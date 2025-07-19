@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getScoreColorClass, isValidScoreInput, formatScore } from '../utils/scoring.js';
 
 /**
@@ -17,6 +17,7 @@ function ScoreInput({
 }) {
     const [inputValue, setInputValue] = useState(value);
     const [isValid, setIsValid] = useState(true);
+    const inputRef = useRef(null);
 
     // Update internal state when prop changes
     useEffect(() => {
@@ -59,26 +60,36 @@ function ScoreInput({
         }
     };
 
+    const handleClick = () => {
+        // Ensure the input is focused when clicked
+        if (inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    };
+
     const colorClass = getScoreColorClass(inputValue);
     const borderClass = isValid ? 'border-gray-300' : 'border-red-500';
 
     return (
         <input
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onBlur={handleBlur}
+            onClick={handleClick}
             placeholder={placeholder}
             disabled={disabled}
             autoFocus={autoFocus}
             className={`
                 w-12 h-12 text-center text-lg font-bold rounded-md border-2 
                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                transition-colors duration-200
+                transition-colors duration-200 cursor-text
                 ${colorClass}
                 ${borderClass}
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-text'}
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-300'}
                 ${className}
             `}
             maxLength={2}

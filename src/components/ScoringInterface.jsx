@@ -97,12 +97,15 @@ function ScoringInterface() {
     };
 
     const handleScoreChange = async (index, value) => {
+        console.log(`Score change: Arrow ${index + 1}, Value: "${value}"`);
         const newScores = [...scores];
         newScores[index] = value;
         setScores(newScores);
         
-        // Auto-save after each score change
-        await saveScores(currentEnd, newScores);
+        // Auto-save after each score change (non-blocking)
+        saveScores(currentEnd, newScores).catch(error => {
+            console.error('Error saving scores:', error);
+        });
     };
 
     const handleNextEnd = async () => {
@@ -163,7 +166,7 @@ function ScoringInterface() {
                                 value={score}
                                 onChange={(value) => handleScoreChange(index, value)}
                                 placeholder="0-10"
-                                autoFocus={index === 0}
+                                autoFocus={false}
                             />
                         </div>
                     ))}
