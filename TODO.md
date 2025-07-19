@@ -32,21 +32,24 @@ Modern archery scoring and management application built with React + Firebase, l
 
 ---
 
-### Session 2: Core Scoring Logic Migration
-**Date:** [TBD]
-**Duration:** [TBD]
+### Session 2: Core Scoring Logic Migration ✅ COMPLETED
+**Date:** December 19, 2024
+**Duration:** ~1.5 hours
 
 #### Goals:
-- [ ] Extract `parseScoreValue` and `getScoreColor` from reference app
-- [ ] Create React components for score input
-- [ ] Implement Olympic round scoring logic
-- [ ] Add basic score validation
-- [ ] Create score display components
+- [x] Extract `parseScoreValue` and `getScoreColor` from reference app
+- [x] Create React components for score input
+- [x] Implement Olympic round scoring logic
+- [x] Add basic score validation
+- [x] Create score display components
 
 #### Accomplishments:
-- [ ] 
-- [ ] 
-- [ ] 
+- [x] Migrated scoring utilities from `reference-app/js/common.js` to `src/utils/scoring.js`
+- [x] Created `ScoreInput` component with validation and color coding
+- [x] Added Tailwind CSS with custom score colors
+- [x] Built `ScoringInterface` component for testing
+- [x] Implemented real-time score calculation and validation
+- [x] Added support for X (10), M (miss), and numbers 0-10
 
 #### Next Session Goals:
 - [ ] Add Firebase authentication

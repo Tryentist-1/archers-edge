@@ -30,21 +30,21 @@ export function parseScoreValue(score) {
  * @returns {string} The Tailwind CSS class name.
  */
 export function getScoreColorClass(score) {
-    if (score === '' || score === null || score === undefined) return 'bg-score-empty';
+    if (score === '' || score === null || score === undefined) return 'bg-gray-100 text-gray-600';
     const strScore = String(score).toUpperCase().trim();
-    if (strScore === 'X') return 'bg-score-x text-white';
-    if (strScore === 'M') return 'bg-score-m text-white';
-    if (strScore === '10') return 'bg-score-10 text-white';
-    if (strScore === '9') return 'bg-score-9 text-white';
-    if (strScore === '8') return 'bg-score-8 text-white';
-    if (strScore === '7') return 'bg-score-7 text-black';
-    if (strScore === '6') return 'bg-score-6 text-white';
-    if (strScore === '5') return 'bg-score-5 text-white';
-    if (strScore === '4') return 'bg-score-4 text-white';
-    if (strScore === '3') return 'bg-score-3 text-white';
-    if (strScore === '2') return 'bg-score-2 text-white';
-    if (strScore === '1') return 'bg-score-1 text-white';
-    return 'bg-score-empty text-gray-600';
+    if (strScore === 'X') return 'bg-red-500 text-white';
+    if (strScore === 'M') return 'bg-gray-700 text-white';
+    if (strScore === '10') return 'bg-teal-500 text-white';
+    if (strScore === '9') return 'bg-blue-500 text-white';
+    if (strScore === '8') return 'bg-green-500 text-white';
+    if (strScore === '7') return 'bg-yellow-400 text-black';
+    if (strScore === '6') return 'bg-pink-400 text-white';
+    if (strScore === '5') return 'bg-blue-400 text-white';
+    if (strScore === '4') return 'bg-purple-500 text-white';
+    if (strScore === '3') return 'bg-cyan-500 text-white';
+    if (strScore === '2') return 'bg-orange-500 text-white';
+    if (strScore === '1') return 'bg-red-600 text-white';
+    return 'bg-gray-100 text-gray-600';
 }
 
 /**
