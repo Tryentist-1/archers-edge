@@ -20,21 +20,70 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
 
+  // Initialize reCAPTCHA
+  useEffect(() => {
+    if (!recaptchaVerifier) {
+      try {
+        // Clear any existing reCAPTCHA
+        const existingRecaptcha = document.querySelector('#recaptcha-container');
+        if (existingRecaptcha) {
+          existingRecaptcha.innerHTML = '';
+        }
+
+        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          'size': 'invisible',
+          'callback': () => {
+            console.log('reCAPTCHA solved');
+          },
+          'expired-callback': () => {
+            console.log('reCAPTCHA expired');
+          }
+        });
+        setRecaptchaVerifier(verifier);
+      } catch (error) {
+        console.error('Error initializing reCAPTCHA:', error);
+      }
+    }
+  }, []);
+
   // Phone number authentication
   const signInWithPhone = async (phoneNumber) => {
     try {
       if (!recaptchaVerifier) {
-        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'invisible',
-        });
-        setRecaptchaVerifier(verifier);
+        throw new Error('reCAPTCHA not initialized. Please refresh the page and try again.');
       }
       
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+      // Clear and reinitialize reCAPTCHA for each attempt
+      const existingRecaptcha = document.querySelector('#recaptcha-container');
+      if (existingRecaptcha) {
+        existingRecaptcha.innerHTML = '';
+      }
+      
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          console.log('reCAPTCHA solved');
+        },
+        'expired-callback': () => {
+          console.log('reCAPTCHA expired');
+        }
+      });
+      
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
       return confirmationResult;
     } catch (error) {
       console.error('Phone sign-in error:', error);
-      throw error;
+      
+      // Provide more helpful error messages
+      if (error.code === 'auth/invalid-phone-number') {
+        throw new Error('Invalid phone number format. Please use +1234567890 format.');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        throw new Error('Phone authentication is not enabled. Please contact support.');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many attempts. Please wait a few minutes and try again.');
+      } else {
+        throw new Error(`Phone authentication failed: ${error.message}`);
+      }
     }
   };
 

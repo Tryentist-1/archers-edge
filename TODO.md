@@ -8,6 +8,8 @@
 - [x] Create login UI with modern design
 - [x] Fix Tailwind CSS configuration issues
 - [x] Test authentication flow
+- [x] Fix phone authentication reCAPTCHA issues
+- [x] Implement score persistence with Firestore
 
 ### Accomplishments:
 - ✅ Created Firebase configuration with real project values
@@ -16,11 +18,15 @@
 - ✅ Fixed Tailwind CSS v4 compatibility issues by downgrading to v3
 - ✅ Server running successfully on http://localhost:3000
 - ✅ Created comprehensive Firebase setup guide
+- ✅ Fixed phone authentication with proper reCAPTCHA handling
+- ✅ Implemented score persistence in Firestore database
+- ✅ Added auto-save functionality for scores
+- ✅ Created competition total tracking
 
 ### Next Steps:
-- [ ] Test authentication in browser
-- [ ] Enable authentication methods in Firebase Console
-- [ ] Set up Firestore database
+- [ ] Enable phone authentication in Firebase Console
+- [ ] Test phone authentication with real/test numbers
+- [ ] Set up Firestore security rules
 - [ ] Begin Session 4: Competition Management
 
 ## Session 4: Competition Management (Next)
@@ -59,8 +65,15 @@
 - 🔄 **Ready for Session 4**: Competition management features
 - 🚀 **Server Running**: http://localhost:3000
 
+## Recent Fixes:
+- ✅ **Phone Authentication**: Fixed reCAPTCHA initialization and error handling
+- ✅ **Score Persistence**: Scores now save to Firestore and persist between ends
+- ✅ **Auto-save**: Scores automatically save after each change
+- ✅ **Competition Tracking**: Added total competition score display
+
 ## Notes:
 - Firebase configuration updated with real project values
 - Tailwind CSS v3 installed and working
 - Authentication UI ready for testing
-- Need to enable authentication methods in Firebase Console 
+- **Need to enable phone authentication in Firebase Console**
+- Scores now persist in database - no more resetting when changing ends! 
