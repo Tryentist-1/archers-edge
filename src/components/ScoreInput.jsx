@@ -36,6 +36,21 @@ function ScoreInput({
         if (valid || newValue === '') {
             onChange?.(newValue);
         }
+        
+        // Auto-advance to next field if input is complete
+        if (newValue.length >= 1) {
+            setTimeout(() => {
+                const allInputs = Array.from(document.querySelectorAll('input[type="text"]'));
+                const currentIndex = allInputs.findIndex(input => input === e.target);
+                if (currentIndex !== -1 && currentIndex < allInputs.length - 1) {
+                    const nextInput = allInputs[currentIndex + 1];
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                    }
+                }
+            }, 100);
+        }
     };
 
     const handleKeyDown = (e) => {
@@ -84,12 +99,11 @@ function ScoreInput({
             disabled={disabled}
             autoFocus={autoFocus}
             className={`
-                w-10 h-8 text-center text-sm font-bold rounded border-2 
-                focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent
+                w-full h-full text-center text-sm font-bold border-0 
+                focus:outline-none focus:ring-0
                 transition-colors duration-200 cursor-text
                 ${colorClass}
-                ${borderClass}
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-300'}
+                ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
                 ${className}
             `}
             maxLength={2}

@@ -53,6 +53,11 @@ function ScoreInputWithKeypad({
         if (valid || newValue === '') {
             onChange?.(newValue);
         }
+        
+        // Auto-advance to next field after a short delay
+        setTimeout(() => {
+            handleNext();
+        }, 100);
     };
 
     const handleNext = () => {
@@ -69,6 +74,9 @@ function ScoreInputWithKeypad({
                 nextInput.focus();
                 nextInput.click(); // Trigger focus to show keypad
             }
+        } else {
+            // If we're at the last input, keep focus on current input
+            currentInput.focus();
         }
     };
 
@@ -119,12 +127,11 @@ function ScoreInputWithKeypad({
                 readOnly
                 className={`
                     score-input-keypad
-                    w-10 h-8 text-center text-sm font-bold rounded border-2 
-                    focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent
+                    w-full h-full text-center text-sm font-bold border-0 
+                    focus:outline-none focus:ring-0
                     transition-colors duration-200 cursor-pointer
                     ${colorClass}
-                    ${borderClass}
-                    ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-300'}
+                    ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
                     ${className}
                 `}
                 maxLength={2}

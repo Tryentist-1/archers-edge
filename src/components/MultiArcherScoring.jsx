@@ -186,9 +186,9 @@ const MultiArcherScoring = ({ baleData, onViewCard }) => {
                     </div>
                 </div>
 
-                {/* Save Status */}
+                {/* Save Status - Fixed position */}
                 {loading && (
-                    <div className="mb-2 p-1 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="fixed top-4 right-4 p-2 bg-blue-50 border border-blue-200 rounded-md shadow-lg z-40">
                         <div className="flex items-center justify-center space-x-2">
                             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
                             <span className="text-xs text-blue-700">Saving...</span>
@@ -197,7 +197,7 @@ const MultiArcherScoring = ({ baleData, onViewCard }) => {
                 )}
 
                 {saveSuccess && (
-                    <div className="mb-2 p-1 bg-green-50 border border-green-200 rounded-md">
+                    <div className="fixed top-4 right-4 p-2 bg-green-50 border border-green-200 rounded-md shadow-lg z-40">
                         <div className="flex items-center justify-center space-x-2">
                             <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -212,16 +212,16 @@ const MultiArcherScoring = ({ baleData, onViewCard }) => {
                     <table className="w-full border-collapse border border-gray-300 text-sm">
                         <thead>
                             <tr className="bg-gray-100">
-                                <th className="border border-gray-300 px-1 py-1 text-left text-xs">Archer</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">A1</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">A2</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">A3</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">10s</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">X</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">End</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">Run</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">Avg</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs">Card</th>
+                                <th className="border border-gray-300 px-1 py-1 text-left text-xs text-gray-900">Archer</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A1</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A2</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A3</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">10s</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">X</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">End</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Run</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Avg</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Card</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -240,17 +240,14 @@ const MultiArcherScoring = ({ baleData, onViewCard }) => {
                                 return (
                                     <tr key={archer.id} className="hover:bg-gray-50">
                                         <td className="border border-gray-300 px-1 py-1">
-                                            <div className="font-medium text-xs">
+                                            <div className="font-medium text-xs text-gray-900 text-left">
                                                 {shortName}
-                                            </div>
-                                            <div className="text-xs text-gray-600">
-                                                {archer.targetAssignment} • {archer.school}
                                             </div>
                                         </td>
                                         
                                         {/* Arrow inputs */}
                                         {[0, 1, 2].map(arrowIndex => (
-                                            <td key={arrowIndex} className="border border-gray-300 px-1 py-1">
+                                            <td key={arrowIndex} className="border border-gray-300 p-0">
                                                 {useKeypad ? (
                                                     <ScoreInputWithKeypad
                                                         value={endScores[`arrow${arrowIndex + 1}`] || ''}
