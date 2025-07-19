@@ -84,8 +84,8 @@ function ScoreInput({
             disabled={disabled}
             autoFocus={autoFocus}
             className={`
-                w-12 h-12 text-center text-lg font-bold rounded-md border-2 
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                w-10 h-8 text-center text-sm font-bold rounded border-2 
+                focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent
                 transition-colors duration-200 cursor-text
                 ${colorClass}
                 ${borderClass}

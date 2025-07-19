@@ -2,6 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-specific styles for keypad */
+@media (max-width: 768px) {
+  /* Ensure the keypad is properly sized on mobile */
+  #score-keypad {
+    padding: 8px;
+    gap: 6px;
+  }
+  
+  #score-keypad button {
+    padding: 12px 6px;
+    font-size: 1.1em;
+  }
+  
+  /* Make table cells more touch-friendly */
+  .score-input-keypad {
+    min-height: 44px; /* iOS minimum touch target */
+    touch-action: manipulation;
+  }
+  
+  /* Ensure table doesn't overflow on mobile */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Landscape mode adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  #score-keypad {
+    padding: 4px;
+    gap: 4px;
+  }
+  
+  #score-keypad button {
+    padding: 8px 4px;
+    font-size: 1em;
+  }
+}
+
+/* Prevent zoom on input focus on iOS */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .score-input-keypad {
+    font-size: 16px !important;
+  }
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
