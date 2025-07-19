@@ -27,9 +27,49 @@
 - [ ] Enable phone authentication in Firebase Console
 - [ ] Test phone authentication with real/test numbers
 - [ ] Set up Firestore security rules
-- [ ] Begin Session 4: Competition Management
+- [ ] Begin Session 4: Multiple Archers Per Bale (Core Functionality)
 
-## Session 4: Competition Management (Next)
+## Session 4: Multiple Archers Per Bale 🎯 **CORE FUNCTIONALITY**
+
+### Goals:
+- [ ] **Archer Setup Interface**: Add/remove archers to bale
+- [ ] **Target Assignment**: Assign archers to targets (A, B, C, D, etc.)
+- [ ] **Multi-Archer Scoring**: Score multiple archers per end
+- [ ] **Archer Switching**: Switch between archers during scoring
+- [ ] **Individual Cards**: View individual archer scorecards
+- [ ] **Bale Totals**: Combined totals for all archers on bale
+
+### Technical Tasks:
+- [ ] **Data Structure Redesign**:
+  ```javascript
+  {
+    baleNumber: 1,
+    archers: [
+      {
+        id: "archer1",
+        firstName: "John",
+        lastName: "Doe", 
+        targetAssignment: "A",
+        scores: [[10, 9, 8], [X, 10, 9], ...] // 12 ends x 3 arrows
+      }
+    ],
+    currentEnd: 1,
+    totalEnds: 12
+  }
+  ```
+- [ ] **Setup View**: Archer selection with target assignment
+- [ ] **Scoring View**: Multi-row table with all archers
+- [ ] **Card View**: Individual archer scorecard
+- [ ] **Navigation**: Switch between setup, scoring, and card views
+
+### Reference Implementation:
+Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
+- ✅ **Setup Phase**: Select archers and assign targets
+- ✅ **Scoring Phase**: Score all archers per end
+- ✅ **Card Phase**: Individual archer verification
+- ✅ **Bale Totals**: Combined verification and export
+
+## Session 5: Competition Management
 
 ### Goals:
 - [ ] Create competition creation interface
@@ -37,13 +77,7 @@
 - [ ] Add participant management
 - [ ] Build scoring session management
 
-### Technical Tasks:
-- [ ] Design competition data structure
-- [ ] Create Firestore collections and security rules
-- [ ] Build competition creation form
-- [ ] Implement real-time updates with Firebase listeners
-
-## Session 5: Data Persistence & Offline Sync
+## Session 6: Data Persistence & Offline Sync
 
 ### Goals:
 - [ ] Implement offline-first architecture
@@ -51,7 +85,7 @@
 - [ ] Create sync mechanism for when connection returns
 - [ ] Add data export/import functionality
 
-## Session 6: Polish & Deployment
+## Session 7: Polish & Deployment
 
 ### Goals:
 - [ ] Mobile-responsive design optimization
@@ -62,7 +96,7 @@
 
 ## Current Status:
 - ✅ **Session 3 Complete**: Firebase authentication working
-- 🔄 **Ready for Session 4**: Competition management features
+- 🎯 **Ready for Session 4**: Multiple archers per bale (CORE FUNCTIONALITY)
 - 🚀 **Server Running**: http://localhost:3000
 
 ## Recent Fixes:
@@ -70,10 +104,12 @@
 - ✅ **Score Persistence**: Scores now save to Firestore and persist between ends
 - ✅ **Auto-save**: Scores automatically save after each change
 - ✅ **Competition Tracking**: Added total competition score display
+- ✅ **Color Coding**: Fixed to match exact archery color scheme
 
 ## Notes:
 - Firebase configuration updated with real project values
 - Tailwind CSS v3 installed and working
 - Authentication UI ready for testing
 - **Need to enable phone authentication in Firebase Console**
-- Scores now persist in database - no more resetting when changing ends! 
+- **MULTIPLE ARCHERS PER BALE IS THE CORE FUNCTIONALITY** - not just a feature!
+- Current app only supports single archer - needs major redesign for multi-archer support 
