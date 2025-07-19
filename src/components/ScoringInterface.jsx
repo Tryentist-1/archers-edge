@@ -17,6 +17,7 @@ function ScoringInterface() {
     const [allEnds, setAllEnds] = useState({}); // Store all ends data
     const [loading, setLoading] = useState(false);
     const [competitionId, setCompetitionId] = useState(null);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     // Load existing scores when component mounts or user changes
     useEffect(() => {
@@ -64,6 +65,7 @@ function ScoringInterface() {
         
         try {
             setLoading(true);
+            setSaveSuccess(false);
             const userDoc = doc(db, 'users', currentUser.uid);
             
             // Create or get competition ID
@@ -89,6 +91,10 @@ function ScoringInterface() {
             }, { merge: true });
             
             setAllEnds(updatedScores);
+            setSaveSuccess(true);
+            
+            // Hide success indicator after 2 seconds
+            setTimeout(() => setSaveSuccess(false), 2000);
         } catch (error) {
             console.error('Error saving scores:', error);
         } finally {
@@ -146,6 +152,28 @@ function ScoringInterface() {
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                 End {currentEnd} Scoring
             </h2>
+            
+            {/* Save Status Indicator */}
+            {loading && (
+                <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span className="text-sm text-blue-700">Saving scores...</span>
+                    </div>
+                </div>
+            )}
+            
+            {/* Save Success Indicator */}
+            {saveSuccess && (
+                <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded-md">
+                    <div className="flex items-center justify-center space-x-2">
+                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-sm text-green-700">Scores saved!</span>
+                    </div>
+                </div>
+            )}
             
             {/* Competition Total */}
             <div className="mb-4 p-3 bg-blue-50 rounded-md">
@@ -205,11 +233,14 @@ function ScoringInterface() {
             <div className="mt-6 p-4 bg-gray-50 rounded-md">
                 <h3 className="font-semibold text-gray-800 mb-2">Scoring Guide:</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• <strong>X</strong> = 10 points (gold)</li>
-                    <li>• <strong>10</strong> = 10 points (teal)</li>
-                    <li>• <strong>9</strong> = 9 points (blue)</li>
-                    <li>• <strong>8</strong> = 8 points (green)</li>
-                    <li>• <strong>M</strong> = 0 points (miss)</li>
+                    <li>• <span className="bg-yellow-400 text-black px-1 rounded font-bold">X</span> = 10 points (gold - perfect)</li>
+                    <li>• <span className="bg-teal-500 text-white px-1 rounded font-bold">10</span> = 10 points (teal - perfect)</li>
+                    <li>• <span className="bg-blue-500 text-white px-1 rounded font-bold">9</span> = 9 points (blue - excellent)</li>
+                    <li>• <span className="bg-green-500 text-white px-1 rounded font-bold">8</span> = 8 points (green - good)</li>
+                    <li>• <span className="bg-yellow-500 text-black px-1 rounded font-bold">7</span> = 7 points (yellow - fair)</li>
+                    <li>• <span className="bg-orange-500 text-white px-1 rounded font-bold">6</span> = 6 points (orange - below average)</li>
+                    <li>• <span className="bg-red-500 text-white px-1 rounded font-bold">5</span> = 5 points (red - poor)</li>
+                    <li>• <span className="bg-gray-800 text-white px-1 rounded font-bold">M</span> = 0 points (miss)</li>
                 </ul>
             </div>
         </div>

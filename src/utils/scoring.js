@@ -31,19 +31,39 @@ export function parseScoreValue(score) {
  */
 export function getScoreColorClass(score) {
     if (score === '' || score === null || score === undefined) return 'bg-gray-100 text-gray-600';
+    
     const strScore = String(score).toUpperCase().trim();
-    if (strScore === 'X') return 'bg-red-500 text-white';
-    if (strScore === 'M') return 'bg-gray-700 text-white';
-    if (strScore === '10') return 'bg-teal-500 text-white';
-    if (strScore === '9') return 'bg-blue-500 text-white';
-    if (strScore === '8') return 'bg-green-500 text-white';
-    if (strScore === '7') return 'bg-yellow-400 text-black';
-    if (strScore === '6') return 'bg-pink-400 text-white';
-    if (strScore === '5') return 'bg-blue-400 text-white';
-    if (strScore === '4') return 'bg-purple-500 text-white';
-    if (strScore === '3') return 'bg-cyan-500 text-white';
-    if (strScore === '2') return 'bg-orange-500 text-white';
-    if (strScore === '1') return 'bg-red-600 text-white';
+    
+    // Gold (X) - Perfect shot
+    if (strScore === 'X') return 'bg-yellow-400 text-black font-bold';
+    
+    // Teal (10) - Perfect score
+    if (strScore === '10') return 'bg-teal-500 text-white font-bold';
+    
+    // Blue (9) - Excellent
+    if (strScore === '9') return 'bg-blue-500 text-white font-bold';
+    
+    // Green (8) - Good
+    if (strScore === '8') return 'bg-green-500 text-white font-bold';
+    
+    // Yellow (7) - Fair
+    if (strScore === '7') return 'bg-yellow-500 text-black font-bold';
+    
+    // Orange (6) - Below average
+    if (strScore === '6') return 'bg-orange-500 text-white font-bold';
+    
+    // Red (5 and below) - Poor
+    if (strScore === '5') return 'bg-red-500 text-white font-bold';
+    if (strScore === '4') return 'bg-red-600 text-white font-bold';
+    if (strScore === '3') return 'bg-red-700 text-white font-bold';
+    if (strScore === '2') return 'bg-red-800 text-white font-bold';
+    if (strScore === '1') return 'bg-red-900 text-white font-bold';
+    if (strScore === '0') return 'bg-red-900 text-white font-bold';
+    
+    // Miss (M) - Black
+    if (strScore === 'M') return 'bg-gray-800 text-white font-bold';
+    
+    // Default for invalid input
     return 'bg-gray-100 text-gray-600';
 }
 
