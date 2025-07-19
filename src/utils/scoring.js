@@ -30,41 +30,42 @@ export function parseScoreValue(score) {
  * @returns {string} The Tailwind CSS class name.
  */
 export function getScoreColorClass(score) {
-    if (score === '' || score === null || score === undefined) return 'bg-gray-100 text-gray-600';
+    if (score === '' || score === null || score === undefined) return 'bg-transparent text-gray-600';
     
     const strScore = String(score).toUpperCase().trim();
     
-    // Gold (X) - Perfect shot
-    if (strScore === 'X') return 'bg-yellow-400 text-black font-bold';
+    // Gold (X, 10, 9) - Perfect/Excellent shots
+    if (strScore === 'X' || strScore === '10' || strScore === '9') {
+        return 'bg-yellow-400 text-black font-bold';
+    }
     
-    // Teal (10) - Perfect score
-    if (strScore === '10') return 'bg-teal-500 text-white font-bold';
+    // Red (8, 7) - Good shots
+    if (strScore === '8' || strScore === '7') {
+        return 'bg-red-600 text-white font-bold';
+    }
     
-    // Blue (9) - Excellent
-    if (strScore === '9') return 'bg-blue-500 text-white font-bold';
+    // Blue (6, 5) - Fair shots
+    if (strScore === '6' || strScore === '5') {
+        return 'bg-cyan-400 text-black font-bold';
+    }
     
-    // Green (8) - Good
-    if (strScore === '8') return 'bg-green-500 text-white font-bold';
+    // Black (4, 3) - Poor shots
+    if (strScore === '4' || strScore === '3') {
+        return 'bg-gray-800 text-white font-bold';
+    }
     
-    // Yellow (7) - Fair
-    if (strScore === '7') return 'bg-yellow-500 text-black font-bold';
+    // White (2, 1) - Very poor shots
+    if (strScore === '2' || strScore === '1') {
+        return 'bg-white text-black font-bold border border-gray-300';
+    }
     
-    // Orange (6) - Below average
-    if (strScore === '6') return 'bg-orange-500 text-white font-bold';
-    
-    // Red (5 and below) - Poor
-    if (strScore === '5') return 'bg-red-500 text-white font-bold';
-    if (strScore === '4') return 'bg-red-600 text-white font-bold';
-    if (strScore === '3') return 'bg-red-700 text-white font-bold';
-    if (strScore === '2') return 'bg-red-800 text-white font-bold';
-    if (strScore === '1') return 'bg-red-900 text-white font-bold';
-    if (strScore === '0') return 'bg-red-900 text-white font-bold';
-    
-    // Miss (M) - Black
-    if (strScore === 'M') return 'bg-gray-800 text-white font-bold';
+    // Miss (M) - White with gray text
+    if (strScore === 'M') {
+        return 'bg-white text-gray-500 font-bold border border-gray-300';
+    }
     
     // Default for invalid input
-    return 'bg-gray-100 text-gray-600';
+    return 'bg-transparent text-gray-600';
 }
 
 /**

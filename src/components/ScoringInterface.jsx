@@ -234,13 +234,17 @@ function ScoringInterface() {
                 <h3 className="font-semibold text-gray-800 mb-2">Scoring Guide:</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
                     <li>• <span className="bg-yellow-400 text-black px-1 rounded font-bold">X</span> = 10 points (gold - perfect)</li>
-                    <li>• <span className="bg-teal-500 text-white px-1 rounded font-bold">10</span> = 10 points (teal - perfect)</li>
-                    <li>• <span className="bg-blue-500 text-white px-1 rounded font-bold">9</span> = 9 points (blue - excellent)</li>
-                    <li>• <span className="bg-green-500 text-white px-1 rounded font-bold">8</span> = 8 points (green - good)</li>
-                    <li>• <span className="bg-yellow-500 text-black px-1 rounded font-bold">7</span> = 7 points (yellow - fair)</li>
-                    <li>• <span className="bg-orange-500 text-white px-1 rounded font-bold">6</span> = 6 points (orange - below average)</li>
-                    <li>• <span className="bg-red-500 text-white px-1 rounded font-bold">5</span> = 5 points (red - poor)</li>
-                    <li>• <span className="bg-gray-800 text-white px-1 rounded font-bold">M</span> = 0 points (miss)</li>
+                    <li>• <span className="bg-yellow-400 text-black px-1 rounded font-bold">10</span> = 10 points (gold - perfect)</li>
+                    <li>• <span className="bg-yellow-400 text-black px-1 rounded font-bold">9</span> = 9 points (gold - excellent)</li>
+                    <li>• <span className="bg-red-600 text-white px-1 rounded font-bold">8</span> = 8 points (red - good)</li>
+                    <li>• <span className="bg-red-600 text-white px-1 rounded font-bold">7</span> = 7 points (red - good)</li>
+                    <li>• <span className="bg-cyan-400 text-black px-1 rounded font-bold">6</span> = 6 points (blue - fair)</li>
+                    <li>• <span className="bg-cyan-400 text-black px-1 rounded font-bold">5</span> = 5 points (blue - fair)</li>
+                    <li>• <span className="bg-gray-800 text-white px-1 rounded font-bold">4</span> = 4 points (black - poor)</li>
+                    <li>• <span className="bg-gray-800 text-white px-1 rounded font-bold">3</span> = 3 points (black - poor)</li>
+                    <li>• <span className="bg-white text-black px-1 rounded font-bold border border-gray-300">2</span> = 2 points (white - very poor)</li>
+                    <li>• <span className="bg-white text-black px-1 rounded font-bold border border-gray-300">1</span> = 1 point (white - very poor)</li>
+                    <li>• <span className="bg-white text-gray-500 px-1 rounded font-bold border border-gray-300">M</span> = 0 points (miss)</li>
                 </ul>
             </div>
         </div>
