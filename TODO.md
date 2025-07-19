@@ -1,225 +1,66 @@
-# Archer's Edge - Development Sessions
+# Archer's Edge Development TODO
 
-## Project Overview
-Modern archery scoring and management application built with React + Firebase, leveraging existing offline scoring logic.
+## Session 3: Firebase Authentication ✅ COMPLETED
 
-## Session Management
+### Goals:
+- [x] Set up Firebase project and configuration
+- [x] Implement authentication with Google and phone sign-in
+- [x] Create login UI with modern design
+- [x] Fix Tailwind CSS configuration issues
+- [x] Test authentication flow
 
-### Session 1: Project Setup & Foundation ✅ COMPLETED
-**Date:** December 19, 2024
-**Duration:** ~2 hours
+### Accomplishments:
+- ✅ Created Firebase configuration with real project values
+- ✅ Implemented AuthContext for state management
+- ✅ Built Login component with Google and phone authentication
+- ✅ Fixed Tailwind CSS v4 compatibility issues by downgrading to v3
+- ✅ Server running successfully on http://localhost:3000
+- ✅ Created comprehensive Firebase setup guide
 
-#### Goals:
-- [x] Set up React + Vite project structure
-- [x] Create development branch to protect working app
-- [x] Copy reference app for migration
-- [x] Fix Vite compatibility issues
-- [x] Establish git workflow
+### Next Steps:
+- [ ] Test authentication in browser
+- [ ] Enable authentication methods in Firebase Console
+- [ ] Set up Firestore database
+- [ ] Begin Session 4: Competition Management
 
-#### Accomplishments:
-- [x] Created `archers-edge-dev` branch
-- [x] Set up Vite 4.x for Node 20.3.0 compatibility
-- [x] Established project structure with components, utils, hooks, styles
-- [x] Created basic React app with proper entry points
-- [x] Set up .gitignore and package.json
-- [x] Committed initial setup
+## Session 4: Competition Management (Next)
 
-#### Next Session Goals:
-- [ ] Migrate core scoring utilities from reference app
-- [ ] Create basic scoring interface components
-- [ ] Implement score parsing and validation logic
-- [ ] Add Tailwind CSS for styling
+### Goals:
+- [ ] Create competition creation interface
+- [ ] Implement real-time leaderboards
+- [ ] Add participant management
+- [ ] Build scoring session management
 
----
+### Technical Tasks:
+- [ ] Design competition data structure
+- [ ] Create Firestore collections and security rules
+- [ ] Build competition creation form
+- [ ] Implement real-time updates with Firebase listeners
 
-### Session 2: Core Scoring Logic Migration ✅ COMPLETED
-**Date:** December 19, 2024
-**Duration:** ~1.5 hours
+## Session 5: Data Persistence & Offline Sync
 
-#### Goals:
-- [x] Extract `parseScoreValue` and `getScoreColor` from reference app
-- [x] Create React components for score input
-- [x] Implement Olympic round scoring logic
-- [x] Add basic score validation
-- [x] Create score display components
+### Goals:
+- [ ] Implement offline-first architecture
+- [ ] Add local storage for disconnected scenarios
+- [ ] Create sync mechanism for when connection returns
+- [ ] Add data export/import functionality
 
-#### Accomplishments:
-- [x] Migrated scoring utilities from `reference-app/js/common.js` to `src/utils/scoring.js`
-- [x] Created `ScoreInput` component with validation and color coding
-- [x] Added Tailwind CSS with custom score colors
-- [x] Built `ScoringInterface` component for testing
-- [x] Implemented real-time score calculation and validation
-- [x] Added support for X (10), M (miss), and numbers 0-10
+## Session 6: Polish & Deployment
 
-#### Next Session Goals:
-- [ ] Add Firebase authentication
-- [ ] Implement user profile management
-- [ ] Create competition setup interface
-
----
-
-### Session 3: User Management & Authentication ✅ COMPLETED
-**Date:** December 19, 2024
-**Duration:** ~1 hour
-
-#### Goals:
-- [x] Set up Firebase project
-- [x] Implement phone number authentication
-- [x] Add Google Sign-In
-- [x] Create user profile management
-- [x] Add archer profile creation/editing
-
-#### Accomplishments:
-- [x] Added Firebase SDK and configuration
-- [x] Created AuthContext for state management
-- [x] Built Login component with phone and Google auth
-- [x] Implemented conditional rendering based on auth state
-- [x] Added sign-out functionality
-- [x] Fixed color coding issue with standard Tailwind colors
-
-#### Next Session Goals:
-- [ ] Set up Firebase project (need actual config)
-- [ ] Implement competition management
-- [ ] Add real-time leaderboards
-- [ ] Create offline sync functionality
-
----
-
-### Session 4: Competition Management
-**Date:** [TBD]
-**Duration:** [TBD]
-
-#### Goals:
-- [ ] Create competition setup interface
-- [ ] Implement registration system
-- [ ] Add bail assignment functionality
-- [ ] Create real-time leaderboards
-- [ ] Implement score synchronization
-
-#### Accomplishments:
-- [ ] 
-- [ ] 
-- [ ] 
-
-#### Next Session Goals:
-- [ ] Add coach's notes system
-- [ ] Implement data analytics
-- [ ] Create reporting features
-
----
-
-### Session 5: Advanced Features
-**Date:** [TBD]
-**Duration:** [TBD]
-
-#### Goals:
-- [ ] Implement coach's notes with structured templates
-- [ ] Add performance analytics and charts
-- [ ] Create comprehensive reporting
-- [ ] Add data export functionality
-- [ ] Implement advanced scoring formats
-
-#### Accomplishments:
-- [ ] 
-- [ ] 
-- [ ] 
-
-#### Next Session Goals:
+### Goals:
+- [ ] Mobile-responsive design optimization
 - [ ] Performance optimization
-- [ ] Mobile responsiveness improvements
-- [ ] Deployment preparation
+- [ ] PWA features (offline, installable)
+- [ ] Deploy to Firebase Hosting
+- [ ] Final testing and bug fixes
 
----
+## Current Status:
+- ✅ **Session 3 Complete**: Firebase authentication working
+- 🔄 **Ready for Session 4**: Competition management features
+- 🚀 **Server Running**: http://localhost:3000
 
-### Session 6: Polish & Deploy
-**Date:** [TBD]
-**Duration:** [TBD]
-
-#### Goals:
-- [ ] Optimize performance and loading times
-- [ ] Improve mobile user experience
-- [ ] Add comprehensive error handling
-- [ ] Set up Firebase hosting
-- [ ] Deploy to production
-
-#### Accomplishments:
-- [ ] 
-- [ ] 
-- [ ] 
-
-#### Next Session Goals:
-- [ ] User testing and feedback
-- [ ] Bug fixes and improvements
-- [ ] Feature enhancements
-
----
-
-## Quick Start Commands
-
-### Development
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-```
-
-### Git Workflow
-```bash
-git status           # Check current status
-git add .           # Stage all changes
-git commit -m "message"  # Commit changes
-git push origin archers-edge-dev  # Push to remote
-```
-
-### Session Management
-```bash
-# Start new session
-echo "## Session X: [Title]" >> TODO.md
-echo "**Date:** $(date)" >> TODO.md
-
-# End session
-echo "**Duration:** [Time spent]" >> TODO.md
-echo "#### Accomplishments:" >> TODO.md
-```
-
-## Reference Materials
-
-### Existing App Structure (reference-app/)
-- `js/common.js` - Core scoring utilities
-- `js/solo_round.js` - Olympic round scoring logic
-- `js/ranking_round.js` - Ranking round implementation
-- `css/` - Existing styling patterns
-
-### Key Functions to Migrate
-- `parseScoreValue()` - Score parsing logic
-- `getScoreColor()` - Visual score feedback
-- `calculateAllScores()` - Olympic round calculations
-- `saveDataToLocalStorage()` - Data persistence
-- `loadDataFromLocalStorage()` - Data retrieval
-
-### Architecture Decisions
-- **Frontend:** React + Vite + Tailwind CSS
-- **Backend:** Firebase (Firestore + Auth + Hosting)
-- **State Management:** React Context API
-- **Offline Support:** Local storage + Firebase sync
-- **Mobile First:** Progressive Web App (PWA)
-
-## Notes & Decisions
-
-### Technical Decisions
-- Using Vite 4.x for Node 20.3.0 compatibility
-- Keeping reference app as backup during migration
-- Implementing offline-first architecture
-- Using Firebase for real-time features
-
-### Design Decisions
-- Mobile-first responsive design
-- Intuitive scoring interface
-- Real-time leaderboards
-- Comprehensive data analytics
-
-### Future Considerations
-- Arrow placement visualization (postponed)
-- Advanced analytics and machine learning
-- Integration with external archery systems
-- Tournament management features 
+## Notes:
+- Firebase configuration updated with real project values
+- Tailwind CSS v3 installed and working
+- Authentication UI ready for testing
+- Need to enable authentication methods in Firebase Console 
