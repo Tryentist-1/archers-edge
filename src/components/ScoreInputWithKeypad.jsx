@@ -31,6 +31,15 @@ function ScoreInputWithKeypad({
 
     const handleInputFocus = (e) => {
         setIsFocused(true);
+        
+        // Hide any other visible keypads first
+        const allKeypads = document.querySelectorAll('#score-keypad');
+        allKeypads.forEach(keypad => {
+            if (keypad.style.display !== 'none') {
+                keypad.style.display = 'none';
+            }
+        });
+        
         setIsKeypadVisible(true);
         inputRef.current?.select();
         onFocus?.(e);
@@ -107,10 +116,21 @@ function ScoreInputWithKeypad({
         console.log('handleCloseKeypad called'); // Debug log
         setIsKeypadVisible(false);
         setIsFocused(false);
-        // Also blur the current input
+        
+        // Force blur and remove focus from current input
         if (inputRef.current) {
             inputRef.current.blur();
+            // Also remove focus from any other inputs
+            document.activeElement?.blur();
         }
+        
+        // Hide any other visible keypads
+        const allKeypads = document.querySelectorAll('#score-keypad');
+        allKeypads.forEach(keypad => {
+            if (keypad.style.display !== 'none') {
+                keypad.style.display = 'none';
+            }
+        });
     };
 
     const colorClass = getScoreColorClass(inputValue);

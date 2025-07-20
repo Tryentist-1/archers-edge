@@ -10,7 +10,7 @@ import ScoreInputWithKeypad from './ScoreInputWithKeypad.jsx';
 const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
     const { currentUser } = useAuth();
     const [archers, setArchers] = useState(baleData.archers || []);
-    const [currentEnd, setCurrentEnd] = useState(1);
+    const [currentEnd, setCurrentEnd] = useState(baleData.currentEnd || 1);
     const [loading, setLoading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     
@@ -51,7 +51,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             const updatedBaleData = {
                 ...baleData,
                 archers,
-                currentEnd,
+                currentEnd, // Always save current end
                 lastUpdated: new Date()
             };
 
@@ -79,7 +79,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             const updatedBaleData = {
                 ...baleData,
                 archers,
-                currentEnd,
+                currentEnd, // Always save current end
                 lastUpdated: new Date()
             };
             LocalStorage.saveBaleData(updatedBaleData);
@@ -94,22 +94,29 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
         if (newEnd >= 1 && newEnd <= totalEnds) {
             setCurrentEnd(newEnd);
             
-            // Auto-focus the first arrow of the first archer after a short delay
+            // Auto-focus the first arrow of the first archer after a longer delay
             setTimeout(() => {
-                // Find the first input specifically (first archer, first arrow)
-                const firstInput = document.querySelector('.score-input-keypad');
-                console.log('Found first input:', firstInput); // Debug log
+                // Find all score inputs and focus the first one
+                const allInputs = document.querySelectorAll('.score-input-keypad');
+                console.log('Found inputs:', allInputs.length); // Debug log
                 
-                if (firstInput) {
+                if (allInputs.length > 0) {
+                    const firstInput = allInputs[0];
+                    console.log('Focusing first input:', firstInput); // Debug log
+                    
+                    // Force focus and trigger keypad
                     firstInput.focus();
-                    // Trigger keypad if using keypad mode
-                    if (useKeypad) {
+                    firstInput.click();
+                    
+                    // Additional focus attempt after a short delay
+                    setTimeout(() => {
+                        firstInput.focus();
                         firstInput.click();
-                    }
+                    }, 100);
                 } else {
-                    console.log('No first input found'); // Debug log
+                    console.log('No inputs found'); // Debug log
                 }
-            }, 300); // Increased delay to ensure DOM is updated
+            }, 500); // Increased delay to ensure DOM is fully updated
         }
     };
 
@@ -188,6 +195,13 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
     };
 
     const baleTotals = calculateBaleTotals();
+
+    // Load current end from saved data when component mounts
+    useEffect(() => {
+        if (baleData.currentEnd && baleData.currentEnd !== currentEnd) {
+            setCurrentEnd(baleData.currentEnd);
+        }
+    }, [baleData.currentEnd]);
 
     // Auto-save when scores change
     useEffect(() => {

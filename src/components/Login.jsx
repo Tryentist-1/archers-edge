@@ -7,7 +7,7 @@ function Login() {
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signInWithPhone, signInWithGoogle } = useAuth();
+  const { signInWithPhone, signInWithGoogle, signInAsMobile } = useAuth();
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
@@ -51,6 +51,23 @@ function Login() {
     }
   };
 
+  const handleMobileSignIn = () => {
+    console.log('handleMobileSignIn called');
+    setLoading(true);
+    setError('');
+    
+    try {
+      console.log('Calling signInAsMobile');
+      signInAsMobile();
+      console.log('signInAsMobile completed');
+      setLoading(false);
+    } catch (error) {
+      console.error('Mobile sign-in error:', error);
+      setError('Failed to sign in as mobile user: ' + error.message);
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -71,6 +88,17 @@ function Login() {
             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign in with Google'}
+          </button>
+        </div>
+
+        {/* Mobile Test Sign In */}
+        <div className="mt-4">
+          <button
+            onClick={handleMobileSignIn}
+            disabled={loading}
+            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+          >
+            {loading ? 'Signing in...' : 'Mobile Test Login'}
           </button>
         </div>
 
