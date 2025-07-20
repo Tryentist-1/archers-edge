@@ -84,14 +84,18 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             setTimeout(() => {
                 // Find the first input specifically (first archer, first arrow)
                 const firstInput = document.querySelector('.score-input-keypad');
+                console.log('Found first input:', firstInput); // Debug log
+                
                 if (firstInput) {
                     firstInput.focus();
                     // Trigger keypad if using keypad mode
                     if (useKeypad) {
                         firstInput.click();
                     }
+                } else {
+                    console.log('No first input found'); // Debug log
                 }
-            }, 200); // Increased delay to ensure DOM is updated
+            }, 300); // Increased delay to ensure DOM is updated
         }
     };
 
@@ -137,8 +141,13 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
         let totalXs = 0;
         let totalArrows = 0;
 
+        console.log('Calculating bale totals for end:', currentEnd);
+        console.log('Archers:', archers);
+
         archers.forEach(archer => {
             const endScores = archer.scores[endKey];
+            console.log(`Archer ${archer.firstName} scores for ${endKey}:`, endScores);
+            
             if (endScores) {
                 const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
                 scores.forEach(score => {
@@ -152,13 +161,16 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             }
         });
 
-        return {
+        const result = {
             totalScore,
             totalTens,
             totalXs,
             totalArrows,
             average: totalArrows > 0 ? (totalScore / totalArrows).toFixed(1) : '0.0'
         };
+
+        console.log('Bale totals result:', result);
+        return result;
     };
 
     const baleTotals = calculateBaleTotals();
