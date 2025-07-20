@@ -43,12 +43,10 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
     };
 
     const saveScores = async () => {
-        if (!currentUser) return;
+        if (!currentUser || loading) return;
         
+        setLoading(true);
         try {
-            setLoading(true);
-            setSaveSuccess(false);
-            
             const updatedBaleData = {
                 ...baleData,
                 archers,
@@ -63,8 +61,13 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             }, { merge: true });
 
             setSaveSuccess(true);
+            
+            // Update the parent component with the new bale data
+            if (onBaleDataUpdate) {
+                onBaleDataUpdate(updatedBaleData);
+            }
+            
             setTimeout(() => setSaveSuccess(false), 2000);
-            onBaleDataUpdate(updatedBaleData); // Call the prop to update the parent
         } catch (error) {
             console.error('Error saving scores:', error);
         } finally {
@@ -126,6 +129,39 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
         if (avg >= 3) return 'bg-gray-800 text-white';
         return 'bg-white text-black border border-gray-300';
     };
+
+    const calculateBaleTotals = () => {
+        const endKey = `end${currentEnd}`;
+        let totalScore = 0;
+        let totalTens = 0;
+        let totalXs = 0;
+        let totalArrows = 0;
+
+        archers.forEach(archer => {
+            const endScores = archer.scores[endKey];
+            if (endScores) {
+                const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+                scores.forEach(score => {
+                    if (score && score !== '') {
+                        totalArrows++;
+                        totalScore += parseScoreValue(score);
+                        if (score === '10') totalTens++;
+                        if (score === 'X') totalXs++;
+                    }
+                });
+            }
+        });
+
+        return {
+            totalScore,
+            totalTens,
+            totalXs,
+            totalArrows,
+            average: totalArrows > 0 ? (totalScore / totalArrows).toFixed(1) : '0.0'
+        };
+    };
+
+    const baleTotals = calculateBaleTotals();
 
     // Auto-save when scores change
     useEffect(() => {
@@ -280,13 +316,25 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                     <h3 className="font-semibold text-gray-800 mb-1 text-sm">Bale Totals:</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                         <div>
+                            <span className="font-medium">Score:</span> {baleTotals.totalScore}
+                        </div>
+                        <div>
+                            <span className="font-medium">10s:</span> {baleTotals.totalTens}
+                        </div>
+                        <div>
+                            <span className="font-medium">Xs:</span> {baleTotals.totalXs}
+                        </div>
+                        <div>
+                            <span className="font-medium">Arrows:</span> {baleTotals.totalArrows}
+                        </div>
+                        <div>
+                            <span className="font-medium">Avg:</span> {baleTotals.average}
+                        </div>
+                        <div>
                             <span className="font-medium">Archers:</span> {archers.length}
                         </div>
                         <div>
                             <span className="font-medium">End:</span> {currentEnd}
-                        </div>
-                        <div>
-                            <span className="font-medium">Total:</span> {totalEnds}
                         </div>
                         <div>
                             <span className="font-medium">Bale:</span> {baleData.baleNumber}

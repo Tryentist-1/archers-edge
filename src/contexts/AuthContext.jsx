@@ -30,18 +30,24 @@ export function AuthProvider({ children }) {
           existingRecaptcha.innerHTML = '';
         }
 
-        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'invisible',
-          'callback': () => {
-            console.log('reCAPTCHA solved');
-          },
-          'expired-callback': () => {
-            console.log('reCAPTCHA expired');
-          }
-        });
-        setRecaptchaVerifier(verifier);
+        // Check if we're in a browser environment
+        if (typeof window !== 'undefined' && window.recaptcha) {
+          const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': () => {
+              console.log('reCAPTCHA solved');
+            },
+            'expired-callback': () => {
+              console.log('reCAPTCHA expired');
+            }
+          });
+          setRecaptchaVerifier(verifier);
+        } else {
+          console.warn('reCAPTCHA not available, using fallback authentication');
+        }
       } catch (error) {
         console.error('Error initializing reCAPTCHA:', error);
+        // Don't throw error, just log it and continue
       }
     }
   }, []);
