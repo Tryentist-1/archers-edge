@@ -28,7 +28,15 @@ const ArcherScorecard = ({ baleData, archerId, onBackToScoring }) => {
 
     const calculateEndTotal = (endScores) => {
         if (!endScores) return 0;
-        const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+        
+        // Handle both array format ['', '', ''] and object format { arrow1: '', arrow2: '', arrow3: '' }
+        let scores;
+        if (Array.isArray(endScores)) {
+            scores = endScores;
+        } else {
+            scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+        }
+        
         return scores.reduce((total, score) => total + parseScoreValue(score), 0);
     };
 
@@ -45,7 +53,15 @@ const ArcherScorecard = ({ baleData, archerId, onBackToScoring }) => {
 
     const calculateEndAverage = (endScores) => {
         if (!endScores) return 0;
-        const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+        
+        // Handle both array format ['', '', ''] and object format { arrow1: '', arrow2: '', arrow3: '' }
+        let scores;
+        if (Array.isArray(endScores)) {
+            scores = endScores;
+        } else {
+            scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+        }
+        
         const validScores = scores.filter(score => score !== '' && score !== null);
         if (validScores.length === 0) return 0;
         const total = validScores.reduce((sum, score) => sum + parseScoreValue(score), 0);
@@ -86,7 +102,14 @@ const ArcherScorecard = ({ baleData, archerId, onBackToScoring }) => {
             const endKey = `end${end}`;
             const endScores = archer.scores[endKey];
             if (endScores) {
-                const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+                // Handle both array format ['', '', ''] and object format { arrow1: '', arrow2: '', arrow3: '' }
+                let scores;
+                if (Array.isArray(endScores)) {
+                    scores = endScores;
+                } else {
+                    scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+                }
+                
                 scores.forEach(score => {
                     if (score) {
                         totalArrows++;
@@ -179,19 +202,24 @@ const ArcherScorecard = ({ baleData, archerId, onBackToScoring }) => {
                                     const runningTotal = calculateRunningTotal(archer);
                                     const endAverage = calculateEndAverage(endScores);
 
+                                    // Handle both array format ['', '', ''] and object format { arrow1: '', arrow2: '', arrow3: '' }
+                                    let scores;
+                                    if (Array.isArray(endScores)) {
+                                        scores = endScores;
+                                    } else {
+                                        scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+                                    }
+
                                     return (
                                         <tr key={endNumber} className="hover:bg-gray-50">
                                             <td className="border border-gray-300 px-2 py-2 text-center font-medium text-xs">
                                                 {endNumber}
                                             </td>
-                                            {[1, 2, 3].map(arrowNum => {
-                                                const score = endScores[`arrow${arrowNum}`] || '';
-                                                return (
-                                                    <td key={arrowNum} className={`border border-gray-300 px-2 py-2 text-center font-medium text-xs ${getScoreClass(score)}`}>
-                                                        {score}
-                                                    </td>
-                                                );
-                                            })}
+                                            {scores.map((score, arrowIndex) => (
+                                                <td key={arrowIndex} className={`border border-gray-300 px-2 py-2 text-center font-medium text-xs ${getScoreClass(score)}`}>
+                                                    {score}
+                                                </td>
+                                            ))}
                                             <td className="border border-gray-300 px-2 py-2 text-center font-medium text-xs">
                                                 {endTotal}
                                             </td>

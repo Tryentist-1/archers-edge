@@ -27,6 +27,10 @@ function AppContent() {
     setCurrentView('scoring');
   };
 
+  const handleBaleDataUpdate = (updatedBaleData) => {
+    setBaleData(updatedBaleData);
+  };
+
   const handleViewCard = (archerId) => {
     setSelectedArcherId(archerId);
     setCurrentView('card');
@@ -99,6 +103,7 @@ function AppContent() {
           <MultiArcherScoring 
             baleData={baleData} 
             onViewCard={handleViewCard}
+            onBaleDataUpdate={handleBaleDataUpdate}
           />
         )}
         

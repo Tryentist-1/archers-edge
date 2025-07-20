@@ -6,7 +6,7 @@ import { getScoreColorClass, parseScoreValue } from '../utils/scoring';
 import ScoreInput from './ScoreInput.jsx';
 import ScoreInputWithKeypad from './ScoreInputWithKeypad.jsx';
 
-const MultiArcherScoring = ({ baleData, onViewCard }) => {
+const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
     const { currentUser } = useAuth();
     const [archers, setArchers] = useState(baleData.archers || []);
     const [currentEnd, setCurrentEnd] = useState(1);
@@ -65,6 +65,7 @@ const MultiArcherScoring = ({ baleData, onViewCard }) => {
 
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
+            onBaleDataUpdate(updatedBaleData); // Call the prop to update the parent
         } catch (error) {
             console.error('Error saving scores:', error);
         } finally {
@@ -79,12 +80,16 @@ const MultiArcherScoring = ({ baleData, onViewCard }) => {
             
             // Auto-focus the first arrow of the first archer after a short delay
             setTimeout(() => {
+                // Try to find the first input in the current view
                 const firstInput = document.querySelector('.score-input-keypad, input[type="text"]');
                 if (firstInput) {
                     firstInput.focus();
-                    firstInput.click(); // Trigger keypad if using keypad mode
+                    // If using keypad mode, trigger the keypad
+                    if (useKeypad && firstInput.classList.contains('score-input-keypad')) {
+                        firstInput.click();
+                    }
                 }
-            }, 100);
+            }, 150); // Increased delay to ensure DOM is updated
         }
     };
 
