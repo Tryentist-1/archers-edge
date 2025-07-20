@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getScoreColorClass, parseScoreValue } from '../utils/scoring';
+import { LocalStorage } from '../utils/localStorage';
 import ScoreInput from './ScoreInput.jsx';
 import ScoreInputWithKeypad from './ScoreInputWithKeypad.jsx';
 
@@ -54,11 +55,15 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                 lastUpdated: new Date()
             };
 
+            // Save to Firebase
             const userDoc = doc(db, 'users', currentUser.uid);
             await setDoc(userDoc, {
                 currentBale: updatedBaleData,
                 lastUpdated: new Date()
             }, { merge: true });
+
+            // Also save to local storage as backup
+            LocalStorage.saveBaleData(updatedBaleData);
 
             setSaveSuccess(true);
             
@@ -70,6 +75,15 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             setTimeout(() => setSaveSuccess(false), 2000);
         } catch (error) {
             console.error('Error saving scores:', error);
+            // If Firebase fails, still save to local storage
+            const updatedBaleData = {
+                ...baleData,
+                archers,
+                currentEnd,
+                lastUpdated: new Date()
+            };
+            LocalStorage.saveBaleData(updatedBaleData);
+            console.log('Saved to local storage as backup');
         } finally {
             setLoading(false);
         }

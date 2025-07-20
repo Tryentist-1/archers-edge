@@ -5,6 +5,7 @@ import ScoringInterface from './components/ScoringInterface';
 import ArcherSetup from './components/ArcherSetup';
 import MultiArcherScoring from './components/MultiArcherScoring';
 import ArcherScorecard from './components/ArcherScorecard';
+import { LocalStorage } from './utils/localStorage';
 import './App.css';
 
 function AppContent() {
@@ -13,22 +14,54 @@ function AppContent() {
   const [baleData, setBaleData] = useState(null);
   const [selectedArcherId, setSelectedArcherId] = useState(null);
 
-  // Load existing bale data if available
+  // Load existing bale data and app state from local storage
   useEffect(() => {
-    if (currentUser && !baleData) {
-      // Check if user has existing bale data
-      // For now, we'll start with setup view
-      setCurrentView('setup');
+    if (!loading) {
+      // Load app state from local storage
+      const savedAppState = LocalStorage.loadAppState();
+      if (savedAppState) {
+        console.log('Loading saved app state:', savedAppState);
+        setCurrentView(savedAppState.currentView || 'setup');
+        setBaleData(savedAppState.baleData || null);
+        setSelectedArcherId(savedAppState.selectedArcherId || null);
+      } else {
+        // Check if user has existing bale data
+        const savedBaleData = LocalStorage.loadBaleData();
+        if (savedBaleData) {
+          console.log('Loading saved bale data:', savedBaleData);
+          setBaleData(savedBaleData);
+          setCurrentView('scoring');
+        } else {
+          setCurrentView('setup');
+        }
+      }
     }
-  }, [currentUser, baleData]);
+  }, [loading]);
+
+  // Save app state to local storage whenever it changes
+  useEffect(() => {
+    if (!loading) {
+      const appState = {
+        currentView,
+        baleData,
+        selectedArcherId,
+        timestamp: new Date().toISOString()
+      };
+      LocalStorage.saveAppState(appState);
+    }
+  }, [currentView, baleData, selectedArcherId, loading]);
 
   const handleSetupComplete = (newBaleData) => {
     setBaleData(newBaleData);
     setCurrentView('scoring');
+    // Save bale data to local storage
+    LocalStorage.saveBaleData(newBaleData);
   };
 
   const handleBaleDataUpdate = (updatedBaleData) => {
     setBaleData(updatedBaleData);
+    // Save updated bale data to local storage
+    LocalStorage.saveBaleData(updatedBaleData);
   };
 
   const handleViewCard = (archerId) => {
@@ -45,6 +78,8 @@ function AppContent() {
     setBaleData(null);
     setCurrentView('setup');
     setSelectedArcherId(null);
+    // Clear local storage for new bale
+    LocalStorage.clearAll();
   };
 
   if (loading) {
