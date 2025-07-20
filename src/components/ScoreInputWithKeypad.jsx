@@ -104,6 +104,7 @@ function ScoreInputWithKeypad({
     };
 
     const handleCloseKeypad = () => {
+        console.log('handleCloseKeypad called'); // Debug log
         setIsKeypadVisible(false);
         setIsFocused(false);
         // Also blur the current input

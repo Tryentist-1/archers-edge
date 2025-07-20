@@ -21,6 +21,8 @@ function ScoreKeypad({
         const value = button.dataset.value;
         const action = button.dataset.action;
         
+        console.log('Keypad button clicked:', { value, action }); // Debug log
+        
         if (value !== undefined) {
             onScoreInput?.(value);
         } else if (action) {
@@ -35,6 +37,7 @@ function ScoreKeypad({
                     onClear?.();
                     break;
                 case 'close':
+                    console.log('Close button clicked'); // Debug log
                     onClose?.();
                     break;
             }

@@ -13,9 +13,8 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
     const [loading, setLoading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     
-    // Detect mobile and default to keypad
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const [useKeypad, setUseKeypad] = useState(isMobile);
+    // Default to keypad only
+    const [useKeypad, setUseKeypad] = useState(true);
     
     const totalEnds = 12;
 
@@ -80,16 +79,16 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             
             // Auto-focus the first arrow of the first archer after a short delay
             setTimeout(() => {
-                // Try to find the first input in the current view
-                const firstInput = document.querySelector('.score-input-keypad, input[type="text"]');
+                // Find the first input specifically (first archer, first arrow)
+                const firstInput = document.querySelector('.score-input-keypad');
                 if (firstInput) {
                     firstInput.focus();
-                    // If using keypad mode, trigger the keypad
-                    if (useKeypad && firstInput.classList.contains('score-input-keypad')) {
+                    // Trigger keypad if using keypad mode
+                    if (useKeypad) {
                         firstInput.click();
                     }
                 }
-            }, 150); // Increased delay to ensure DOM is updated
+            }, 200); // Increased delay to ensure DOM is updated
         }
     };
 
@@ -174,32 +173,6 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                     </div>
                 </div>
 
-                {/* Input Mode Toggle */}
-                <div className="mb-3 flex justify-center">
-                    <div className="bg-gray-100 rounded-lg p-1 flex">
-                        <button
-                            onClick={() => setUseKeypad(false)}
-                            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                                !useKeypad 
-                                    ? 'bg-white text-gray-900 shadow-sm' 
-                                    : 'text-gray-600 hover:text-gray-900'
-                            }`}
-                        >
-                            Keyboard
-                        </button>
-                        <button
-                            onClick={() => setUseKeypad(true)}
-                            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                                useKeypad 
-                                    ? 'bg-white text-gray-900 shadow-sm' 
-                                    : 'text-gray-600 hover:text-gray-900'
-                            }`}
-                        >
-                            Keypad
-                        </button>
-                    </div>
-                </div>
-
                 {/* Save Status - Fixed position */}
                 {loading && (
                     <div className="fixed top-4 right-4 p-2 bg-blue-50 border border-blue-200 rounded-md shadow-lg z-40">
@@ -262,17 +235,12 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                                         {/* Arrow inputs */}
                                         {[0, 1, 2].map(arrowIndex => (
                                             <td key={arrowIndex} className="border border-gray-300 p-0">
-                                                {useKeypad ? (
-                                                    <ScoreInputWithKeypad
-                                                        value={endScores[`arrow${arrowIndex + 1}`] || ''}
-                                                        onChange={(value) => handleScoreChange(archer.id, arrowIndex, value)}
-                                                    />
-                                                ) : (
-                                                    <ScoreInput
-                                                        value={endScores[`arrow${arrowIndex + 1}`] || ''}
-                                                        onChange={(value) => handleScoreChange(archer.id, arrowIndex, value)}
-                                                    />
-                                                )}
+                                                <ScoreInputWithKeypad
+                                                    value={endScores[`arrow${arrowIndex + 1}`] || ''}
+                                                    onChange={(value) => handleScoreChange(archer.id, arrowIndex, value)}
+                                                    data-archer-id={archer.id}
+                                                    data-arrow-index={arrowIndex}
+                                                />
                                             </td>
                                         ))}
                                         
