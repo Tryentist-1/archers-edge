@@ -347,9 +347,9 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                     </table>
                 </div>
 
-                {/* Bale Totals */}
+                {/* End Totals */}
                 <div className="mt-3 p-2 bg-gray-50 rounded-md">
-                    <h3 className="font-semibold text-gray-800 mb-1 text-sm">Bale Totals:</h3>
+                    <h3 className="font-semibold text-gray-800 mb-1 text-sm">End {currentEnd} Totals:</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                         <div className="text-gray-900">
                             <span className="font-medium">Score:</span> {baleTotals.totalScore}

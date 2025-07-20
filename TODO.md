@@ -32,15 +32,15 @@
 ## Session 4: Multiple Archers Per Bale 🎯 **CORE FUNCTIONALITY**
 
 ### Goals:
-- [ ] **Archer Setup Interface**: Add/remove archers to bale
-- [ ] **Target Assignment**: Assign archers to targets (A, B, C, D, etc.)
-- [ ] **Multi-Archer Scoring**: Score multiple archers per end
-- [ ] **Archer Switching**: Switch between archers during scoring
-- [ ] **Individual Cards**: View individual archer scorecards
-- [ ] **Bale Totals**: Combined totals for all archers on bale
+- [x] **Archer Setup Interface**: Add/remove archers to bale
+- [x] **Target Assignment**: Assign archers to targets (A, B, C, D, etc.)
+- [x] **Multi-Archer Scoring**: Score multiple archers per end
+- [x] **Archer Switching**: Switch between archers during scoring
+- [x] **Individual Cards**: View individual archer scorecards
+- [x] **Bale Totals**: Combined totals for all archers on bale
 
 ### Technical Tasks:
-- [ ] **Data Structure Redesign**:
+- [x] **Data Structure Redesign**:
   ```javascript
   {
     baleNumber: 1,
@@ -57,10 +57,25 @@
     totalEnds: 12
   }
   ```
-- [ ] **Setup View**: Archer selection with target assignment
-- [ ] **Scoring View**: Multi-row table with all archers
-- [ ] **Card View**: Individual archer scorecard
-- [ ] **Navigation**: Switch between setup, scoring, and card views
+- [x] **Setup View**: Archer selection with target assignment
+- [x] **Scoring View**: Multi-row table with all archers
+- [x] **Card View**: Individual archer scorecard
+- [x] **Navigation**: Switch between setup, scoring, and card views
+
+### Recent Accomplishments:
+- ✅ **Keypad Functionality**: Fixed keypad appearance and score entry
+- ✅ **Focus Management**: Improved focus handling between ends and inputs
+- ✅ **Blur Handling**: Added proper timeout-based blur detection
+- ✅ **Color Contrast**: Fixed white text on white background in bale totals
+- ✅ **Test Harness**: Added Vitest and React Testing Library for debugging
+- ✅ **Local Storage**: Added debugging for persistence issues
+- ✅ **End Navigation**: Fixed keypad dismissal when navigating between ends
+
+### Current Issues to Fix:
+- [ ] **Close Button**: Keypad close button not working properly
+- [ ] **Keypad Dismissal**: Keypad doesn't dismiss when clicking outside
+- [ ] **Persistence**: App resets on refresh - need to fix local storage loading
+- [ ] **Debug Cleanup**: Remove debug indicators and console logs
 
 ### Reference Implementation:
 Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
@@ -96,7 +111,9 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 
 ## Current Status:
 - ✅ **Session 3 Complete**: Firebase authentication working
-- 🎯 **Ready for Session 4**: Multiple archers per bale (CORE FUNCTIONALITY)
+- 🎯 **Session 4 In Progress**: Multiple archers per bale (CORE FUNCTIONALITY)
+- ✅ **Keypad Working**: Scores can be entered and flow between fields
+- ✅ **Focus Management**: Improved navigation between ends
 - 🚀 **Server Running**: http://localhost:3000
 
 ## Recent Fixes:
@@ -105,6 +122,9 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 - ✅ **Auto-save**: Scores automatically save after each change
 - ✅ **Competition Tracking**: Added total competition score display
 - ✅ **Color Coding**: Fixed to match exact archery color scheme
+- ✅ **Keypad Functionality**: Keypad appears and accepts input correctly
+- ✅ **Focus Management**: Proper focus handling between inputs and ends
+- ✅ **Color Contrast**: Fixed white text on white background in totals
 
 ## Notes:
 - Firebase configuration updated with real project values
@@ -112,4 +132,5 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 - Authentication UI ready for testing
 - **Need to enable phone authentication in Firebase Console**
 - **MULTIPLE ARCHERS PER BALE IS THE CORE FUNCTIONALITY** - not just a feature!
-- Current app only supports single archer - needs major redesign for multi-archer support 
+- Keypad functionality working but close button needs debugging
+- Local storage persistence needs debugging for app reset issue 

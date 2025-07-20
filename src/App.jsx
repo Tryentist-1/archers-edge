@@ -19,29 +19,22 @@ function AppContent() {
   useEffect(() => {
     try {
       if (!loading) {
-        console.log('App: Loading data from local storage...');
-        
         // Load app state from local storage
         const savedAppState = LocalStorage.loadAppState();
-        console.log('App: Loaded app state:', savedAppState);
         
         if (savedAppState) {
           setCurrentView(savedAppState.currentView || 'setup');
           setBaleData(savedAppState.baleData || null);
           setSelectedArcherId(savedAppState.selectedArcherId || null);
-          console.log('App: Restored from app state');
         } else {
           // Check if user has existing bale data
           const savedBaleData = LocalStorage.loadBaleData();
-          console.log('App: Loaded bale data:', savedBaleData);
           
           if (savedBaleData) {
             setBaleData(savedBaleData);
             setCurrentView('scoring');
-            console.log('App: Restored from bale data');
           } else {
             setCurrentView('setup');
-            console.log('App: No saved data, starting with setup');
           }
         }
       }

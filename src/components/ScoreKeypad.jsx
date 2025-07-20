@@ -21,8 +21,6 @@ function ScoreKeypad({
         const value = button.dataset.value;
         const action = button.dataset.action;
         
-        console.log(`Keypad clicked: value=${value}, action=${action}`);
-        
         if (value !== undefined) {
             onScoreInput?.(value);
         } else if (action) {
@@ -37,25 +35,13 @@ function ScoreKeypad({
                     onClear?.();
                     break;
                 case 'close':
-                    console.log('Close button clicked - calling onClose function');
-                    console.log('onClose function exists:', !!onClose);
-                    if (onClose) {
-                        onClose();
-                        console.log('onClose function called successfully');
-                    } else {
-                        console.log('onClose function is undefined');
-                    }
+                    onClose?.();
                     break;
             }
         }
     };
 
-    if (!isVisible) {
-        console.log('ScoreKeypad: Not visible, returning null');
-        return null;
-    }
-
-    console.log('ScoreKeypad: Rendering visible keypad');
+    if (!isVisible) return null;
 
     return (
         <div 

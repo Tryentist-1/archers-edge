@@ -70,7 +70,6 @@ function ScoreInputWithKeypad({
     }, []);
 
     const handleInputFocus = (e) => {
-        console.log(`Focus on: ${inputValue}`);
         currentlyFocusedInput = inputRef.current;
         setIsFocused(true);
         
@@ -87,7 +86,6 @@ function ScoreInputWithKeypad({
     };
 
     const handleInputBlur = (e) => {
-        console.log(`Blur from: ${inputValue}`);
         if (blurTimeout) clearTimeout(blurTimeout);
         
         blurTimeout = setTimeout(() => {
@@ -101,12 +99,9 @@ function ScoreInputWithKeypad({
                                 activeElement.classList.contains('score-input-keypad');
             
             if (!isKeypadButton && !isScoreInput) {
-                console.log("Focus moved outside keypad/inputs, hiding keypad.");
                 setIsKeypadVisible(false);
                 setIsFocused(false);
                 currentlyFocusedInput = null;
-            } else {
-                console.log("Focus still within keypad or inputs, not hiding keypad.");
             }
             blurTimeout = null;
         }, 150);
@@ -152,7 +147,6 @@ function ScoreInputWithKeypad({
             setIsKeypadVisible(false);
             setIsFocused(false);
             currentlyFocusedInput = null;
-            console.log("Reached last input field.");
         }
     };
 
@@ -180,21 +174,13 @@ function ScoreInputWithKeypad({
     };
 
     const handleCloseKeypad = () => {
-        console.log('handleCloseKeypad called');
-        console.log('Current state before close:', { isKeypadVisible, isFocused, currentlyFocusedInput });
-        
         setIsKeypadVisible(false);
         setIsFocused(false);
         currentlyFocusedInput = null;
         
-        console.log('State after close:', { isKeypadVisible: false, isFocused: false, currentlyFocusedInput: null });
-        
         // Also blur the current input
         if (inputRef.current) {
-            console.log('Blurring input element');
             inputRef.current.blur();
-        } else {
-            console.log('Input ref is null, cannot blur');
         }
     };
 
@@ -235,22 +221,6 @@ function ScoreInputWithKeypad({
                 onClear={handleClear}
                 onClose={handleCloseKeypad}
             />
-            
-            {/* Debug indicator */}
-            {isKeypadVisible && (
-                <div style={{
-                    position: 'fixed',
-                    top: '10px',
-                    left: '10px',
-                    background: 'red',
-                    color: 'white',
-                    padding: '5px',
-                    fontSize: '10px',
-                    zIndex: 9999
-                }}>
-                    KEYPAD VISIBLE
-                </div>
-            )}
         </>
     );
 }
