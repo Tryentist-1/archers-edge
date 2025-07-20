@@ -92,17 +92,18 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
     const changeEnd = (direction) => {
         const newEnd = currentEnd + direction;
         if (newEnd >= 1 && newEnd <= totalEnds) {
+            // Dispatch event to hide keypad before changing end
+            window.dispatchEvent(new CustomEvent('endChange'));
+            
             setCurrentEnd(newEnd);
             
             // Auto-focus the first arrow of the first archer after a longer delay
             setTimeout(() => {
                 // Find all score inputs and focus the first one
                 const allInputs = document.querySelectorAll('.score-input-keypad');
-                console.log('Found inputs:', allInputs.length); // Debug log
                 
                 if (allInputs.length > 0) {
                     const firstInput = allInputs[0];
-                    console.log('Focusing first input:', firstInput); // Debug log
                     
                     // Force focus and trigger keypad
                     firstInput.focus();
@@ -113,8 +114,6 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                         firstInput.focus();
                         firstInput.click();
                     }, 100);
-                } else {
-                    console.log('No inputs found'); // Debug log
                 }
             }, 500); // Increased delay to ensure DOM is fully updated
         }
@@ -162,12 +161,8 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
         let totalXs = 0;
         let totalArrows = 0;
 
-        console.log('Calculating bale totals for end:', currentEnd);
-        console.log('Archers:', archers);
-
         archers.forEach(archer => {
             const endScores = archer.scores[endKey];
-            console.log(`Archer ${archer.firstName} scores for ${endKey}:`, endScores);
             
             if (endScores) {
                 const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
@@ -190,7 +185,6 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             average: totalArrows > 0 ? (totalScore / totalArrows).toFixed(1) : '0.0'
         };
 
-        console.log('Bale totals result:', result);
         return result;
     };
 
@@ -310,13 +304,15 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                                         
                                         {/* Arrow inputs */}
                                         {[0, 1, 2].map(arrowIndex => (
-                                            <td key={arrowIndex} className="border border-gray-300 p-0">
-                                                <ScoreInputWithKeypad
-                                                    value={endScores[`arrow${arrowIndex + 1}`] || ''}
-                                                    onChange={(value) => handleScoreChange(archer.id, arrowIndex, value)}
-                                                    data-archer-id={archer.id}
-                                                    data-arrow-index={arrowIndex}
-                                                />
+                                            <td key={arrowIndex} className="border border-gray-300 p-1 min-h-[2rem] relative">
+                                                <div className="w-full h-full min-h-[2rem] relative">
+                                                    <ScoreInputWithKeypad
+                                                        value={endScores[`arrow${arrowIndex + 1}`] || ''}
+                                                        onChange={(value) => handleScoreChange(archer.id, arrowIndex, value)}
+                                                        data-archer-id={archer.id}
+                                                        data-arrow-index={arrowIndex}
+                                                    />
+                                                </div>
                                             </td>
                                         ))}
                                         
@@ -355,28 +351,28 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                 <div className="mt-3 p-2 bg-gray-50 rounded-md">
                     <h3 className="font-semibold text-gray-800 mb-1 text-sm">Bale Totals:</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                        <div>
+                        <div className="text-gray-900">
                             <span className="font-medium">Score:</span> {baleTotals.totalScore}
                         </div>
-                        <div>
+                        <div className="text-gray-900">
                             <span className="font-medium">10s:</span> {baleTotals.totalTens}
                         </div>
-                        <div>
+                        <div className="text-gray-900">
                             <span className="font-medium">Xs:</span> {baleTotals.totalXs}
                         </div>
-                        <div>
+                        <div className="text-gray-900">
                             <span className="font-medium">Arrows:</span> {baleTotals.totalArrows}
                         </div>
-                        <div>
+                        <div className="text-gray-900">
                             <span className="font-medium">Avg:</span> {baleTotals.average}
                         </div>
-                        <div>
+                        <div className="text-gray-900">
                             <span className="font-medium">Archers:</span> {archers.length}
                         </div>
-                        <div>
+                        <div className="text-gray-900">
                             <span className="font-medium">End:</span> {currentEnd}
                         </div>
-                        <div>
+                        <div className="text-gray-900">
                             <span className="font-medium">Bale:</span> {baleData.baleNumber}
                         </div>
                     </div>

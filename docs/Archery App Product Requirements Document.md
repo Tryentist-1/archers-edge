@@ -70,6 +70,7 @@ Individuals interested in following competition results or reviewing an archer's
 * **As a tournament organizer,** I want to define new competitions, including customizable targets and scoring rules (e.g., 1-10 points, 10-8-5 points, 3 arrows/end, 1 arrow/target) so I can support various event formats (Olympic, NFAA Field/Hunter, Novelty shoots, OAS Ranking/Head-to-Head).  
 * **As an archer,** I want to register for a specific competition, selecting my profile and the class I will shoot in for that event, so my entry details are accurate.  
 * **As a tournament organizer,** I want to assign archers to bails (up to 8 archers per bail) so I can manage shooting groups efficiently.
+* As a tournament organizer I want to be able to have the app understand NFAA rounds from https://nfaausa.com/about/constitution/divisions-of-competition&term=
 
 **Feature: Digital Scorecard & Scoring**
 

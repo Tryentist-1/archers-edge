@@ -13,28 +13,41 @@ function AppContent() {
   const [currentView, setCurrentView] = useState('setup'); // 'setup', 'scoring', 'card'
   const [baleData, setBaleData] = useState(null);
   const [selectedArcherId, setSelectedArcherId] = useState(null);
+  const [error, setError] = useState(null);
 
   // Load existing bale data and app state from local storage
   useEffect(() => {
-    if (!loading) {
-      // Load app state from local storage
-      const savedAppState = LocalStorage.loadAppState();
-      if (savedAppState) {
-        console.log('Loading saved app state:', savedAppState);
-        setCurrentView(savedAppState.currentView || 'setup');
-        setBaleData(savedAppState.baleData || null);
-        setSelectedArcherId(savedAppState.selectedArcherId || null);
-      } else {
-        // Check if user has existing bale data
-        const savedBaleData = LocalStorage.loadBaleData();
-        if (savedBaleData) {
-          console.log('Loading saved bale data:', savedBaleData);
-          setBaleData(savedBaleData);
-          setCurrentView('scoring');
+    try {
+      if (!loading) {
+        console.log('App: Loading data from local storage...');
+        
+        // Load app state from local storage
+        const savedAppState = LocalStorage.loadAppState();
+        console.log('App: Loaded app state:', savedAppState);
+        
+        if (savedAppState) {
+          setCurrentView(savedAppState.currentView || 'setup');
+          setBaleData(savedAppState.baleData || null);
+          setSelectedArcherId(savedAppState.selectedArcherId || null);
+          console.log('App: Restored from app state');
         } else {
-          setCurrentView('setup');
+          // Check if user has existing bale data
+          const savedBaleData = LocalStorage.loadBaleData();
+          console.log('App: Loaded bale data:', savedBaleData);
+          
+          if (savedBaleData) {
+            setBaleData(savedBaleData);
+            setCurrentView('scoring');
+            console.log('App: Restored from bale data');
+          } else {
+            setCurrentView('setup');
+            console.log('App: No saved data, starting with setup');
+          }
         }
       }
+    } catch (error) {
+      console.error('Error in AppContent useEffect:', error);
+      setError(error.message);
     }
   }, [loading]);
 
@@ -93,12 +106,31 @@ function AppContent() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <strong>Error:</strong> {error}
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return <Login />;
   }
 
   return (
     <div className="min-h-screen bg-gray-100">
+      
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

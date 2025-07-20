@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getScoreColorClass, isValidScoreInput, formatScore } from '../utils/scoring.js';
 import ScoreKeypad from './ScoreKeypad.jsx';
 
+// Global focus tracking (like the standalone version)
+let currentlyFocusedInput = null;
+let blurTimeout = null;
+
 /**
  * ScoreInputWithKeypad Component
  * 
@@ -29,24 +33,84 @@ function ScoreInputWithKeypad({
         setInputValue(value);
     }, [value]);
 
+    // Cleanup effect when component unmounts
+    useEffect(() => {
+        return () => {
+            // If this input was the currently focused one, clear the global reference
+            if (currentlyFocusedInput === inputRef.current) {
+                currentlyFocusedInput = null;
+            }
+            // Clear any pending blur timeout
+            if (blurTimeout) {
+                clearTimeout(blurTimeout);
+                blurTimeout = null;
+            }
+        };
+    }, []);
+
+    // Global effect to hide keypad when navigating between ends
+    useEffect(() => {
+        const handleEndChange = () => {
+            // Hide keypad when navigating between ends
+            setIsKeypadVisible(false);
+            setIsFocused(false);
+            currentlyFocusedInput = null;
+            if (blurTimeout) {
+                clearTimeout(blurTimeout);
+                blurTimeout = null;
+            }
+        };
+
+        // Listen for end navigation events (you can customize this based on your app's navigation)
+        window.addEventListener('endChange', handleEndChange);
+        
+        return () => {
+            window.removeEventListener('endChange', handleEndChange);
+        };
+    }, []);
+
     const handleInputFocus = (e) => {
+        console.log(`Focus on: ${inputValue}`);
+        currentlyFocusedInput = inputRef.current;
         setIsFocused(true);
         
-        // Hide any other visible keypads first
-        const allKeypads = document.querySelectorAll('#score-keypad');
-        allKeypads.forEach(keypad => {
-            if (keypad.style.display !== 'none') {
-                keypad.style.display = 'none';
-            }
-        });
+        // Clear any existing blur timeout
+        if (blurTimeout) {
+            clearTimeout(blurTimeout);
+            blurTimeout = null;
+        }
         
+        // Show keypad
         setIsKeypadVisible(true);
         inputRef.current?.select();
         onFocus?.(e);
     };
 
     const handleInputBlur = (e) => {
-        // Don't immediately hide keypad on blur - let user control it
+        console.log(`Blur from: ${inputValue}`);
+        if (blurTimeout) clearTimeout(blurTimeout);
+        
+        blurTimeout = setTimeout(() => {
+            const activeElement = document.activeElement;
+            const scoreKeypad = document.getElementById('score-keypad');
+            const isKeypadButton = scoreKeypad && activeElement && 
+                                  scoreKeypad.contains(activeElement) && 
+                                  activeElement.tagName === 'BUTTON';
+            const isScoreInput = activeElement && 
+                                activeElement.tagName === 'INPUT' && 
+                                activeElement.classList.contains('score-input-keypad');
+            
+            if (!isKeypadButton && !isScoreInput) {
+                console.log("Focus moved outside keypad/inputs, hiding keypad.");
+                setIsKeypadVisible(false);
+                setIsFocused(false);
+                currentlyFocusedInput = null;
+            } else {
+                console.log("Focus still within keypad or inputs, not hiding keypad.");
+            }
+            blurTimeout = null;
+        }, 150);
+        
         onBlur?.(e);
     };
 
@@ -84,8 +148,11 @@ function ScoreInputWithKeypad({
                 nextInput.click(); // Trigger focus to show keypad
             }
         } else {
-            // If we're at the last input, keep focus on current input
-            currentInput.focus();
+            // If we're at the last input, hide keypad
+            setIsKeypadVisible(false);
+            setIsFocused(false);
+            currentlyFocusedInput = null;
+            console.log("Reached last input field.");
         }
     };
 
@@ -113,24 +180,22 @@ function ScoreInputWithKeypad({
     };
 
     const handleCloseKeypad = () => {
-        console.log('handleCloseKeypad called'); // Debug log
+        console.log('handleCloseKeypad called');
+        console.log('Current state before close:', { isKeypadVisible, isFocused, currentlyFocusedInput });
+        
         setIsKeypadVisible(false);
         setIsFocused(false);
+        currentlyFocusedInput = null;
         
-        // Force blur and remove focus from current input
+        console.log('State after close:', { isKeypadVisible: false, isFocused: false, currentlyFocusedInput: null });
+        
+        // Also blur the current input
         if (inputRef.current) {
+            console.log('Blurring input element');
             inputRef.current.blur();
-            // Also remove focus from any other inputs
-            document.activeElement?.blur();
+        } else {
+            console.log('Input ref is null, cannot blur');
         }
-        
-        // Hide any other visible keypads
-        const allKeypads = document.querySelectorAll('#score-keypad');
-        allKeypads.forEach(keypad => {
-            if (keypad.style.display !== 'none') {
-                keypad.style.display = 'none';
-            }
-        });
     };
 
     const colorClass = getScoreColorClass(inputValue);
@@ -170,6 +235,22 @@ function ScoreInputWithKeypad({
                 onClear={handleClear}
                 onClose={handleCloseKeypad}
             />
+            
+            {/* Debug indicator */}
+            {isKeypadVisible && (
+                <div style={{
+                    position: 'fixed',
+                    top: '10px',
+                    left: '10px',
+                    background: 'red',
+                    color: 'white',
+                    padding: '5px',
+                    fontSize: '10px',
+                    zIndex: 9999
+                }}>
+                    KEYPAD VISIBLE
+                </div>
+            )}
         </>
     );
 }
