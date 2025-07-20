@@ -106,6 +106,10 @@ function ScoreInputWithKeypad({
     const handleCloseKeypad = () => {
         setIsKeypadVisible(false);
         setIsFocused(false);
+        // Also blur the current input
+        if (inputRef.current) {
+            inputRef.current.blur();
+        }
     };
 
     const colorClass = getScoreColorClass(inputValue);

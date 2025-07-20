@@ -76,6 +76,15 @@ const MultiArcherScoring = ({ baleData, onViewCard }) => {
         const newEnd = currentEnd + direction;
         if (newEnd >= 1 && newEnd <= totalEnds) {
             setCurrentEnd(newEnd);
+            
+            // Auto-focus the first arrow of the first archer after a short delay
+            setTimeout(() => {
+                const firstInput = document.querySelector('.score-input-keypad, input[type="text"]');
+                if (firstInput) {
+                    firstInput.focus();
+                    firstInput.click(); // Trigger keypad if using keypad mode
+                }
+            }, 100);
         }
     };
 
