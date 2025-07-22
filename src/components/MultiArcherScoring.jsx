@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getScoreColorClass, parseScoreValue } from '../utils/scoring';
 import { LocalStorage } from '../utils/localStorage';
@@ -207,6 +207,96 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
 
     const baleTotals = calculateBaleTotals();
 
+    // Calculate final scores for all archers
+    const calculateFinalScores = () => {
+        const finalScores = archers.map(archer => {
+            let totalScore = 0;
+            let totalTens = 0;
+            let totalXs = 0;
+            let completedEnds = 0;
+            
+            for (let end = 1; end <= 12; end++) {
+                const endKey = `end${end}`;
+                const endScores = archer.scores[endKey];
+                
+                if (endScores && endScores.arrow1 && endScores.arrow2 && endScores.arrow3) {
+                    const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+                    const endTotal = calculateEndTotal(endScores);
+                    totalScore += endTotal;
+                    completedEnds++;
+                    
+                    scores.forEach(score => {
+                        if (score === 'X') {
+                            totalTens++;
+                            totalXs++;
+                        } else if (score === '10') {
+                            totalTens++;
+                        }
+                    });
+                }
+            }
+            
+            return {
+                archerId: archer.id,
+                firstName: archer.firstName,
+                lastName: archer.lastName,
+                totalScore,
+                totalTens,
+                totalXs,
+                completedEnds,
+                average: completedEnds > 0 ? (totalScore / (completedEnds * 3)).toFixed(1) : '0.0'
+            };
+        });
+        
+        return finalScores.sort((a, b) => b.totalScore - a.totalScore);
+    };
+
+    // Check if all ends are completed
+    const isAllEndsCompleted = () => {
+        return archers.every(archer => {
+            for (let end = 1; end <= 12; end++) {
+                const endKey = `end${end}`;
+                const endScores = archer.scores[endKey];
+                if (!endScores || !endScores.arrow1 || !endScores.arrow2 || !endScores.arrow3) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    };
+
+    // Handle final scorecard verification
+    const handleVerifyScorecard = async () => {
+        const finalScores = calculateFinalScores();
+        
+        // Save final scores to Firebase
+        try {
+            const finalScorecard = {
+                baleNumber: baleData.baleNumber,
+                competitionId: baleData.competitionId,
+                competitionName: baleData.competitionName,
+                finalScores,
+                completedAt: new Date(),
+                createdBy: baleData.createdBy
+            };
+            
+            // Save to Firebase
+            const userDoc = doc(db, 'users', currentUser.uid);
+            await setDoc(userDoc, {
+                completedScorecards: arrayUnion(finalScorecard),
+                lastUpdated: new Date()
+            }, { merge: true });
+            
+            alert('Scorecard verified and saved! Final scores have been recorded.');
+            
+            // Clear current bale data
+            onBaleDataUpdate(null);
+        } catch (error) {
+            console.error('Error saving final scorecard:', error);
+            alert('Error saving final scorecard. Please try again.');
+        }
+    };
+
     // Load current end from saved data when component mounts
     useEffect(() => {
         if (baleData.currentEnd && baleData.currentEnd !== currentEnd) {
@@ -259,6 +349,24 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                         </button>
                     </div>
                 </div>
+
+                {/* Verify Scorecard Button - Show when all ends are completed */}
+                {isAllEndsCompleted() && (
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold text-green-800">All Ends Completed!</h3>
+                                <p className="text-sm text-green-600">Ready to verify and save final scores</p>
+                            </div>
+                            <button
+                                onClick={handleVerifyScorecard}
+                                className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+                            >
+                                Verify Scorecard
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Save Status - Fixed position */}
                 {loading && (
