@@ -29,8 +29,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         usArcheryNumber: '',
         nfaaNumber: '',
         defaultClassification: 'Varsity', // Varsity, JV, JOAD, NFAA classes
-        sponsorships: '',
-        profilePicture: null
+        sponsorships: ''
     });
 
     useEffect(() => {
@@ -131,11 +130,13 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     };
 
     const createNewProfile = () => {
+        console.log('=== CREATE NEW PROFILE DEBUG ===');
         setSelectedProfile(null);
         setShowProfileSelection(false);
         setIsCreating(true);
         setIsEditing(false);
         resetForm();
+        console.log('Form reset, isCreating:', true, 'isEditing:', false);
     };
 
     const saveProfile = async (profileData) => {
@@ -253,7 +254,8 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     };
 
     const resetForm = () => {
-        setProfileForm({
+        console.log('=== RESET FORM DEBUG ===');
+        const resetData = {
             firstName: '',
             lastName: '',
             role: 'Archer',
@@ -266,7 +268,9 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             nfaaNumber: '',
             defaultClassification: 'Varsity',
             sponsorships: ''
-        });
+        };
+        console.log('Resetting form to:', resetData);
+        setProfileForm(resetData);
     };
 
     const handleFormSubmit = (e) => {
@@ -404,7 +408,11 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                     </div>
                 </div>
 
-                <form onSubmit={handleFormSubmit} className="space-y-6">
+                <form 
+                    key={`${isCreating ? 'create' : 'edit'}-${selectedProfile?.id || 'new'}`}
+                    onSubmit={handleFormSubmit} 
+                    className="space-y-6"
+                >
                     {/* Basic Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
