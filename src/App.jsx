@@ -287,6 +287,7 @@ function AppContent() {
           <HomePage 
             currentUser={currentUser}
             onNavigate={handleNavigation}
+            baleData={baleData}
           />
         )}
         

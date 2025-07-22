@@ -1,6 +1,6 @@
 import React from 'react';
 
-const HomePage = ({ currentUser, onNavigate }) => {
+const HomePage = ({ currentUser, onNavigate, baleData }) => {
     const handleNavigation = (destination) => {
         onNavigate(destination);
     };
@@ -35,27 +35,37 @@ const HomePage = ({ currentUser, onNavigate }) => {
                     </p>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="mb-6 flex flex-wrap gap-3">
-                    <button
-                        onClick={() => handleNavigation('new-round')}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-                    >
-                        + New Score
-                    </button>
-                    <button
-                        onClick={() => handleNavigation('team-archers')}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-                    >
-                        + New Archer
-                    </button>
-                    <button
-                        onClick={() => handleNavigation('competitions')}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-                    >
-                        + New Competition
-                    </button>
-                </div>
+                {/* Round in Progress Card */}
+                {baleData && baleData.archers && baleData.archers.length > 0 && (
+                    <div className="mb-6">
+                        <div 
+                            className="bg-orange-50 border border-orange-200 rounded-lg p-4 cursor-pointer hover:bg-orange-100 transition-colors"
+                            onClick={() => handleNavigation('scoring')}
+                        >
+                            <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-semibold text-orange-800">Round in Progress</h3>
+                                    <p className="text-sm text-orange-700">
+                                        Bale {baleData.baleNumber} • {baleData.archers.length} archer{baleData.archers.length !== 1 ? 's' : ''} • End {baleData.currentEnd || 1}
+                                    </p>
+                                    {baleData.competitionName && (
+                                        <p className="text-xs text-orange-600 mt-1">
+                                            {baleData.competitionName}
+                                        </p>
+                                    )}
+                                </div>
+                                <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Navigation Cards */}
                 <div className="space-y-4">
