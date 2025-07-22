@@ -68,14 +68,18 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             console.log('Current user:', currentUser);
             console.log('Is online:', isOnline());
             
+            let loadedProfiles = [];
+            
             // Try to load from Firebase first if online and not mock user
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     console.log('Attempting to load from Firebase...');
                     const firebaseProfiles = await loadProfilesFromFirebase(currentUser.uid);
                     console.log('Profiles loaded from Firebase:', firebaseProfiles);
-                    setProfiles(firebaseProfiles);
-                    localStorage.setItem('archerProfiles', JSON.stringify(firebaseProfiles));
+                    if (firebaseProfiles && firebaseProfiles.length > 0) {
+                        loadedProfiles = firebaseProfiles;
+                        localStorage.setItem('archerProfiles', JSON.stringify(firebaseProfiles));
+                    }
                 } catch (error) {
                     console.error('Error loading from Firebase, falling back to local:', error);
                 }
@@ -83,16 +87,21 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 console.log('Skipping Firebase load - offline, no user, or mock user');
             }
             
-            // Fallback to local storage
-            const savedProfiles = localStorage.getItem('archerProfiles');
-            console.log('Raw localStorage data:', savedProfiles);
-            if (savedProfiles) {
-                const parsedProfiles = JSON.parse(savedProfiles);
-                console.log('Profiles loaded from localStorage:', parsedProfiles);
-                setProfiles(parsedProfiles);
-            } else {
-                console.log('No profiles found in localStorage');
+            // Fallback to local storage if no Firebase data
+            if (loadedProfiles.length === 0) {
+                const savedProfiles = localStorage.getItem('archerProfiles');
+                console.log('Raw localStorage data:', savedProfiles);
+                if (savedProfiles) {
+                    const parsedProfiles = JSON.parse(savedProfiles);
+                    console.log('Profiles loaded from localStorage:', parsedProfiles);
+                    loadedProfiles = parsedProfiles;
+                } else {
+                    console.log('No profiles found in localStorage');
+                }
             }
+            
+            console.log('Final loaded profiles:', loadedProfiles);
+            setProfiles(loadedProfiles);
         } catch (error) {
             console.error('Error loading profiles:', error);
         } finally {
@@ -138,11 +147,14 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         }
     }, [loading, profiles, currentUser]);
 
-    // Update form when selected profile changes (for editing)
+    // Update form when selected profile changes (for both selection and editing)
     useEffect(() => {
-        if (selectedProfile && isEditing) {
+        if (selectedProfile && !isCreating) {
             console.log('=== POPULATE FORM DEBUG ===');
-            console.log('Selected profile for editing:', selectedProfile);
+            console.log('Selected profile:', selectedProfile);
+            console.log('isEditing:', isEditing);
+            console.log('isCreating:', isCreating);
+            
             const formData = {
                 firstName: selectedProfile.firstName || '',
                 lastName: selectedProfile.lastName || '',
@@ -160,7 +172,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             console.log('Setting form data:', formData);
             setProfileForm(formData);
         }
-    }, [selectedProfile, isEditing]);
+    }, [selectedProfile, isEditing, isCreating]);
 
     // Debug profileForm state
     useEffect(() => {
@@ -171,10 +183,31 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     }, [profileForm, selectedProfile, isEditing, isCreating]);
 
     const selectProfile = (profile) => {
+        console.log('=== SELECT PROFILE DEBUG ===');
+        console.log('Selecting profile:', profile);
         setSelectedProfile(profile);
         setShowProfileSelection(false);
         setIsEditing(false);
         setIsCreating(false);
+        
+        // Populate form with selected profile data
+        const formData = {
+            firstName: profile.firstName || '',
+            lastName: profile.lastName || '',
+            role: profile.role || 'Archer',
+            profileType: profile.profileType || 'Compound',
+            dominantHand: profile.dominantHand || 'Right',
+            dominantEye: profile.dominantEye || 'Right',
+            bowWeight: profile.bowWeight || '',
+            drawLength: profile.drawLength || '',
+            usArcheryNumber: profile.usArcheryNumber || '',
+            nfaaNumber: profile.nfaaNumber || '',
+            defaultClassification: profile.defaultClassification || 'Varsity',
+            sponsorships: profile.sponsorships || ''
+        };
+        console.log('Setting form data for selected profile:', formData);
+        setProfileForm(formData);
+        
         if (onProfileSelect) {
             onProfileSelect(profile);
         }
@@ -363,8 +396,12 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     };
 
     const editProfile = (profile) => {
+        console.log('=== EDIT PROFILE DEBUG ===');
+        console.log('Editing profile:', profile);
         setSelectedProfile(profile);
-        setProfileForm({
+        
+        // Reset form with profile data
+        const formData = {
             firstName: profile.firstName || '',
             lastName: profile.lastName || '',
             role: profile.role || 'Archer',
@@ -377,7 +414,10 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             nfaaNumber: profile.nfaaNumber || '',
             defaultClassification: profile.defaultClassification || 'Varsity',
             sponsorships: profile.sponsorships || ''
-        });
+        };
+        console.log('Setting form data for editing:', formData);
+        setProfileForm(formData);
+        
         setIsEditing(true);
         setIsCreating(false);
         setShowProfileSelection(false);
