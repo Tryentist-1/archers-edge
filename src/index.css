@@ -47,6 +47,136 @@
   }
 }
 
+/* Keypad button styles */
+.keypad-btn {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 600px) {
+  .keypad-btn {
+    min-height: 40px;
+    min-width: 40px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 350px) {
+  .keypad-btn {
+    min-height: 35px;
+    min-width: 35px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Ensure full width layout */
+html, body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Table layout fixes */
+.score-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.score-table th,
+.score-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keypad positioning */
+#score-keypad {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* Scorecard mobile optimization */
+@media (max-width: 600px) {
+  .scorecard-table {
+    font-size: 0.7rem;
+  }
+  
+  .scorecard-table th,
+  .scorecard-table td {
+    padding: 1px;
+    min-width: 25px;
+  }
+}
+
+@media (max-width: 350px) {
+  .scorecard-table {
+    font-size: 0.65rem;
+  }
+  
+  .scorecard-table th,
+  .scorecard-table td {
+    padding: 0px;
+    min-width: 20px;
+  }
+}
+
+/* Mobile-optimized table styles based on standalone version */
+@media (max-width: 600px) {
+  .score-table {
+    font-size: 0.8rem;
+  }
+  
+  .score-table th,
+  .score-table td {
+    padding: 2px 1px;
+    min-width: 35px;
+  }
+  
+  .score-table th:first-child,
+  .score-table td:first-child {
+    width: 80px;
+    min-width: 80px;
+  }
+  
+  /* Column widths matching standalone */
+  .score-table .arrow-col { width: 35px; min-width: 35px; }
+  .score-table .total-col { width: 30px; min-width: 30px; }
+  .score-table .running-col { width: 35px; min-width: 35px; }
+  .score-table .avg-col { width: 35px; min-width: 35px; }
+  .score-table .card-col { width: 25px; min-width: 25px; }
+}
+
+/* Very small mobile screens */
+@media (max-width: 350px) {
+  .score-table {
+    font-size: 0.75rem;
+  }
+  
+  .score-table th,
+  .score-table td {
+    padding: 1px;
+    min-width: 30px;
+  }
+  
+  .score-table th:first-child,
+  .score-table td:first-child {
+    width: 70px;
+    min-width: 70px;
+  }
+  
+  .score-table .arrow-col { width: 30px; min-width: 30px; }
+  .score-table .total-col { width: 25px; min-width: 25px; }
+  .score-table .running-col { width: 30px; min-width: 30px; }
+  .score-table .avg-col { width: 30px; min-width: 30px; }
+  .score-table .card-col { width: 20px; min-width: 20px; }
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -74,9 +204,8 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  padding: 0;
+  width: 100%;
   min-height: 100vh;
 }
 
@@ -86,10 +215,10 @@ h1 {
 }
 
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .card {

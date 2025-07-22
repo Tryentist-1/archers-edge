@@ -6,7 +6,6 @@ import ArcherSetup from './components/ArcherSetup';
 import MultiArcherScoring from './components/MultiArcherScoring';
 import ArcherScorecard from './components/ArcherScorecard';
 import { LocalStorage } from './utils/localStorage';
-import './App.css';
 
 function AppContent() {
   const { currentUser, loading } = useAuth();
@@ -122,30 +121,30 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-white">
       
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      <header className="bg-white border-b border-gray-200">
+        <div className="w-full px-1">
+          <div className="flex justify-between items-center h-12">
             <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">Archer's Edge</h1>
+              <h1 className="text-lg font-semibold text-gray-900">Archer's Edge</h1>
               {baleData && (
-                <span className="ml-4 text-sm text-gray-600">
+                <span className="ml-2 text-xs text-gray-600">
                   Bale {baleData.baleNumber} • {baleData.archers?.length || 0} archers
                 </span>
               )}
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
               {currentView !== 'setup' && (
                 <button
                   onClick={handleNewBale}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+                  className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
                 >
                   New Bale
                 </button>
               )}
-              <div className="text-sm text-gray-600">
+              <div className="text-xs text-gray-600">
                 {currentUser.email}
               </div>
             </div>
@@ -154,7 +153,7 @@ function AppContent() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="w-full">
         {currentView === 'setup' && (
           <ArcherSetup onSetupComplete={handleSetupComplete} />
         )}

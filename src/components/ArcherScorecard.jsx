@@ -133,131 +133,129 @@ const ArcherScorecard = ({ baleData, archerId, onBackToScoring }) => {
     const totals = calculateTotals();
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                {/* Header */}
-                <div className="sticky top-0 bg-white border-b border-gray-200 p-4">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-bold text-gray-800">
-                                {archer.firstName} {archer.lastName}
-                            </h2>
-                            <p className="text-sm text-gray-600">
-                                {archer.class} - {archer.target}
-                            </p>
+        <div className="fixed inset-0 bg-white z-50">
+            {/* Header */}
+            <div className="bg-white border-b border-gray-200 p-2">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-800">
+                            {archer.firstName} {archer.lastName}
+                        </h2>
+                        <p className="text-xs text-gray-600">
+                            {archer.class} - {archer.target}
+                        </p>
+                    </div>
+                    <button
+                        onClick={onBackToScoring}
+                        className="text-gray-400 hover:text-gray-600 text-xl"
+                    >
+                        ×
+                    </button>
+                </div>
+            </div>
+
+            {/* Scorecard Content */}
+            <div className="p-2">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-4 gap-2 mb-3 p-2 bg-gray-50 rounded">
+                    <div className="text-center">
+                        <div className="text-lg font-bold text-blue-600">{totals.totalScore}</div>
+                        <div className="text-xs text-gray-600">Total</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-lg font-bold text-green-600">{totals.totalArrows}</div>
+                        <div className="text-xs text-gray-600">Arrows</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-lg font-bold text-yellow-600">{totals.totalTens + totals.totalXs}</div>
+                        <div className="text-xs text-gray-600">10s+Xs</div>
+                    </div>
+                    <div className="text-center">
+                        <div className={`text-lg font-bold ${getAverageClass(totals.average)}`}>
+                            {totals.average}
                         </div>
-                        <button
-                            onClick={onBackToScoring}
-                            className="text-gray-400 hover:text-gray-600 text-2xl"
-                        >
-                            ×
-                        </button>
+                        <div className="text-xs text-gray-600">Avg</div>
                     </div>
                 </div>
 
-                {/* Scorecard Content */}
-                <div className="p-4">
-                    {/* Summary Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">{totals.totalScore}</div>
-                            <div className="text-xs text-gray-600">Total Score</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-green-600">{totals.totalArrows}</div>
-                            <div className="text-xs text-gray-600">Arrows Shot</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-yellow-600">{totals.totalTens + totals.totalXs}</div>
-                            <div className="text-xs text-gray-600">10s + Xs</div>
-                        </div>
-                        <div className="text-center">
-                            <div className={`text-2xl font-bold ${getAverageClass(totals.average)}`}>
-                                {totals.average}
-                            </div>
-                            <div className="text-xs text-gray-600">Average</div>
-                        </div>
+                {/* Detailed Scorecard */}
+                <div className="overflow-x-auto">
+                    <table className="scorecard-table w-full border-collapse border border-gray-300 text-xs">
+                        <thead>
+                            <tr className="bg-gray-100">
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">End</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A1</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A2</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A3</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Total</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Run</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Avg</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {Array.from({ length: totalEnds }, (_, index) => {
+                                const endNumber = index + 1;
+                                const endKey = `end${endNumber}`;
+                                const endScores = archer.scores[endKey] || { arrow1: '', arrow2: '', arrow3: '' };
+                                const endTotal = calculateEndTotal(endScores);
+                                const runningTotal = calculateRunningTotal(archer);
+                                const endAverage = calculateEndAverage(endScores);
+
+                                // Handle both array format ['', '', ''] and object format { arrow1: '', arrow2: '', arrow3: '' }
+                                let scores;
+                                if (Array.isArray(endScores)) {
+                                    scores = endScores;
+                                } else {
+                                    scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+                                }
+
+                                return (
+                                    <tr key={endNumber} className="hover:bg-gray-50">
+                                        <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
+                                            {endNumber}
+                                        </td>
+                                        {scores.map((score, arrowIndex) => (
+                                            <td key={arrowIndex} className={`border border-gray-300 px-1 py-1 text-center font-medium text-xs ${getScoreClass(score)}`}>
+                                                {score}
+                                            </td>
+                                        ))}
+                                        <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
+                                            {endTotal}
+                                        </td>
+                                        <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
+                                            {runningTotal}
+                                        </td>
+                                        <td className={`border border-gray-300 px-1 py-1 text-center font-medium text-xs ${getAverageClass(endAverage)}`}>
+                                            {endAverage}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Footer Stats */}
+                <div className="mt-3 grid grid-cols-4 gap-2 p-2 bg-blue-50 rounded">
+                    <div className="text-center">
+                        <div className="text-sm font-bold text-blue-600">{totals.totalXs}</div>
+                        <div className="text-xs text-gray-600">Xs</div>
                     </div>
-
-                    {/* Detailed Scorecard */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-gray-300 text-sm">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900">End</th>
-                                    <th className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900">A1</th>
-                                    <th className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900">A2</th>
-                                    <th className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900">A3</th>
-                                    <th className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900">End Total</th>
-                                    <th className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900">Running Total</th>
-                                    <th className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900">End Avg</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Array.from({ length: totalEnds }, (_, index) => {
-                                    const endNumber = index + 1;
-                                    const endKey = `end${endNumber}`;
-                                    const endScores = archer.scores[endKey] || { arrow1: '', arrow2: '', arrow3: '' };
-                                    const endTotal = calculateEndTotal(endScores);
-                                    const runningTotal = calculateRunningTotal(archer);
-                                    const endAverage = calculateEndAverage(endScores);
-
-                                    // Handle both array format ['', '', ''] and object format { arrow1: '', arrow2: '', arrow3: '' }
-                                    let scores;
-                                    if (Array.isArray(endScores)) {
-                                        scores = endScores;
-                                    } else {
-                                        scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
-                                    }
-
-                                    return (
-                                        <tr key={endNumber} className="hover:bg-gray-50">
-                                            <td className="border border-gray-300 px-2 py-2 text-center font-medium text-xs">
-                                                {endNumber}
-                                            </td>
-                                            {scores.map((score, arrowIndex) => (
-                                                <td key={arrowIndex} className={`border border-gray-300 px-2 py-2 text-center font-medium text-xs ${getScoreClass(score)}`}>
-                                                    {score}
-                                                </td>
-                                            ))}
-                                            <td className="border border-gray-300 px-2 py-2 text-center font-medium text-xs">
-                                                {endTotal}
-                                            </td>
-                                            <td className="border border-gray-300 px-2 py-2 text-center font-medium text-xs">
-                                                {runningTotal}
-                                            </td>
-                                            <td className={`border border-gray-300 px-2 py-2 text-center font-medium text-xs ${getAverageClass(endAverage)}`}>
-                                                {endAverage}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                    <div className="text-center">
+                        <div className="text-sm font-bold text-green-600">{totals.totalTens}</div>
+                        <div className="text-xs text-gray-600">10s</div>
                     </div>
-
-                    {/* Footer Stats */}
-                    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-blue-50 rounded-lg">
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-blue-600">{totals.totalXs}</div>
-                            <div className="text-xs text-gray-600">X Count</div>
+                    <div className="text-center">
+                        <div className="text-sm font-bold text-purple-600">
+                            {totals.totalArrows > 0 ? ((totals.totalXs / totals.totalArrows) * 100).toFixed(1) : '0'}%
                         </div>
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-green-600">{totals.totalTens}</div>
-                            <div className="text-xs text-gray-600">10 Count</div>
+                        <div className="text-xs text-gray-600">X%</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-sm font-bold text-orange-600">
+                            {totals.totalArrows > 0 ? (((totals.totalTens + totals.totalXs) / totals.totalArrows) * 100).toFixed(1) : '0'}%
                         </div>
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-purple-600">
-                                {totals.totalArrows > 0 ? ((totals.totalXs / totals.totalArrows) * 100).toFixed(1) : '0'}%
-                            </div>
-                            <div className="text-xs text-gray-600">X Percentage</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-orange-600">
-                                {totals.totalArrows > 0 ? (((totals.totalTens + totals.totalXs) / totals.totalArrows) * 100).toFixed(1) : '0'}%
-                            </div>
-                            <div className="text-xs text-gray-600">10+X Percentage</div>
-                        </div>
+                        <div className="text-xs text-gray-600">10+X%</div>
                     </div>
                 </div>
             </div>

@@ -230,25 +230,25 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
         <div className="w-full">
             <div className="bg-white">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-2 px-2">
-                    <h2 className="text-lg font-bold text-gray-800">
+                <div className="flex justify-between items-center mb-1">
+                    <h2 className="text-base font-bold text-gray-800">
                         Bale {baleData.baleNumber} - End {currentEnd}
                     </h2>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1">
                         <button
                             onClick={() => changeEnd(-1)}
                             disabled={currentEnd <= 1}
-                            className="px-2 py-1 bg-gray-500 text-white rounded text-sm disabled:opacity-50"
+                            className="px-1 py-1 bg-gray-500 text-white rounded text-xs disabled:opacity-50"
                         >
                             ←
                         </button>
-                        <span className="text-sm font-medium">
+                        <span className="text-xs font-medium">
                             {currentEnd}/{totalEnds}
                         </span>
                         <button
                             onClick={() => changeEnd(1)}
                             disabled={currentEnd >= totalEnds}
-                            className="px-2 py-1 bg-green-600 text-white rounded text-sm disabled:opacity-50"
+                            className="px-1 py-1 bg-green-600 text-white rounded text-xs disabled:opacity-50"
                         >
                             →
                         </button>
@@ -277,20 +277,20 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                 )}
 
                 {/* Scoring Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300 text-sm">
+                <div className="w-full">
+                    <table className="score-table w-full border-collapse border border-gray-300">
                         <thead>
                             <tr className="bg-gray-100">
                                 <th className="border border-gray-300 px-1 py-1 text-left text-xs text-gray-900">Archer</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A1</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A2</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">A3</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">10s</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">X</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">End</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Run</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Avg</th>
-                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900">Card</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900 arrow-col">A1</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900 arrow-col">A2</th>
+                                <th className="border border-gray-300 px-1 py-1 text-center text-xs text-gray-900 arrow-col">A3</th>
+                                <th className="border border-gray-300 px-0 py-1 text-center text-xs text-gray-900 total-col">10s</th>
+                                <th className="border border-gray-300 px-0 py-1 text-center text-xs text-gray-900 total-col">X</th>
+                                <th className="border border-gray-300 px-0 py-1 text-center text-xs text-gray-900 total-col">End</th>
+                                <th className="border border-gray-300 px-0 py-1 text-center text-xs text-gray-900 running-col">Run</th>
+                                <th className="border border-gray-300 px-0 py-1 text-center text-xs text-gray-900 avg-col">Avg</th>
+                                <th className="border border-gray-300 px-0 py-1 text-center text-xs text-gray-900 card-col">&gt;</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -319,15 +319,15 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
 
                                 return (
                                     <tr key={archer.id} className="hover:bg-gray-50">
-                                        <td className="border border-gray-300 px-1 py-1">
-                                            <span className="font-medium text-xs text-gray-900 text-left whitespace-nowrap">
+                                        <td className="border border-gray-300 px-1 py-1 text-left">
+                                            <span className="font-medium text-xs text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis block">
                                                 {shortName}
                                             </span>
                                         </td>
                                         
                                         {/* Arrow inputs */}
                                         {[0, 1, 2].map(arrowIndex => (
-                                            <td key={arrowIndex} className="border border-gray-300 p-1 min-h-[2rem] relative">
+                                            <td key={arrowIndex} className="border border-gray-300 p-1 min-h-[2rem] relative arrow-col">
                                                 <div className="w-full h-full min-h-[2rem] relative">
                                                     <ScoreInputWithKeypad
                                                         value={endScores[`arrow${arrowIndex + 1}`] || ''}
@@ -340,27 +340,27 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                                         ))}
                                         
                                         {/* Calculated columns */}
-                                        <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
+                                        <td className="border border-gray-300 px-0 py-1 text-center font-bold text-xs total-col">
                                             {tens}
                                         </td>
-                                        <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
+                                        <td className="border border-gray-300 px-0 py-1 text-center font-bold text-xs total-col">
                                             {xs}
                                         </td>
-                                        <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
+                                        <td className="border border-gray-300 px-0 py-1 text-center font-bold text-xs total-col">
                                             {endTotal}
                                         </td>
-                                        <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
+                                        <td className="border border-gray-300 px-0 py-1 text-center font-bold text-xs running-col">
                                             {runningTotal}
                                         </td>
-                                        <td className={`border border-gray-300 px-1 py-1 text-center font-medium text-xs ${getAverageClass(endAverage)}`}>
+                                        <td className={`border border-gray-300 px-0 py-1 text-center font-bold text-xs avg-col ${getAverageClass(endAverage)}`}>
                                             {endAverage}
                                         </td>
-                                        <td className="border border-gray-300 px-1 py-1 text-center">
+                                        <td className="border border-gray-300 px-0 py-1 text-center card-col">
                                             <button
                                                 onClick={() => onViewCard(archer.id)}
-                                                className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                                className="w-full h-full bg-blue-600 text-white hover:bg-blue-700 text-xs font-bold"
                                             >
-                                                View
+                                                &gt;
                                             </button>
                                         </td>
                                     </tr>
