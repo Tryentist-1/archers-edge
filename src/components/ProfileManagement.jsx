@@ -242,11 +242,13 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 return;
             }
             
-            // Check for duplicates
-            const duplicateError = checkForDuplicateProfile(profileData);
-            if (duplicateError) {
-                setSaveMessage(duplicateError);
-                return;
+            // Check for duplicates (only when creating new profiles)
+            if (isCreating) {
+                const duplicateError = checkForDuplicateProfile(profileData);
+                if (duplicateError) {
+                    setSaveMessage(duplicateError);
+                    return;
+                }
             }
             
             let updatedProfiles;
@@ -262,7 +264,10 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 updatedProfiles = profiles.map(p => 
                     p.id === selectedProfile.id ? profileToSave : p
                 );
-                console.log('Updating existing profile:', profileToSave);
+                console.log('=== UPDATE EXISTING PROFILE ===');
+                console.log('Selected profile ID:', selectedProfile.id);
+                console.log('Profile to save:', profileToSave);
+                console.log('Updated profiles count:', updatedProfiles.length);
             } else {
                 // Create new profile
                 profileToSave = {
@@ -275,7 +280,9 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                     updatedAt: new Date().toISOString()
                 };
                 updatedProfiles = [...profiles, profileToSave];
-                console.log('Creating new profile:', profileToSave);
+                console.log('=== CREATE NEW PROFILE ===');
+                console.log('New profile:', profileToSave);
+                console.log('Updated profiles count:', updatedProfiles.length);
             }
             
             // Save to local storage
@@ -454,28 +461,46 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     const checkForDuplicateProfile = (profileData) => {
         const { firstName, lastName, email } = profileData;
         
-        // Check for exact name match
-        const nameMatch = profiles.find(profile => 
-            profile.firstName?.toLowerCase() === firstName?.toLowerCase() &&
-            profile.lastName?.toLowerCase() === lastName?.toLowerCase()
-        );
+        console.log('=== DUPLICATE CHECK DEBUG ===');
+        console.log('Checking profile data:', profileData);
+        console.log('Current selected profile:', selectedProfile);
+        console.log('Is editing:', isEditing);
+        console.log('Is creating:', isCreating);
         
-        if (nameMatch && nameMatch.id !== selectedProfile?.id) {
+        // Check for exact name match (excluding current profile if editing)
+        const nameMatch = profiles.find(profile => {
+            const nameMatches = profile.firstName?.toLowerCase() === firstName?.toLowerCase() &&
+                               profile.lastName?.toLowerCase() === lastName?.toLowerCase();
+            const isCurrentProfile = profile.id === selectedProfile?.id;
+            
+            console.log(`Profile ${profile.id}: nameMatches=${nameMatches}, isCurrentProfile=${isCurrentProfile}`);
+            
+            return nameMatches && !isCurrentProfile;
+        });
+        
+        if (nameMatch) {
+            console.log('Name duplicate found:', nameMatch);
             return `A profile for ${firstName} ${lastName} already exists.`;
         }
         
         // Check for email match (if email is provided)
         if (email) {
-            const emailMatch = profiles.find(profile => 
-                profile.email?.toLowerCase() === email?.toLowerCase() &&
-                profile.id !== selectedProfile?.id
-            );
+            const emailMatch = profiles.find(profile => {
+                const emailMatches = profile.email?.toLowerCase() === email?.toLowerCase();
+                const isCurrentProfile = profile.id === selectedProfile?.id;
+                
+                console.log(`Profile ${profile.id}: emailMatches=${emailMatches}, isCurrentProfile=${isCurrentProfile}`);
+                
+                return emailMatches && !isCurrentProfile;
+            });
             
             if (emailMatch) {
+                console.log('Email duplicate found:', emailMatch);
                 return `A profile with email ${email} already exists.`;
             }
         }
         
+        console.log('No duplicates found');
         return null;
     };
 
