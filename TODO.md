@@ -113,12 +113,16 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 ## Session 6: OAS Competition Management ✅ **IN PROGRESS**
 
 ### Goals:
-- [x] **OAS Competition Creation Interface**: Create and edit competitions with OAS divisions (Boys/Girls Varsity/JV)
+- [x] **OAS Competition Creation Interface**: Create and edit competitions with OAS divisions (M/F for Male/Female, V/JV for Varsity/JV)
 - [x] **OAS Qualification Round Configuration**: Support for OAS Qualification Round (12 ends, 3 arrows, max 360, 2min/end)
 - [x] **Bale Assignment Settings**: Configure max archers per bale and distance (18m/9m)
 - [x] **Competition Management**: CRUD operations for OAS competitions
 - [x] **Firebase Integration**: Save/load competitions from Firestore
 - [x] **UI Integration**: Added to HomePage and navigation
+- [x] **Navigation Styling**: Clean navigation with consistent button colors (Home blue, Go buttons blue, Add New green, Logout red)
+- [x] **Team Management Focus**: Improved Team Management screen with compact table layout and better visibility
+- [x] **Division Format**: Updated to M/F for Male/Female, V/JV for Varsity/JV (MV, MJV, FV, FJV, MMS, FMS)
+- [x] **Action Buttons**: Added quick action buttons to HomePage (+ New Score, + New Archer, + New Competition)
 - [ ] **Real-time Leaderboards**: Live scoring updates during competitions
 - [x] **Team Archer Management**: Coach view to manage all archers on the team
 - [x] **Archer Integration**: Load team archers in bale setup for qualification rounds
@@ -169,6 +173,10 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 - ✅ **Header Design**: Improved spacing, responsive layout, visual polish
 - ✅ **reCAPTCHA Errors**: Disabled phone auth temporarily to clean console
 - ✅ **Profile Persistence**: Profiles sync and persist across login/logout cycles
+- ✅ **Navigation Styling**: Clean navigation with consistent button colors (Home blue, Go buttons blue, Add New green, Logout red)
+- ✅ **Team Management Focus**: Improved Team Management screen with compact table layout and better visibility
+- ✅ **Division Format**: Updated to M/F for Male/Female, V/JV for Varsity/JV (MV, MJV, FV, FJV, MMS, FMS)
+- ✅ **Action Buttons**: Added quick action buttons to HomePage (+ New Score, + New Archer, + New Competition)
 
 ## Notes:
 - Firebase configuration updated with real project values
