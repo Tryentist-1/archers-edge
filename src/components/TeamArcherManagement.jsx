@@ -47,6 +47,9 @@ const TeamArcherManagement = ({ onNavigate }) => {
     'Middle School Girls'
   ];
 
+  // Ensure allArchers is always an array
+  const safeArchers = Array.isArray(allArchers) ? allArchers : [];
+
   useEffect(() => {
     loadAllArchers();
   }, [currentUser]);
@@ -230,9 +233,6 @@ const TeamArcherManagement = ({ onNavigate }) => {
   };
 
   const filteredArchers = getFilteredArchers();
-
-  // Ensure allArchers is always an array
-  const safeArchers = Array.isArray(allArchers) ? allArchers : [];
 
   if (loading) {
     return (
