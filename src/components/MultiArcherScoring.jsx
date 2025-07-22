@@ -19,6 +19,11 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
     
     const totalEnds = 12;
 
+    // Debug logging
+    console.log('MultiArcherScoring received baleData:', baleData);
+    console.log('MultiArcherScoring currentEnd:', currentEnd);
+    console.log('MultiArcherScoring baleData.currentEnd:', baleData.currentEnd);
+
     const handleScoreChange = (archerId, arrowIndex, value) => {
         setArchers(prevArchers => 
             prevArchers.map(archer => {

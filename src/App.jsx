@@ -138,6 +138,10 @@ function AppContent() {
       case 'new-round':
         setCurrentView('setup');
         break;
+      case 'scoring':
+        console.log('Navigating to scoring, baleData:', baleData);
+        setCurrentView('scoring');
+        break;
       default:
         setCurrentView('home');
     }
