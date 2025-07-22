@@ -215,9 +215,14 @@ function AppContent() {
       <header className="bg-white border-b border-gray-200">
         <div className="w-full px-4">
           <div className="flex justify-between items-center h-14">
-            {/* Left side - App title and context */}
+            {/* Left side - App title and Home button */}
             <div className="flex items-center space-x-3">
-              <h1 className="text-xl font-bold text-gray-900">Archer's Edge</h1>
+              <button
+                onClick={() => handleNavigation('home')}
+                className="text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                Archer's Edge
+              </button>
               {baleData && currentView === 'scoring' && (
                 <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
@@ -234,18 +239,10 @@ function AppContent() {
             <div className="flex items-center space-x-3">
               {/* Navigation buttons */}
               <div className="flex items-center space-x-2">
-                {currentView !== 'home' && currentView !== 'setup' && (
-                  <button
-                    onClick={() => handleNavigation('home')}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
-                  >
-                    Home
-                  </button>
-                )}
                 {currentView === 'scoring' && (
                   <button
                     onClick={handleNewBale}
-                    className="px-3 py-1.5 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700 transition-colors"
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
                   >
                     New Bale
                   </button>
@@ -270,12 +267,14 @@ function AppContent() {
                 <div className="hidden sm:block text-sm text-gray-600 truncate max-w-32">
                   {currentUser.email}
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
-                >
-                  Logout
-                </button>
+                {currentView === 'home' && (
+                  <button
+                    onClick={handleLogout}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
+                  >
+                    Logout
+                  </button>
+                )}
               </div>
             </div>
           </div>

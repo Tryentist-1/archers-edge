@@ -38,14 +38,14 @@ const TeamArcherManagement = ({ onNavigate }) => {
     notes: ''
   });
 
-  // OAS Divisions for filtering
+  // OAS Divisions for filtering (M/F for Male/Female, V/JV for Varsity/JV)
   const oasDivisions = [
-    'Boys Varsity',
-    'Boys Junior Varsity', 
-    'Girls Varsity',
-    'Girls Junior Varsity',
-    'Middle School Boys',
-    'Middle School Girls'
+    'MV',    // Male Varsity
+    'MJV',   // Male Junior Varsity
+    'FV',    // Female Varsity
+    'FJV',   // Female Junior Varsity
+    'MMS',   // Middle School Male
+    'FMS'    // Middle School Female
   ];
 
   // Ensure allArchers is always an array
@@ -260,21 +260,21 @@ const TeamArcherManagement = ({ onNavigate }) => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Team Archer Management</h1>
-              <p className="text-gray-600 mt-1">Coach view: Manage all archers on your team for OAS qualification rounds</p>
+              <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
+              <p className="text-gray-600 mt-1">View and manage team archers for OAS qualification rounds</p>
             </div>
             <div className="flex space-x-3">
               <button
                 onClick={() => onNavigate('home')}
-                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Back to Home
+                Go to Home
               </button>
               <button
                 onClick={handleCreateArcher}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
               >
-                Add New Archer
+                + New Archer
               </button>
             </div>
           </div>
@@ -368,13 +368,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
                     Archer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    School
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Division
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Grade
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Equipment
@@ -400,19 +394,15 @@ const TeamArcherManagement = ({ onNavigate }) => {
                         <div className="text-sm font-medium text-gray-900">
                           {`${archer.firstName || ''} ${archer.lastName || ''}`.trim() || 'Unnamed Archer'}
                         </div>
-                        <div className="text-sm text-gray-500">{archer.division || 'No Division'}</div>
+                        <div className="text-sm text-gray-500">
+                          {archer.school || 'No School'} • {archer.grade || 'No Grade'}
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {archer.school || 'No School'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                         {archer.division || 'No Division'}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {archer.grade || 'No Grade'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {archer.equipment?.bowType || 'No Bow'} • {archer.equipment?.drawWeight || '0'}# 

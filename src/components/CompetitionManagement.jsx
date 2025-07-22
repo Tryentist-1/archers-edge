@@ -29,14 +29,14 @@ const CompetitionManagement = ({ onNavigate }) => {
     status: 'draft' // 'draft', 'active', 'completed', 'cancelled'
   });
 
-  // OAS Division options for high school archery
+  // OAS Division options for high school archery (M/F for Male/Female, V/JV for Varsity/JV)
   const oasDivisions = [
-    'Boys Varsity',
-    'Boys Junior Varsity', 
-    'Girls Varsity',
-    'Girls Junior Varsity',
-    'Middle School Boys',
-    'Middle School Girls'
+    'MV',    // Male Varsity
+    'MJV',   // Male Junior Varsity
+    'FV',    // Female Varsity
+    'FJV',   // Female Junior Varsity
+    'MMS',   // Middle School Male
+    'FMS'    // Middle School Female
   ];
 
   // OAS Round types
@@ -265,7 +265,7 @@ const CompetitionManagement = ({ onNavigate }) => {
               onClick={() => setIsCreating(true)}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
             >
-              Create New OAS Competition
+              + New Competition
             </button>
           </div>
 
@@ -274,9 +274,9 @@ const CompetitionManagement = ({ onNavigate }) => {
               <p className="text-gray-600 mb-4">No OAS competitions created yet.</p>
               <button
                 onClick={() => setIsCreating(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
               >
-                Create Your First OAS Competition
+                + New Competition
               </button>
             </div>
           ) : (

@@ -35,6 +35,28 @@ const HomePage = ({ currentUser, onNavigate }) => {
                     </p>
                 </div>
 
+                {/* Action Buttons */}
+                <div className="mb-6 flex flex-wrap gap-3">
+                    <button
+                        onClick={() => handleNavigation('new-round')}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+                    >
+                        + New Score
+                    </button>
+                    <button
+                        onClick={() => handleNavigation('team-archers')}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+                    >
+                        + New Archer
+                    </button>
+                    <button
+                        onClick={() => handleNavigation('competitions')}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+                    >
+                        + New Competition
+                    </button>
+                </div>
+
                 {/* Navigation Cards */}
                 <div className="space-y-4">
                     {/* Profile Card */}
