@@ -104,9 +104,12 @@ const TeamArcherManagement = ({ onNavigate }) => {
   };
 
   const getFilteredArchers = () => {
-    return allArchers.filter(archer => {
-      const matchesSearch = archer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          archer.school?.toLowerCase().includes(searchTerm.toLowerCase());
+    return safeArchers.filter(archer => {
+      const archerName = archer.name || '';
+      const archerSchool = archer.school || '';
+      
+      const matchesSearch = archerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          archerSchool.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesDivision = !filterDivision || archer.division === filterDivision;
       const matchesSchool = !filterSchool || archer.school === filterSchool;
       
@@ -242,6 +245,9 @@ const TeamArcherManagement = ({ onNavigate }) => {
       </div>
     );
   }
+
+  // Ensure allArchers is always an array
+  const safeArchers = Array.isArray(allArchers) ? allArchers : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -387,23 +393,23 @@ const TeamArcherManagement = ({ onNavigate }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{archer.name}</div>
-                        <div className="text-sm text-gray-500">{archer.classification}</div>
+                        <div className="text-sm font-medium text-gray-900">{archer.name || 'Unnamed Archer'}</div>
+                        <div className="text-sm text-gray-500">{archer.classification || 'No Classification'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {archer.school}
+                      {archer.school || 'No School'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {archer.division}
+                        {archer.division || 'No Division'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {archer.grade}
+                      {archer.grade || 'No Grade'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {archer.equipment?.bowType} • {archer.equipment?.drawWeight}#
+                      {archer.equipment?.bowType || 'No Bow'} • {archer.equipment?.drawWeight || '0'}# 
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
