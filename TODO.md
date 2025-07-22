@@ -110,13 +110,18 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 - ✅ **Profile Persistence**: Profiles now sync and persist across login/logout
 - ✅ **Visual Polish**: Better colors, transitions, and professional appearance
 
-## Session 6: Competition Management
+## Session 6: OAS Competition Management ✅ **IN PROGRESS**
 
 ### Goals:
-- [ ] Create competition creation interface
-- [ ] Implement real-time leaderboards
-- [ ] Add participant management
-- [ ] Build scoring session management
+- [x] **OAS Competition Creation Interface**: Create and edit competitions with OAS divisions (Men/Women Varsity/JV)
+- [x] **OAS Round Configuration**: Support for OAS Ranking Round (12 ends, 3 arrows, max 360)
+- [x] **School Team Management**: Team size and scoring method configuration
+- [x] **Competition Management**: CRUD operations for OAS competitions
+- [x] **Firebase Integration**: Save/load competitions from Firestore
+- [x] **UI Integration**: Added to HomePage and navigation
+- [ ] **Real-time Leaderboards**: Live scoring updates during competitions
+- [ ] **Participant Management**: Register archers for competitions
+- [ ] **Scoring Session Management**: Link bales to competitions
 
 ## Session 6: Data Persistence & Offline Sync
 
@@ -139,10 +144,12 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 - ✅ **Session 3 Complete**: Firebase authentication working
 - ✅ **Session 4 Complete**: Multiple archers per bale (CORE FUNCTIONALITY)
 - ✅ **Session 5 Complete**: Profile management and user experience
+- 🎯 **Session 6 In Progress**: Competition management (admin/coach features)
 - ✅ **Keypad Working**: Scores can be entered and flow between fields
 - ✅ **Focus Management**: Improved navigation between ends
 - ✅ **Profile Sync**: Profiles persist across login/logout cycles
 - ✅ **UI Polish**: Clean headers and responsive design
+- ✅ **Competition Management**: Basic CRUD operations implemented
 - 🚀 **Server Running**: http://localhost:3003
 
 ## Recent Fixes:

@@ -7,6 +7,7 @@ import MultiArcherScoring from './components/MultiArcherScoring';
 import ArcherScorecard from './components/ArcherScorecard';
 import HomePage from './components/HomePage';
 import ProfileManagement from './components/ProfileManagement';
+import CompetitionManagement from './components/CompetitionManagement';
 import { LocalStorage } from './utils/localStorage';
 import { 
     syncLocalDataToFirebase, 
@@ -117,6 +118,9 @@ function AppContent() {
         break;
       case 'profile':
         setCurrentView('profile');
+        break;
+      case 'competitions':
+        setCurrentView('competitions');
         break;
       case 'scores':
         setCurrentView('scores');
@@ -305,6 +309,10 @@ function AppContent() {
         
         {currentView === 'profile' && (
           <ProfileManagement onNavigate={handleNavigation} />
+        )}
+        
+        {currentView === 'competitions' && (
+          <CompetitionManagement onNavigate={handleNavigation} />
         )}
         
         {currentView === 'scores' && (

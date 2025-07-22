@@ -64,6 +64,60 @@ export const deleteProfileFromFirebase = async (profileId) => {
     }
 };
 
+// Competition Management
+export const saveCompetitionToFirebase = async (competition, userId) => {
+    try {
+        console.log('Saving competition to Firebase:', { competition, userId });
+        const competitionRef = doc(db, 'competitions', competition.id);
+        const competitionData = {
+            ...competition,
+            userId,
+            updatedAt: serverTimestamp()
+        };
+        console.log('Competition data to save:', competitionData);
+        await setDoc(competitionRef, competitionData);
+        console.log('Competition saved to Firebase successfully');
+        return true;
+    } catch (error) {
+        console.error('Error saving competition to Firebase:', error);
+        throw error;
+    }
+};
+
+export const loadCompetitionsFromFirebase = async (userId) => {
+    try {
+        console.log('Loading competitions from Firebase for user:', userId);
+        const competitionsRef = collection(db, 'competitions');
+        const q = query(competitionsRef, where('userId', '==', userId));
+        console.log('Executing query:', q);
+        const querySnapshot = await getDocs(q);
+        
+        const competitions = [];
+        querySnapshot.forEach((doc) => {
+            competitions.push({ id: doc.id, ...doc.data() });
+        });
+        
+        console.log('Competitions loaded from Firebase:', competitions);
+        return competitions;
+    } catch (error) {
+        console.error('Error loading competitions from Firebase:', error);
+        throw error;
+    }
+};
+
+export const deleteCompetitionFromFirebase = async (competitionId, userId) => {
+    try {
+        console.log('Deleting competition from Firebase:', { competitionId, userId });
+        const competitionRef = doc(db, 'competitions', competitionId);
+        await deleteDoc(competitionRef);
+        console.log('Competition deleted from Firebase successfully');
+        return true;
+    } catch (error) {
+        console.error('Error deleting competition from Firebase:', error);
+        throw error;
+    }
+};
+
 // Score Management
 export const saveBaleDataToFirebase = async (baleData, userId) => {
     try {

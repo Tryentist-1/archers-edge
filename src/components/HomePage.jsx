@@ -100,6 +100,27 @@ const HomePage = ({ currentUser, onNavigate }) => {
                         </div>
                     </div>
 
+                    {/* Competition Management Card */}
+                    <div 
+                        className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => handleNavigation('competitions')}
+                    >
+                        <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                            </div>
+                                                        <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-gray-800">OAS Competition Management</h3>
+                              <p className="text-sm text-gray-600">Create and manage OAS ranking rounds, solo matches, and team competitions</p>
+                            </div>
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                    </div>
+
                     {/* Quick Stats */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                         <h3 className="text-lg font-semibold text-gray-800 mb-3">Quick Stats</h3>
