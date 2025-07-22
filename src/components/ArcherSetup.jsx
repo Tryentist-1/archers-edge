@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { loadProfilesFromFirebase } from '../services/firebaseService';
 
 const ArcherSetup = ({ onSetupComplete }) => {
     const { currentUser } = useAuth();
@@ -31,18 +32,44 @@ const ArcherSetup = ({ onSetupComplete }) => {
         });
     }, [currentUser]);
 
-    // Sample archer data - in real app this would come from a database
+    // Load archers from team management system
+    const [teamArchers, setTeamArchers] = useState([]);
+    const [loadingArchers, setLoadingArchers] = useState(true);
+
+    // Load team archers from Firebase
+    useEffect(() => {
+        const loadTeamArchers = async () => {
+            if (!currentUser) return;
+            
+            try {
+                setLoadingArchers(true);
+                const profiles = await loadProfilesFromFirebase(currentUser.uid);
+                setTeamArchers(profiles || []);
+            } catch (error) {
+                console.error('Error loading team archers:', error);
+            } finally {
+                setLoadingArchers(false);
+            }
+        };
+
+        loadTeamArchers();
+    }, [currentUser]);
+
+    // Sample archer data - fallback if no team archers loaded
     const sampleArchers = [
-        { id: '1', firstName: 'John', lastName: 'Doe', school: 'Archery Club', level: 'Recurve', gender: 'M' },
-        { id: '2', firstName: 'Jane', lastName: 'Smith', school: 'Archery Club', level: 'Compound', gender: 'F' },
-        { id: '3', firstName: 'Mike', lastName: 'Johnson', school: 'Target Masters', level: 'Recurve', gender: 'M' },
-        { id: '4', firstName: 'Sarah', lastName: 'Wilson', school: 'Target Masters', level: 'Compound', gender: 'F' },
-        { id: '5', firstName: 'David', lastName: 'Brown', school: 'Archery Club', level: 'Recurve', gender: 'M' },
+        { id: '1', name: 'John Doe', school: 'Archery Club', division: 'Boys Varsity', equipment: { bowType: 'Recurve' } },
+        { id: '2', name: 'Jane Smith', school: 'Archery Club', division: 'Girls Varsity', equipment: { bowType: 'Compound' } },
+        { id: '3', name: 'Mike Johnson', school: 'Target Masters', division: 'Boys Junior Varsity', equipment: { bowType: 'Recurve' } },
+        { id: '4', name: 'Sarah Wilson', school: 'Target Masters', division: 'Girls Varsity', equipment: { bowType: 'Compound' } },
+        { id: '5', name: 'David Brown', school: 'Archery Club', division: 'Boys Varsity', equipment: { bowType: 'Recurve' } },
     ];
 
-    const filteredArchers = sampleArchers.filter(archer => {
-        const fullName = `${archer.firstName} ${archer.lastName}`.toLowerCase();
-        return fullName.includes(searchTerm.toLowerCase());
+    // Use team archers if available, otherwise fall back to sample data
+    const availableArchers = teamArchers.length > 0 ? teamArchers : sampleArchers;
+
+    const filteredArchers = availableArchers.filter(archer => {
+        const archerName = archer.name || `${archer.firstName || ''} ${archer.lastName || ''}`.trim();
+        return archerName.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     const addArcherToBale = (archer) => {
@@ -308,6 +335,9 @@ const ArcherSetup = ({ onSetupComplete }) => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                     />
+                    {loadingArchers && (
+                        <p className="text-sm text-gray-500 mt-1">Loading team archers...</p>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -332,10 +362,10 @@ const ArcherSetup = ({ onSetupComplete }) => {
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <div className="font-medium">
-                                                    {archer.firstName} {archer.lastName}
+                                                    {archer.name || `${archer.firstName || ''} ${archer.lastName || ''}`.trim()}
                                                 </div>
                                                 <div className="text-sm text-gray-600">
-                                                    {archer.school} • {archer.level} • {archer.gender}
+                                                    {archer.school} • {archer.division || archer.level} • {archer.equipment?.bowType || archer.level}
                                                 </div>
                                             </div>
                                             {isAdded && (
@@ -366,10 +396,10 @@ const ArcherSetup = ({ onSetupComplete }) => {
                                         <div className="flex justify-between items-center">
                                             <div className="flex-1">
                                                 <div className="font-medium">
-                                                    {archer.firstName} {archer.lastName}
+                                                    {archer.name || `${archer.firstName || ''} ${archer.lastName || ''}`.trim()}
                                                 </div>
                                                 <div className="text-sm text-gray-600">
-                                                    {archer.school} • {archer.level} • {archer.gender}
+                                                    {archer.school} • {archer.division || archer.level} • {archer.equipment?.bowType || archer.level}
                                                 </div>
                                             </div>
                                             <div className="flex items-center space-x-2">

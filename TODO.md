@@ -120,7 +120,9 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 - [x] **Firebase Integration**: Save/load competitions from Firestore
 - [x] **UI Integration**: Added to HomePage and navigation
 - [ ] **Real-time Leaderboards**: Live scoring updates during competitions
-- [ ] **Participant Management**: Register archers for competitions
+- [x] **Team Archer Management**: View and manage all archers in the system
+- [x] **Archer Integration**: Load team archers in bale setup for qualification rounds
+- [ ] **Participant Registration**: Register archers for specific competitions
 - [ ] **Scoring Session Management**: Link bales to competitions
 
 ## Session 6: Data Persistence & Offline Sync
