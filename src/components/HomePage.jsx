@@ -5,6 +5,11 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
         onNavigate(destination);
     };
 
+    // Debug logging
+    console.log('HomePage baleData:', baleData);
+    console.log('baleData.archers:', baleData?.archers);
+    console.log('baleData.archers.length:', baleData?.archers?.length);
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
@@ -40,7 +45,10 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                     <div className="mb-6">
                         <div 
                             className="bg-orange-50 border border-orange-200 rounded-lg p-4 cursor-pointer hover:bg-orange-100 transition-colors"
-                            onClick={() => handleNavigation('scoring')}
+                            onClick={() => {
+                                console.log('Round in Progress clicked, navigating to scoring');
+                                handleNavigation('scoring');
+                            }}
                         >
                             <div className="flex items-center space-x-3">
                                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">

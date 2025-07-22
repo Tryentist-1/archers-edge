@@ -230,27 +230,27 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
         <div className="w-full">
             <div className="bg-white">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center mb-4">
                     <h2 className="text-base font-bold text-gray-800">
                         Bale {baleData.baleNumber} - End {currentEnd}
                     </h2>
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-2">
                         <button
                             onClick={() => changeEnd(-1)}
                             disabled={currentEnd <= 1}
-                            className="px-1 py-1 bg-gray-500 text-white rounded text-xs disabled:opacity-50"
+                            className="px-2 py-1 bg-gray-500 text-white rounded text-xs disabled:opacity-50 hover:bg-gray-600 transition-colors"
                         >
-                            ←
+                            Previous End
                         </button>
-                        <span className="text-xs font-medium">
+                        <span className="text-xs font-medium px-2">
                             {currentEnd}/{totalEnds}
                         </span>
                         <button
                             onClick={() => changeEnd(1)}
                             disabled={currentEnd >= totalEnds}
-                            className="px-1 py-1 bg-green-600 text-white rounded text-xs disabled:opacity-50"
+                            className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium disabled:opacity-50 hover:bg-blue-700 transition-colors"
                         >
-                            →
+                            Next End
                         </button>
                     </div>
                 </div>

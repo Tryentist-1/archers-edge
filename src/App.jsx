@@ -14,7 +14,8 @@ import {
     syncLocalDataToFirebase, 
     syncFirebaseDataToLocal, 
     isOnline, 
-    setupNetworkListeners 
+    setupNetworkListeners,
+    loadAppStateFromFirebase
 } from './services/firebaseService';
 
 function AppContent() {
@@ -26,7 +27,7 @@ function AppContent() {
   const [isOnline, setIsOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'syncing', 'success', 'error'
 
-  // Load existing bale data and app state from local storage
+  // Load existing bale data and app state from local storage and Firebase
   useEffect(() => {
     try {
       if (!loading && currentUser) {
@@ -36,28 +37,33 @@ function AppContent() {
           () => setIsOnline(false)
         );
 
-        // Load app state from local storage
+        // Load app state from local storage first
         const savedAppState = LocalStorage.loadAppState();
+        const savedBaleData = LocalStorage.loadBaleData();
         
         if (savedAppState) {
           setCurrentView(savedAppState.currentView || 'home');
-          setBaleData(savedAppState.baleData || null);
+          setBaleData(savedAppState.baleData || savedBaleData || null);
           setSelectedArcherId(savedAppState.selectedArcherId || null);
+        } else if (savedBaleData) {
+          setBaleData(savedBaleData);
+          setCurrentView('scoring');
         } else {
-          // Check if user has existing bale data
-          const savedBaleData = LocalStorage.loadBaleData();
-          
-          if (savedBaleData) {
-            setBaleData(savedBaleData);
-            setCurrentView('scoring');
-          } else {
-            setCurrentView('home');
-          }
+          setCurrentView('home');
         }
 
-        // Sync with Firebase if online
+        // Sync with Firebase if online and load any missing data
         if (isOnline) {
           syncWithFirebase();
+          // Also try to load app state from Firebase
+          loadAppStateFromFirebase(currentUser.uid).then(firebaseAppState => {
+            if (firebaseAppState && firebaseAppState.baleData && !baleData) {
+              setBaleData(firebaseAppState.baleData);
+              setCurrentView(firebaseAppState.currentView || 'scoring');
+            }
+          }).catch(error => {
+            console.error('Error loading app state from Firebase:', error);
+          });
         }
 
         return cleanup;
@@ -237,17 +243,6 @@ function AppContent() {
 
             {/* Right side - Navigation and user info */}
             <div className="flex items-center space-x-3">
-              {/* Navigation buttons */}
-              <div className="flex items-center space-x-2">
-                {currentView === 'scoring' && (
-                  <button
-                    onClick={handleNewBale}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
-                  >
-                    New Bale
-                  </button>
-                )}
-              </div>
 
               {/* Sync Status */}
               {syncStatus !== 'idle' && (
