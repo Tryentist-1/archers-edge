@@ -63,18 +63,18 @@ const ArcherSetup = ({ onSetupComplete }) => {
 
     // Sample archer data - fallback if no team archers loaded
     const sampleArchers = [
-        { id: '1', name: 'John Doe', school: 'Archery Club', division: 'Boys Varsity', equipment: { bowType: 'Recurve' } },
-        { id: '2', name: 'Jane Smith', school: 'Archery Club', division: 'Girls Varsity', equipment: { bowType: 'Compound' } },
-        { id: '3', name: 'Mike Johnson', school: 'Target Masters', division: 'Boys Junior Varsity', equipment: { bowType: 'Recurve' } },
-        { id: '4', name: 'Sarah Wilson', school: 'Target Masters', division: 'Girls Varsity', equipment: { bowType: 'Compound' } },
-        { id: '5', name: 'David Brown', school: 'Archery Club', division: 'Boys Varsity', equipment: { bowType: 'Recurve' } },
+        { id: '1', firstName: 'John', lastName: 'Doe', school: 'Archery Club', division: 'Boys Varsity', equipment: { bowType: 'Recurve' } },
+        { id: '2', firstName: 'Jane', lastName: 'Smith', school: 'Archery Club', division: 'Girls Varsity', equipment: { bowType: 'Compound' } },
+        { id: '3', firstName: 'Mike', lastName: 'Johnson', school: 'Target Masters', division: 'Boys Junior Varsity', equipment: { bowType: 'Recurve' } },
+        { id: '4', firstName: 'Sarah', lastName: 'Wilson', school: 'Target Masters', division: 'Girls Varsity', equipment: { bowType: 'Compound' } },
+        { id: '5', firstName: 'David', lastName: 'Brown', school: 'Archery Club', division: 'Boys Varsity', equipment: { bowType: 'Recurve' } },
     ];
 
     // Use team archers if available, otherwise fall back to sample data
     const availableArchers = teamArchers.length > 0 ? teamArchers : sampleArchers;
 
     const filteredArchers = availableArchers.filter(archer => {
-        const archerName = archer.name || `${archer.firstName || ''} ${archer.lastName || ''}`.trim();
+        const archerName = `${archer.firstName || ''} ${archer.lastName || ''}`.trim();
         return archerName.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
@@ -93,13 +93,17 @@ const ArcherSetup = ({ onSetupComplete }) => {
             };
         }
 
-        const newArcher = {
+        // Ensure consistent data structure - handle both name and firstName/lastName
+        const normalizedArcher = {
             ...archer,
+            // If archer has 'name' field, split it into firstName and lastName
+            firstName: archer.firstName || (archer.name ? archer.name.split(' ')[0] : ''),
+            lastName: archer.lastName || (archer.name ? archer.name.split(' ').slice(1).join(' ') : ''),
             targetAssignment: nextTarget,
             scores: scoresObject // Use object instead of nested arrays
         };
 
-        setArchers([...archers, newArcher]);
+        setArchers([...archers, normalizedArcher]);
     };
 
     const removeArcherFromBale = (archerId) => {
@@ -403,7 +407,7 @@ const ArcherSetup = ({ onSetupComplete }) => {
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <div className="font-medium">
-                                                    {archer.name || `${archer.firstName || ''} ${archer.lastName || ''}`.trim()}
+                                                    {`${archer.firstName || ''} ${archer.lastName || ''}`.trim()}
                                                 </div>
                                                 <div className="text-sm text-gray-600">
                                                     {archer.school} • {archer.division || archer.level} • {archer.equipment?.bowType || archer.level}
@@ -437,7 +441,7 @@ const ArcherSetup = ({ onSetupComplete }) => {
                                         <div className="flex justify-between items-center">
                                             <div className="flex-1">
                                                 <div className="font-medium">
-                                                    {archer.name || `${archer.firstName || ''} ${archer.lastName || ''}`.trim()}
+                                                    {`${archer.firstName || ''} ${archer.lastName || ''}`.trim()}
                                                 </div>
                                                 <div className="text-sm text-gray-600">
                                                     {archer.school} • {archer.division || archer.level} • {archer.equipment?.bowType || archer.level}

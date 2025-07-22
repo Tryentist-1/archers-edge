@@ -315,7 +315,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                                 });
 
                                 // Shortened archer name: First Name + Last Initial
-                                const shortName = `${archer.firstName} ${archer.lastName.charAt(0)}.`;
+                                const shortName = `${archer.firstName || ''} ${(archer.lastName || '').charAt(0) || ''}.`;
 
                                 return (
                                     <tr key={archer.id} className="hover:bg-gray-50">
