@@ -260,13 +260,21 @@ const CompetitionManagement = ({ onNavigate }) => {
         {/* Competition List */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Your OAS Competitions</h2>
-            <button
-              onClick={() => setIsCreating(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-            >
-              + New Competition
-            </button>
+            <h2 className="text-lg font-semibold text-gray-800">Your OAS Competitions ({competitions.length})</h2>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setIsCreating(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                + New Competition
+              </button>
+              <button
+                onClick={() => onNavigate('team-archers')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Manage Team
+              </button>
+            </div>
           </div>
 
           {competitions.length === 0 ? (
@@ -280,49 +288,117 @@ const CompetitionManagement = ({ onNavigate }) => {
               </button>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {competitions.map((competition) => (
-                <div key={competition.id} className="bg-white rounded-lg p-4 border border-gray-200">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-gray-800">{competition.name}</h3>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      competition.status === 'active' ? 'bg-green-100 text-green-800' :
-                      competition.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                      competition.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {competition.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{competition.date} • {competition.location}</p>
-                  <p className="text-sm text-gray-600 mb-3">{competition.description}</p>
-                  <div className="flex justify-between items-center">
-                    <div className="text-xs text-gray-500">
-                      {competition.divisions?.length || 0} OAS divisions • {competition.rounds?.length || 0} rounds
-                      {competition.type === 'qualification' && (
-                        <span> • {competition.distance || '18m'} • {competition.maxArchersPerBale || 8} archers/bale</span>
-                      )}
-                      {competition.type === 'team' && (
-                        <span> • Team size: {competition.maxTeamSize || 4}</span>
-                      )}
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => editCompetition(competition)}
-                        className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteCompetition(competition.id)}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Competition
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date & Location
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type & Divisions
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stats
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {competitions.map((competition) => (
+                      <tr key={competition.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {competition.name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {competition.description}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>
+                            <div>{competition.date}</div>
+                            <div className="text-gray-500">{competition.location}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium text-gray-900">
+                              {competition.type === 'qualification' ? 'OAS Qualification' : 
+                               competition.type === 'olympic' ? 'OAS Olympic' :
+                               competition.type === 'team' ? 'OAS Team' : 'Custom'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {competition.divisions?.length || 0} divisions • {competition.rounds?.length || 0} rounds
+                            </div>
+                            {competition.type === 'qualification' && (
+                              <div className="text-xs text-gray-500">
+                                {competition.distance || '18m'} • {competition.maxArchersPerBale || 8} archers/bale
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            competition.status === 'active' ? 'bg-green-100 text-green-800' :
+                            competition.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                            competition.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {competition.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="space-y-1">
+                            <div className="text-xs">
+                              <span className="font-medium">Archers:</span> {competition.stats?.totalArchers || '0'}
+                            </div>
+                            <div className="text-xs">
+                              <span className="font-medium">Bales:</span> {competition.stats?.totalBales || '0'}
+                            </div>
+                            <div className="text-xs">
+                              <span className="font-medium">Completed:</span> {competition.stats?.completedRounds || '0'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => editCompetition(competition)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => onNavigate('scoring', { competitionId: competition.id })}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              Score
+                            </button>
+                            <button
+                              onClick={() => deleteCompetition(competition.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

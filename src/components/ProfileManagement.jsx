@@ -466,17 +466,35 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                                 {profiles.map(profile => (
                                     <div
                                         key={profile.id}
-                                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                                        className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                                            appSelectedProfile?.id === profile.id
+                                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                : 'border-gray-200 hover:bg-gray-50'
+                                        }`}
                                         onClick={() => selectProfile(profile)}
                                     >
                                         <div className="flex justify-between items-start">
-                                            <div>
-                                                <h5 className="font-medium text-gray-900">
-                                                    {profile.firstName} {profile.lastName}
-                                                </h5>
-                                                <p className="text-sm text-gray-600">
-                                                    {profile.role} • {profile.profileType} • {profile.defaultClassification}
-                                                </p>
+                                            <div className="flex items-center space-x-2">
+                                                {appSelectedProfile?.id === profile.id && (
+                                                    <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                                                )}
+                                                <div>
+                                                    <h5 className={`font-medium ${
+                                                        appSelectedProfile?.id === profile.id 
+                                                            ? 'text-blue-900' 
+                                                            : 'text-gray-900'
+                                                    }`}>
+                                                        {profile.firstName} {profile.lastName}
+                                                        {appSelectedProfile?.id === profile.id && (
+                                                            <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                                Active
+                                                            </span>
+                                                        )}
+                                                    </h5>
+                                                    <p className="text-sm text-gray-600">
+                                                        {profile.role} • {profile.profileType} • {profile.defaultClassification}
+                                                    </p>
+                                                </div>
                                             </div>
                                             <div className="flex space-x-2">
                                                 <button

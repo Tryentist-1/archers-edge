@@ -281,6 +281,36 @@ const TeamArcherManagement = ({ onNavigate }) => {
           </div>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedArchers.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm font-medium text-blue-800">
+                  {selectedArchers.length} archer{selectedArchers.length !== 1 ? 's' : ''} selected
+                </span>
+                <button
+                  onClick={handleDeselectAll}
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  Deselect All
+                </button>
+              </div>
+              <div className="flex space-x-2">
+                <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
+                  Bulk Edit Division
+                </button>
+                <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
+                  Bulk Edit School
+                </button>
+                <button className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors">
+                  Bulk Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="grid gap-4 md:grid-cols-4">
@@ -372,7 +402,13 @@ const TeamArcherManagement = ({ onNavigate }) => {
                     Division
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    School
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Equipment
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Stats
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -406,21 +442,50 @@ const TeamArcherManagement = ({ onNavigate }) => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {archer.equipment?.bowType || 'No Bow'} • {archer.equipment?.drawWeight || '0'}# 
+                      {archer.school || 'No School'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div>
+                        <div>{archer.equipment?.bowType || 'No Bow'}</div>
+                        <div className="text-xs text-gray-500">
+                          {archer.equipment?.drawWeight || '0'}# • {archer.equipment?.drawLength || '0'}"
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="space-y-1">
+                        <div className="text-xs">
+                          <span className="font-medium">Avg:</span> {archer.stats?.averageScore || 'N/A'}
+                        </div>
+                        <div className="text-xs">
+                          <span className="font-medium">Rounds:</span> {archer.stats?.roundsCompleted || '0'}
+                        </div>
+                        <div className="text-xs">
+                          <span className="font-medium">Best:</span> {archer.stats?.bestScore || 'N/A'}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEditArcher(archer)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => onNavigate('profile', { archerId: archer.id })}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        View
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditArcher(archer)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onNavigate('profile', { archerId: archer.id })}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Profile
+                        </button>
+                        <button
+                          onClick={() => onNavigate('scoring', { archerId: archer.id })}
+                          className="text-purple-600 hover:text-purple-900"
+                        >
+                          Score
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
