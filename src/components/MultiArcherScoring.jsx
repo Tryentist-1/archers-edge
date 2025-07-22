@@ -166,14 +166,26 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             
             if (endScores) {
                 const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
-                scores.forEach(score => {
-                    if (score && score !== '') {
-                        totalArrows++;
-                        totalScore += parseScoreValue(score);
-                        if (score === '10') totalTens++;
-                        if (score === 'X') totalXs++;
-                    }
-                });
+                
+                // Check if all arrows are completed (not empty)
+                const isComplete = scores.every(score => score && score !== '' && score !== '--');
+                
+                if (isComplete) {
+                    scores.forEach(score => {
+                        if (score && score !== '') {
+                            totalArrows++;
+                            totalScore += parseScoreValue(score);
+                            
+                            // X counts as both a 10 AND an X
+                            if (score === 'X') {
+                                totalTens++;
+                                totalXs++;
+                            } else if (score === '10') {
+                                totalTens++;
+                            }
+                        }
+                    });
+                }
             }
         });
 
@@ -215,11 +227,11 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
     }, [archers, currentEnd]);
 
     return (
-        <div className="max-w-full mx-auto p-2">
-            <div className="bg-white rounded-lg shadow-lg p-3">
+        <div className="w-full">
+            <div className="bg-white">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-xl font-bold text-gray-800">
+                <div className="flex justify-between items-center mb-2 px-2">
+                    <h2 className="text-lg font-bold text-gray-800">
                         Bale {baleData.baleNumber} - End {currentEnd}
                     </h2>
                     <div className="flex items-center space-x-2">
@@ -288,8 +300,19 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                                 const endTotal = calculateEndTotal(endScores);
                                 const runningTotal = calculateRunningTotal(archer);
                                 const endAverage = calculateEndAverage(endScores);
-                                const tens = [endScores.arrow1, endScores.arrow2, endScores.arrow3].filter(score => score === '10').length;
-                                const xs = [endScores.arrow1, endScores.arrow2, endScores.arrow3].filter(score => score === 'X').length;
+                                
+                                // Calculate tens and Xs correctly (X counts as both)
+                                const scores = [endScores.arrow1, endScores.arrow2, endScores.arrow3];
+                                let tens = 0;
+                                let xs = 0;
+                                scores.forEach(score => {
+                                    if (score === 'X') {
+                                        tens++;
+                                        xs++;
+                                    } else if (score === '10') {
+                                        tens++;
+                                    }
+                                });
 
                                 // Shortened archer name: First Name + Last Initial
                                 const shortName = `${archer.firstName} ${archer.lastName.charAt(0)}.`;
@@ -297,9 +320,9 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                                 return (
                                     <tr key={archer.id} className="hover:bg-gray-50">
                                         <td className="border border-gray-300 px-1 py-1">
-                                            <div className="font-medium text-xs text-gray-900 text-left">
+                                            <span className="font-medium text-xs text-gray-900 text-left whitespace-nowrap">
                                                 {shortName}
-                                            </div>
+                                            </span>
                                         </td>
                                         
                                         {/* Arrow inputs */}
@@ -318,7 +341,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                                         
                                         {/* Calculated columns */}
                                         <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
-                                            {tens + xs}
+                                            {tens}
                                         </td>
                                         <td className="border border-gray-300 px-1 py-1 text-center font-medium text-xs">
                                             {xs}
@@ -345,37 +368,6 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                             })}
                         </tbody>
                     </table>
-                </div>
-
-                {/* End Totals */}
-                <div className="mt-3 p-2 bg-gray-50 rounded-md">
-                    <h3 className="font-semibold text-gray-800 mb-1 text-sm">End {currentEnd} Totals:</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                        <div className="text-gray-900">
-                            <span className="font-medium">Score:</span> {baleTotals.totalScore}
-                        </div>
-                        <div className="text-gray-900">
-                            <span className="font-medium">10s:</span> {baleTotals.totalTens}
-                        </div>
-                        <div className="text-gray-900">
-                            <span className="font-medium">Xs:</span> {baleTotals.totalXs}
-                        </div>
-                        <div className="text-gray-900">
-                            <span className="font-medium">Arrows:</span> {baleTotals.totalArrows}
-                        </div>
-                        <div className="text-gray-900">
-                            <span className="font-medium">Avg:</span> {baleTotals.average}
-                        </div>
-                        <div className="text-gray-900">
-                            <span className="font-medium">Archers:</span> {archers.length}
-                        </div>
-                        <div className="text-gray-900">
-                            <span className="font-medium">End:</span> {currentEnd}
-                        </div>
-                        <div className="text-gray-900">
-                            <span className="font-medium">Bale:</span> {baleData.baleNumber}
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

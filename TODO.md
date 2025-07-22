@@ -72,10 +72,11 @@
 - ✅ **End Navigation**: Fixed keypad dismissal when navigating between ends
 
 ### Current Issues to Fix:
-- [ ] **Close Button**: Keypad close button not working properly
-- [ ] **Keypad Dismissal**: Keypad doesn't dismiss when clicking outside
-- [ ] **Persistence**: App resets on refresh - need to fix local storage loading
-- [ ] **Debug Cleanup**: Remove debug indicators and console logs
+- [x] **Close Button**: Keypad close button not working properly
+- [x] **Keypad Dismissal**: Keypad doesn't dismiss when clicking outside
+- [x] **Persistence**: App resets on refresh - need to fix local storage loading
+- [x] **Debug Cleanup**: Remove debug indicators and console logs
+- [x] **End Totals**: Fixed display to show end-specific totals instead of bale totals
 
 ### Reference Implementation:
 Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
