@@ -36,8 +36,9 @@
 - [x] Bale assignment configuration (max archers per bale)
 - [x] Competition CRUD operations
 - [x] Firebase integration for competitions
-- [x] Team archer management interface
+- [x] Team archer management interface (Coach view)
 - [x] Archer integration with bale setup
+- [ ] Event Manager interface (separate from team management)
 - [ ] Real-time leaderboards
 - [ ] Participant registration for competitions
 - [ ] Scoring session management

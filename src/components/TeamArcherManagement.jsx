@@ -17,7 +17,8 @@ const TeamArcherManagement = ({ onNavigate }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingArcher, setEditingArcher] = useState(null);
   const [newArcherData, setNewArcherData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     school: '',
     division: '',
     grade: '',
@@ -108,7 +109,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
 
   const getFilteredArchers = () => {
     return safeArchers.filter(archer => {
-      const archerName = archer.name || '';
+      const archerName = `${archer.firstName || ''} ${archer.lastName || ''}`.trim();
       const archerSchool = archer.school || '';
       
       const matchesSearch = archerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -124,7 +125,8 @@ const TeamArcherManagement = ({ onNavigate }) => {
     setIsCreating(true);
     setEditingArcher(null);
     setNewArcherData({
-      name: '',
+      firstName: '',
+      lastName: '',
       school: '',
       division: '',
       grade: '',
@@ -164,7 +166,8 @@ const TeamArcherManagement = ({ onNavigate }) => {
       setIsCreating(false);
       setEditingArcher(null);
       setNewArcherData({
-        name: '',
+        firstName: '',
+        lastName: '',
         school: '',
         division: '',
         grade: '',
@@ -192,7 +195,8 @@ const TeamArcherManagement = ({ onNavigate }) => {
     setEditingArcher(archer);
     setIsCreating(true);
     setNewArcherData({
-      name: archer.name || '',
+      firstName: archer.firstName || '',
+      lastName: archer.lastName || '',
       school: archer.school || '',
       division: archer.division || '',
       grade: archer.grade || '',
@@ -257,7 +261,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Team Archer Management</h1>
-              <p className="text-gray-600 mt-1">Manage archers for OAS qualification rounds</p>
+              <p className="text-gray-600 mt-1">Coach view: Manage all archers on your team for OAS qualification rounds</p>
             </div>
             <div className="flex space-x-3">
               <button
@@ -393,7 +397,9 @@ const TeamArcherManagement = ({ onNavigate }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{archer.name || 'Unnamed Archer'}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {`${archer.firstName || ''} ${archer.lastName || ''}`.trim() || 'Unnamed Archer'}
+                        </div>
                         <div className="text-sm text-gray-500">{archer.classification || 'No Classification'}</div>
                       </div>
                     </td>
@@ -456,12 +462,26 @@ const TeamArcherManagement = ({ onNavigate }) => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name *
+                      First Name *
                     </label>
                     <input
                       type="text"
-                      name="name"
-                      value={newArcherData.name}
+                      name="firstName"
+                      value={newArcherData.firstName}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={newArcherData.lastName}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
