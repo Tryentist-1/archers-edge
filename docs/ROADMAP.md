@@ -31,8 +31,9 @@
 
 #### **Session 6: OAS Competition Management** 🎯 **IN PROGRESS**
 - [x] OAS competition creation interface
-- [x] OAS division and round configuration (Men/Women Varsity/JV)
-- [x] School team management (team size, scoring methods)
+- [x] OAS division and round configuration (Boys/Girls Varsity/JV)
+- [x] OAS Qualification Round setup (12 ends, 3 arrows, 2min/end, 18m/9m distance)
+- [x] Bale assignment configuration (max archers per bale)
 - [x] Competition CRUD operations
 - [x] Firebase integration for competitions
 - [ ] Real-time leaderboards

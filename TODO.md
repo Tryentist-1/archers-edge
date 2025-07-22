@@ -113,9 +113,9 @@ Based on `/Users/terry/web-mirrors/tryentist/wdv/ranking_round.html`:
 ## Session 6: OAS Competition Management ✅ **IN PROGRESS**
 
 ### Goals:
-- [x] **OAS Competition Creation Interface**: Create and edit competitions with OAS divisions (Men/Women Varsity/JV)
-- [x] **OAS Round Configuration**: Support for OAS Ranking Round (12 ends, 3 arrows, max 360)
-- [x] **School Team Management**: Team size and scoring method configuration
+- [x] **OAS Competition Creation Interface**: Create and edit competitions with OAS divisions (Boys/Girls Varsity/JV)
+- [x] **OAS Qualification Round Configuration**: Support for OAS Qualification Round (12 ends, 3 arrows, max 360, 2min/end)
+- [x] **Bale Assignment Settings**: Configure max archers per bale and distance (18m/9m)
 - [x] **Competition Management**: CRUD operations for OAS competitions
 - [x] **Firebase Integration**: Save/load competitions from Firestore
 - [x] **UI Integration**: Added to HomePage and navigation

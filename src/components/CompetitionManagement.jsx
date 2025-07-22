@@ -19,10 +19,11 @@ const CompetitionManagement = ({ onNavigate }) => {
     date: '',
     location: '',
     description: '',
-    type: 'ranking', // 'ranking', 'solo', 'team', 'practice'
+    type: 'qualification', // 'qualification', 'olympic', 'team', 'practice'
     divisions: [],
     rounds: [],
     maxArchersPerBale: 8,
+    distance: '18m',
     maxTeamSize: 4,
     teamScoringMethod: 'sum',
     status: 'draft' // 'draft', 'active', 'completed', 'cancelled'
@@ -30,19 +31,20 @@ const CompetitionManagement = ({ onNavigate }) => {
 
   // OAS Division options for high school archery
   const oasDivisions = [
-    'Men Varsity',
-    'Men Junior Varsity', 
-    'Women Varsity',
-    'Women Junior Varsity',
-    'School Team'
+    'Boys Varsity',
+    'Boys Junior Varsity', 
+    'Girls Varsity',
+    'Girls Junior Varsity',
+    'Middle School Boys',
+    'Middle School Girls'
   ];
 
   // OAS Round types
   const roundTypes = [
-    { name: 'OAS Ranking Round', ends: 12, arrowsPerEnd: 3, totalArrows: 36, maxScore: 360 },
-    { name: 'OAS Solo Head to Head', ends: 12, arrowsPerEnd: 3, totalArrows: 36, maxScore: 360 },
-    { name: 'OAS Team Match', ends: 12, arrowsPerEnd: 3, totalArrows: 36, maxScore: 360 },
-    { name: 'Custom Round', ends: 0, arrowsPerEnd: 0, totalArrows: 0, maxScore: 0 }
+    { name: 'OAS Qualification Round', ends: 12, arrowsPerEnd: 3, totalArrows: 36, maxScore: 360, timeLimit: '2 minutes per end' },
+    { name: 'OAS Olympic Round', ends: 12, arrowsPerEnd: 3, totalArrows: 36, maxScore: 360, timeLimit: '2 minutes per end' },
+    { name: 'OAS Team Round', ends: 12, arrowsPerEnd: 3, totalArrows: 36, maxScore: 360, timeLimit: '2 minutes per end' },
+    { name: 'Custom Round', ends: 0, arrowsPerEnd: 0, totalArrows: 0, maxScore: 0, timeLimit: '' }
   ];
 
   useEffect(() => {
@@ -79,10 +81,11 @@ const CompetitionManagement = ({ onNavigate }) => {
       date: '',
       location: '',
       description: '',
-      type: 'ranking',
+      type: 'qualification',
       divisions: [],
       rounds: [],
       maxArchersPerBale: 8,
+      distance: '18m',
       maxTeamSize: 4,
       teamScoringMethod: 'sum',
       status: 'draft'
@@ -211,6 +214,7 @@ const CompetitionManagement = ({ onNavigate }) => {
       divisions: competition.divisions || [],
       rounds: competition.rounds || [],
       maxArchersPerBale: competition.maxArchersPerBale || 8,
+      distance: competition.distance || '18m',
       maxTeamSize: competition.maxTeamSize || 4,
       teamScoringMethod: competition.teamScoringMethod || 'sum',
       status: competition.status
@@ -295,6 +299,9 @@ const CompetitionManagement = ({ onNavigate }) => {
                   <div className="flex justify-between items-center">
                     <div className="text-xs text-gray-500">
                       {competition.divisions?.length || 0} OAS divisions • {competition.rounds?.length || 0} rounds
+                      {competition.type === 'qualification' && (
+                        <span> • {competition.distance || '18m'} • {competition.maxArchersPerBale || 8} archers/bale</span>
+                      )}
                       {competition.type === 'team' && (
                         <span> • Team size: {competition.maxTeamSize || 4}</span>
                       )}
@@ -340,7 +347,7 @@ const CompetitionManagement = ({ onNavigate }) => {
                     value={formData.name}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Spring OAS Ranking Round"
+                    placeholder="e.g., Spring OAS Qualification Round"
                     required
                   />
                 </div>
@@ -401,9 +408,9 @@ const CompetitionManagement = ({ onNavigate }) => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="ranking">OAS Ranking Round</option>
-                    <option value="solo">OAS Solo Head to Head</option>
-                    <option value="team">OAS Team Match</option>
+                    <option value="qualification">OAS Qualification Round</option>
+                    <option value="olympic">OAS Olympic Round</option>
+                    <option value="team">OAS Team Round</option>
                     <option value="practice">Practice Session</option>
                   </select>
                 </div>
@@ -478,7 +485,7 @@ const CompetitionManagement = ({ onNavigate }) => {
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700">
-                      {round.name} ({round.ends} ends, {round.arrowsPerEnd} arrows/end, max {round.maxScore})
+                      {round.name} ({round.ends} ends, {round.arrowsPerEnd} arrows/end, max {round.maxScore}, {round.timeLimit})
                     </span>
                   </label>
                 ))}
@@ -523,6 +530,59 @@ const CompetitionManagement = ({ onNavigate }) => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         min="1"
                       />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Qualification Round Configuration */}
+              {formData.type === 'qualification' && (
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Qualification Round Settings
+                  </label>
+                  <div className="p-4 bg-green-50 rounded-md">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Max Archers Per Bale
+                        </label>
+                        <input
+                          type="number"
+                          name="maxArchersPerBale"
+                          value={formData.maxArchersPerBale || 8}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          min="1"
+                          max="8"
+                        />
+                        <p className="text-xs text-gray-600 mt-1">OAS standard: up to 8 archers per bale</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Distance
+                        </label>
+                        <select
+                          name="distance"
+                          value={formData.distance || '18m'}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="18m">18 meters</option>
+                          <option value="9m">9 meters</option>
+                        </select>
+                        <p className="text-xs text-gray-600 mt-1">OAS Qualification Round distance</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Qualification Round Format:</h4>
+                      <ul className="text-xs text-gray-600 space-y-1">
+                        <li>• 36 arrows total (12 ends × 3 arrows)</li>
+                        <li>• 2 minutes per end</li>
+                        <li>• Maximum score: 360 points</li>
+                        <li>• Archers ranked by total score, then number of 10s</li>
+                        <li>• Tie-breaker: single arrow shoot-off (40 seconds)</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
