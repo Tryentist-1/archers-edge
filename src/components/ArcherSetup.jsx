@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { loadProfilesFromFirebase } from '../services/firebaseService';
+import { loadProfilesFromFirebase, loadCompetitionsFromFirebase } from '../services/firebaseService';
 
 const ArcherSetup = ({ onSetupComplete }) => {
     const { currentUser } = useAuth();
     const [baleNumber, setBaleNumber] = useState(1);
+    const [selectedCompetition, setSelectedCompetition] = useState('');
+    const [competitions, setCompetitions] = useState([]);
     const [archers, setArchers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [availableTargets, setAvailableTargets] = useState(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
@@ -36,23 +38,27 @@ const ArcherSetup = ({ onSetupComplete }) => {
     const [teamArchers, setTeamArchers] = useState([]);
     const [loadingArchers, setLoadingArchers] = useState(true);
 
-    // Load team archers from Firebase
+    // Load team archers and competitions from Firebase
     useEffect(() => {
-        const loadTeamArchers = async () => {
+        const loadData = async () => {
             if (!currentUser) return;
             
             try {
                 setLoadingArchers(true);
-                const profiles = await loadProfilesFromFirebase(currentUser.uid);
+                const [profiles, competitionsData] = await Promise.all([
+                    loadProfilesFromFirebase(currentUser.uid),
+                    loadCompetitionsFromFirebase(currentUser.uid)
+                ]);
                 setTeamArchers(profiles || []);
+                setCompetitions(competitionsData || []);
             } catch (error) {
-                console.error('Error loading team archers:', error);
+                console.error('Error loading data:', error);
             } finally {
                 setLoadingArchers(false);
             }
         };
 
-        loadTeamArchers();
+        loadData();
     }, [currentUser]);
 
     // Sample archer data - fallback if no team archers loaded
@@ -142,12 +148,22 @@ const ArcherSetup = ({ onSetupComplete }) => {
             return;
         }
 
+        if (!selectedCompetition) {
+            alert('Please select a competition for this scoring session.');
+            return;
+        }
+
         setLoading(true);
         try {
-            console.log('Starting bale setup...', { currentUser, archers });
+            console.log('Starting bale setup...', { currentUser, archers, selectedCompetition });
+            
+            const selectedComp = competitions.find(c => c.id === selectedCompetition);
             
             const baleData = {
                 baleNumber,
+                competitionId: selectedCompetition,
+                competitionName: selectedComp?.name || 'Unknown Competition',
+                competitionType: selectedComp?.type || 'Unknown Type',
                 archers,
                 currentEnd: 1,
                 totalEnds: 12,
@@ -198,19 +214,44 @@ const ArcherSetup = ({ onSetupComplete }) => {
                     Setup Bale {baleNumber}
                 </h2>
 
-                {/* Bale Number Selection */}
-                <div className="mb-6 p-4 bg-gray-50 rounded-md">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Bale Number:
-                    </label>
-                    <input
-                        type="number"
-                        min="1"
-                        max="99"
-                        value={baleNumber}
-                        onChange={(e) => setBaleNumber(parseInt(e.target.value) || 1)}
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                    />
+                {/* Competition and Bale Selection */}
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-blue-50 rounded-md">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Select Competition:
+                        </label>
+                        <select
+                            value={selectedCompetition}
+                            onChange={(e) => setSelectedCompetition(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                        >
+                            <option value="">Choose a competition...</option>
+                            {competitions.map(competition => (
+                                <option key={competition.id} value={competition.id}>
+                                    {competition.name} - {competition.type}
+                                </option>
+                            ))}
+                        </select>
+                        {selectedCompetition && (
+                            <p className="text-xs text-gray-600 mt-1">
+                                Selected: {competitions.find(c => c.id === selectedCompetition)?.name}
+                            </p>
+                        )}
+                    </div>
+                    
+                    <div className="p-4 bg-gray-50 rounded-md">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Bale Number:
+                        </label>
+                        <input
+                            type="number"
+                            min="1"
+                            max="99"
+                            value={baleNumber}
+                            onChange={(e) => setBaleNumber(parseInt(e.target.value) || 1)}
+                            className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                        />
+                    </div>
                 </div>
 
                 {/* Add New Archer Button */}
@@ -433,15 +474,20 @@ const ArcherSetup = ({ onSetupComplete }) => {
                 <div className="mt-8 text-center">
                     <button
                         onClick={handleStartScoring}
-                        disabled={archers.length === 0 || loading}
+                        disabled={archers.length === 0 || !selectedCompetition || loading}
                         className={`px-6 py-3 rounded-md font-medium text-white ${
-                            archers.length === 0 || loading
+                            archers.length === 0 || !selectedCompetition || loading
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-green-600 hover:bg-green-700'
                         }`}
                     >
                         {loading ? 'Saving...' : `Start Scoring (${archers.length} archer${archers.length !== 1 ? 's' : ''})`}
                     </button>
+                    {!selectedCompetition && (
+                        <p className="text-sm text-red-600 mt-2">
+                            Please select a competition to continue
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

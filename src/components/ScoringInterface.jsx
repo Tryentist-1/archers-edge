@@ -17,6 +17,7 @@ function ScoringInterface() {
     const [allEnds, setAllEnds] = useState({}); // Store all ends data
     const [loading, setLoading] = useState(false);
     const [competitionId, setCompetitionId] = useState(null);
+    const [competitionInfo, setCompetitionInfo] = useState(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     // Load existing scores when component mounts or user changes
@@ -36,8 +37,12 @@ function ScoringInterface() {
             
             if (userData.exists()) {
                 const data = userData.data();
-                if (data.currentCompetition) {
-                    setCompetitionId(data.currentCompetition);
+                if (data.currentBale) {
+                    setCompetitionId(data.currentBale.competitionId);
+                    setCompetitionInfo({
+                        name: data.currentBale.competitionName,
+                        type: data.currentBale.competitionType
+                    });
                     
                     // Load scores for current end
                     const endKey = `end_${currentEnd}`;
@@ -149,6 +154,16 @@ function ScoringInterface() {
 
     return (
         <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
+            {/* Competition Info */}
+            {competitionInfo && (
+                <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-md">
+                    <div className="text-center">
+                        <h3 className="text-lg font-semibold text-purple-800">{competitionInfo.name}</h3>
+                        <p className="text-sm text-purple-600">{competitionInfo.type}</p>
+                    </div>
+                </div>
+            )}
+            
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                 End {currentEnd} Scoring
             </h2>

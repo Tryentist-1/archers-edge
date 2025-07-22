@@ -400,7 +400,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
                         <div className="text-sm font-medium text-gray-900">
                           {`${archer.firstName || ''} ${archer.lastName || ''}`.trim() || 'Unnamed Archer'}
                         </div>
-                        <div className="text-sm text-gray-500">{archer.classification || 'No Classification'}</div>
+                        <div className="text-sm text-gray-500">{archer.division || 'No Division'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -536,18 +536,16 @@ const TeamArcherManagement = ({ onNavigate }) => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Classification
+                      Grade
                     </label>
-                    <select
-                      name="classification"
-                      value={newArcherData.classification}
+                    <input
+                      type="text"
+                      name="grade"
+                      value={newArcherData.grade}
                       onChange={handleInputChange}
+                      placeholder="e.g., 10th, 11th, 12th"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Varsity">Varsity</option>
-                      <option value="Junior Varsity">Junior Varsity</option>
-                      <option value="Middle School">Middle School</option>
-                    </select>
+                    />
                   </div>
                   
                   <div>
