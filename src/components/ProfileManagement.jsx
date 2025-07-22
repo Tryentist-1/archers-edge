@@ -39,6 +39,27 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         loadProfiles();
     }, []);
 
+    // Update form when selected profile changes (for editing)
+    useEffect(() => {
+        if (selectedProfile && isEditing) {
+            console.log('Updating form with selected profile:', selectedProfile);
+            setProfileForm({
+                firstName: selectedProfile.firstName || '',
+                lastName: selectedProfile.lastName || '',
+                role: selectedProfile.role || 'Archer',
+                profileType: selectedProfile.profileType || 'Compound',
+                dominantHand: selectedProfile.dominantHand || 'Right',
+                dominantEye: selectedProfile.dominantEye || 'Right',
+                bowWeight: selectedProfile.bowWeight || '',
+                drawLength: selectedProfile.drawLength || '',
+                usArcheryNumber: selectedProfile.usArcheryNumber || '',
+                nfaaNumber: selectedProfile.nfaaNumber || '',
+                defaultClassification: selectedProfile.defaultClassification || 'Varsity',
+                sponsorships: selectedProfile.sponsorships || ''
+            });
+        }
+    }, [selectedProfile, isEditing]);
+
     const loadProfiles = async () => {
         try {
             setLoading(true);
@@ -120,7 +141,10 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     // Debug profileForm state
     useEffect(() => {
         console.log('ProfileForm state changed:', profileForm);
-    }, [profileForm]);
+        console.log('Current selectedProfile:', selectedProfile);
+        console.log('isEditing:', isEditing);
+        console.log('isCreating:', isCreating);
+    }, [profileForm, selectedProfile, isEditing, isCreating]);
 
     const selectProfile = (profile) => {
         setSelectedProfile(profile);
@@ -519,7 +543,6 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 </div>
 
                 <form 
-                    key={`${isCreating ? 'create' : 'edit'}-${selectedProfile?.id || 'new'}`}
                     onSubmit={handleFormSubmit} 
                     className="space-y-6"
                 >
