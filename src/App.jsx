@@ -5,24 +5,40 @@ import ScoringInterface from './components/ScoringInterface';
 import ArcherSetup from './components/ArcherSetup';
 import MultiArcherScoring from './components/MultiArcherScoring';
 import ArcherScorecard from './components/ArcherScorecard';
+import HomePage from './components/HomePage';
+import ProfileManagement from './components/ProfileManagement';
 import { LocalStorage } from './utils/localStorage';
+import { 
+    syncLocalDataToFirebase, 
+    syncFirebaseDataToLocal, 
+    isOnline, 
+    setupNetworkListeners 
+} from './services/firebaseService';
 
 function AppContent() {
-  const { currentUser, loading } = useAuth();
-  const [currentView, setCurrentView] = useState('setup'); // 'setup', 'scoring', 'card'
+  const { currentUser, loading, logout } = useAuth();
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'setup', 'scoring', 'card', 'profile', 'scores'
   const [baleData, setBaleData] = useState(null);
   const [selectedArcherId, setSelectedArcherId] = useState(null);
   const [error, setError] = useState(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'syncing', 'success', 'error'
 
   // Load existing bale data and app state from local storage
   useEffect(() => {
     try {
-      if (!loading) {
+      if (!loading && currentUser) {
+        // Set up network listeners
+        const cleanup = setupNetworkListeners(
+          () => setIsOnline(true),
+          () => setIsOnline(false)
+        );
+
         // Load app state from local storage
         const savedAppState = LocalStorage.loadAppState();
         
         if (savedAppState) {
-          setCurrentView(savedAppState.currentView || 'setup');
+          setCurrentView(savedAppState.currentView || 'home');
           setBaleData(savedAppState.baleData || null);
           setSelectedArcherId(savedAppState.selectedArcherId || null);
         } else {
@@ -33,15 +49,22 @@ function AppContent() {
             setBaleData(savedBaleData);
             setCurrentView('scoring');
           } else {
-            setCurrentView('setup');
+            setCurrentView('home');
           }
         }
+
+        // Sync with Firebase if online
+        if (isOnline) {
+          syncWithFirebase();
+        }
+
+        return cleanup;
       }
     } catch (error) {
       console.error('Error in AppContent useEffect:', error);
       setError(error.message);
     }
-  }, [loading]);
+  }, [loading, currentUser, isOnline]);
 
   // Save app state to local storage whenever it changes
   useEffect(() => {
@@ -87,6 +110,63 @@ function AppContent() {
     LocalStorage.clearAll();
   };
 
+  const handleNavigation = (destination) => {
+    switch (destination) {
+      case 'home':
+        setCurrentView('home');
+        break;
+      case 'profile':
+        setCurrentView('profile');
+        break;
+      case 'scores':
+        setCurrentView('scores');
+        break;
+      case 'new-round':
+        setCurrentView('setup');
+        break;
+      default:
+        setCurrentView('home');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Clear local storage
+      LocalStorage.clearAll();
+      
+      // Clear app state
+      setBaleData(null);
+      setSelectedArcherId(null);
+      setCurrentView('home');
+      
+      // Sign out from Firebase
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force reload if logout fails
+      window.location.reload();
+    }
+  };
+
+  const syncWithFirebase = async () => {
+    if (!currentUser || !isOnline) return;
+    
+    try {
+      setSyncStatus('syncing');
+      await syncLocalDataToFirebase(currentUser.uid);
+      setSyncStatus('success');
+      
+      // Clear success status after 3 seconds
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (error) {
+      console.error('Error syncing with Firebase:', error);
+      setSyncStatus('error');
+      
+      // Clear error status after 5 seconds
+      setTimeout(() => setSyncStatus('idle'), 5000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -125,27 +205,69 @@ function AppContent() {
       
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
-        <div className="w-full px-1">
-          <div className="flex justify-between items-center h-12">
-            <div className="flex items-center">
-              <h1 className="text-lg font-semibold text-gray-900">Archer's Edge</h1>
-              {baleData && (
-                <span className="ml-2 text-xs text-gray-600">
-                  Bale {baleData.baleNumber} • {baleData.archers?.length || 0} archers
-                </span>
+        <div className="w-full px-4">
+          <div className="flex justify-between items-center h-14">
+            {/* Left side - App title and context */}
+            <div className="flex items-center space-x-3">
+              <h1 className="text-xl font-bold text-gray-900">Archer's Edge</h1>
+              {baleData && currentView === 'scoring' && (
+                <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    Bale {baleData.baleNumber}
+                  </span>
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                    {baleData.archers?.length || 0} archers
+                  </span>
+                </div>
               )}
             </div>
-            <div className="flex items-center space-x-2">
-              {currentView !== 'setup' && (
-                <button
-                  onClick={handleNewBale}
-                  className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
-                >
-                  New Bale
-                </button>
+
+            {/* Right side - Navigation and user info */}
+            <div className="flex items-center space-x-3">
+              {/* Navigation buttons */}
+              <div className="flex items-center space-x-2">
+                {currentView !== 'home' && currentView !== 'setup' && (
+                  <button
+                    onClick={() => handleNavigation('home')}
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    Home
+                  </button>
+                )}
+                {currentView === 'scoring' && (
+                  <button
+                    onClick={handleNewBale}
+                    className="px-3 py-1.5 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700 transition-colors"
+                  >
+                    New Bale
+                  </button>
+                )}
+              </div>
+
+              {/* Sync Status */}
+              {syncStatus !== 'idle' && (
+                <div className={`text-xs px-2 py-1 rounded-full ${
+                  syncStatus === 'syncing' ? 'bg-yellow-100 text-yellow-800' :
+                  syncStatus === 'success' ? 'bg-green-100 text-green-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {syncStatus === 'syncing' ? '🔄 Syncing' :
+                   syncStatus === 'success' ? '✅ Synced' :
+                   '❌ Error'}
+                </div>
               )}
-              <div className="text-xs text-gray-600">
-                {currentUser.email}
+
+              {/* User info and logout */}
+              <div className="flex items-center space-x-3">
+                <div className="hidden sm:block text-sm text-gray-600 truncate max-w-32">
+                  {currentUser.email}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </div>
@@ -154,6 +276,13 @@ function AppContent() {
 
       {/* Main Content */}
       <main className="w-full">
+        {currentView === 'home' && (
+          <HomePage 
+            currentUser={currentUser}
+            onNavigate={handleNavigation}
+          />
+        )}
+        
         {currentView === 'setup' && (
           <ArcherSetup onSetupComplete={handleSetupComplete} />
         )}
@@ -172,6 +301,17 @@ function AppContent() {
             archerId={selectedArcherId}
             onBackToScoring={handleBackToScoring}
           />
+        )}
+        
+        {currentView === 'profile' && (
+          <ProfileManagement onNavigate={handleNavigation} />
+        )}
+        
+        {currentView === 'scores' && (
+          <div className="p-4">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Your Scores</h2>
+            <p className="text-gray-600">Score history coming soon...</p>
+          </div>
         )}
       </main>
     </div>

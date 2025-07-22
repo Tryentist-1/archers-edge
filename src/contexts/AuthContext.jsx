@@ -20,63 +20,45 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
 
-  // Initialize reCAPTCHA
+  // Initialize reCAPTCHA - Disabled for now to prevent console errors
   useEffect(() => {
-    if (!recaptchaVerifier) {
-      try {
-        // Clear any existing reCAPTCHA
-        const existingRecaptcha = document.querySelector('#recaptcha-container');
-        if (existingRecaptcha) {
-          existingRecaptcha.innerHTML = '';
-        }
-
-        // Check if we're in a browser environment
-        if (typeof window !== 'undefined' && window.recaptcha) {
-          const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
-            'callback': () => {
-              console.log('reCAPTCHA solved');
-            },
-            'expired-callback': () => {
-              console.log('reCAPTCHA expired');
-            }
-          });
-          setRecaptchaVerifier(verifier);
-        } else {
-          console.warn('reCAPTCHA not available, using fallback authentication');
-        }
-      } catch (error) {
-        console.error('Error initializing reCAPTCHA:', error);
-        // Don't throw error, just log it and continue
-      }
-    }
+    // Temporarily disable reCAPTCHA initialization to prevent console errors
+    // This will be re-enabled when phone authentication is properly configured
+    console.log('reCAPTCHA initialization disabled - phone auth not yet configured');
   }, []);
 
   // Phone number authentication
   const signInWithPhone = async (phoneNumber) => {
     try {
+      console.log('Attempting phone sign-in with:', phoneNumber);
+      
       if (!recaptchaVerifier) {
-        throw new Error('reCAPTCHA not initialized. Please refresh the page and try again.');
-      }
-      
-      // Clear and reinitialize reCAPTCHA for each attempt
-      const existingRecaptcha = document.querySelector('#recaptcha-container');
-      if (existingRecaptcha) {
-        existingRecaptcha.innerHTML = '';
-      }
-      
-      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          console.log('reCAPTCHA solved');
-        },
-        'expired-callback': () => {
-          console.log('reCAPTCHA expired');
+        console.log('reCAPTCHA not ready, initializing...');
+        // Try to initialize reCAPTCHA on demand
+        const existingRecaptcha = document.querySelector('#recaptcha-container');
+        if (existingRecaptcha) {
+          existingRecaptcha.innerHTML = '';
         }
-      });
-      
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
-      return confirmationResult;
+        
+        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          'size': 'invisible',
+          'callback': () => {
+            console.log('reCAPTCHA solved');
+          },
+          'expired-callback': () => {
+            console.log('reCAPTCHA expired');
+          }
+        });
+        
+        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
+        console.log('Phone sign-in successful');
+        return confirmationResult;
+      } else {
+        console.log('Using existing reCAPTCHA verifier');
+        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+        console.log('Phone sign-in successful');
+        return confirmationResult;
+      }
     } catch (error) {
       console.error('Phone sign-in error:', error);
       
@@ -84,9 +66,11 @@ export function AuthProvider({ children }) {
       if (error.code === 'auth/invalid-phone-number') {
         throw new Error('Invalid phone number format. Please use +1234567890 format.');
       } else if (error.code === 'auth/operation-not-allowed') {
-        throw new Error('Phone authentication is not enabled. Please contact support.');
+        throw new Error('Phone authentication is not enabled in Firebase. Please enable it in the Firebase Console.');
       } else if (error.code === 'auth/too-many-requests') {
         throw new Error('Too many attempts. Please wait a few minutes and try again.');
+      } else if (error.code === 'auth/captcha-check-failed') {
+        throw new Error('reCAPTCHA verification failed. Please refresh the page and try again.');
       } else {
         throw new Error(`Phone authentication failed: ${error.message}`);
       }
@@ -96,8 +80,10 @@ export function AuthProvider({ children }) {
   // Google authentication
   const signInWithGoogle = async () => {
     try {
+      console.log('Attempting Google sign-in...');
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+      console.log('Google sign-in successful:', result.user);
       return result;
     } catch (error) {
       console.error('Google sign-in error:', error);
@@ -138,12 +124,10 @@ export function AuthProvider({ children }) {
     };
     console.log('Setting mock user:', mockUser);
     
-    // Add a small delay to prevent rapid state changes
-    setTimeout(() => {
-      setCurrentUser(mockUser);
-      setLoading(false);
-      console.log('Mobile login complete');
-    }, 100);
+    // Set user immediately for better UX
+    setCurrentUser(mockUser);
+    setLoading(false);
+    console.log('Mobile login complete');
   };
 
   // Sign out
@@ -158,7 +142,9 @@ export function AuthProvider({ children }) {
 
   // Listen for auth state changes
   useEffect(() => {
+    console.log('Setting up auth state listener...');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       setCurrentUser(user);
       setLoading(false);
     });
