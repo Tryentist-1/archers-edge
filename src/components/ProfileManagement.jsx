@@ -457,6 +457,31 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                         <p className="text-gray-600 mb-4">
                             Choose your existing profile or create a new one to get started.
                         </p>
+                        {/* Debug info */}
+                        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-sm text-yellow-800">
+                                <strong>Debug Info:</strong> 
+                                Profiles loaded: {profiles.length} | 
+                                Selected Profile: {appSelectedProfile ? `${appSelectedProfile.firstName} ${appSelectedProfile.lastName}` : 'None'} | 
+                                Show Selection: {showProfileSelection ? 'Yes' : 'No'}
+                            </p>
+                            {profiles.length > 0 && (
+                                <div className="mt-2 flex space-x-2">
+                                    <button
+                                        onClick={() => selectProfile(profiles[0])}
+                                        className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                                    >
+                                        Test: Select First Profile
+                                    </button>
+                                    <button
+                                        onClick={() => onProfileSelect(null)}
+                                        className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
+                                    >
+                                        Test: Clear Selection
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {profiles.length > 0 && (
@@ -466,9 +491,9 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                                 {profiles.map(profile => (
                                     <div
                                         key={profile.id}
-                                        className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                                        className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
                                             appSelectedProfile?.id === profile.id
-                                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200'
                                                 : 'border-gray-200 hover:bg-gray-50'
                                         }`}
                                         onClick={() => selectProfile(profile)}
@@ -476,7 +501,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                                         <div className="flex justify-between items-start">
                                             <div className="flex items-center space-x-2">
                                                 {appSelectedProfile?.id === profile.id && (
-                                                    <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                                                    <div className="w-3 h-3 bg-blue-600 rounded-full flex-shrink-0 animate-pulse"></div>
                                                 )}
                                                 <div>
                                                     <h5 className={`font-medium ${
