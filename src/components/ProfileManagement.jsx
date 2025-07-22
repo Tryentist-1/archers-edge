@@ -19,6 +19,7 @@ const ProfileManagement = ({ onNavigate }) => {
     const [profileForm, setProfileForm] = useState({
         firstName: '',
         lastName: '',
+        role: 'Archer', // Archer, Team Captain, Coach, Referee, Event Manager, System Admin
         profileType: 'Compound', // Compound, Recurve, Youth, etc.
         dominantHand: 'Right',
         dominantEye: 'Right',
@@ -180,6 +181,7 @@ const ProfileManagement = ({ onNavigate }) => {
         setProfileForm({
             firstName: '',
             lastName: '',
+            role: 'Archer',
             profileType: 'Compound',
             dominantHand: 'Right',
             dominantEye: 'Right',
@@ -285,7 +287,7 @@ const ProfileManagement = ({ onNavigate }) => {
                                                             {profile.firstName} {profile.lastName}
                                                         </h3>
                                                         <p className="text-sm text-gray-600">
-                                                            {profile.profileType} • {profile.defaultClassification}
+                                                            {profile.role || 'Archer'} • {profile.profileType} • {profile.defaultClassification}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -366,6 +368,21 @@ const ProfileManagement = ({ onNavigate }) => {
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             required
                                         />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                        <select
+                                            value={profileForm.role}
+                                            onChange={(e) => handleInputChange('role', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="Archer">Archer</option>
+                                            <option value="Team Captain">Team Captain</option>
+                                            <option value="Coach">Coach</option>
+                                            <option value="Referee">Referee</option>
+                                            <option value="Event Manager">Event Manager</option>
+                                            <option value="System Admin">System Admin</option>
+                                        </select>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Profile Type</label>

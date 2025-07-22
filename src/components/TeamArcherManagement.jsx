@@ -19,6 +19,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
   const [newArcherData, setNewArcherData] = useState({
     firstName: '',
     lastName: '',
+    role: 'Archer',
     school: '',
     division: '',
     grade: '',
@@ -395,7 +396,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
                           {`${archer.firstName || ''} ${archer.lastName || ''}`.trim() || 'Unnamed Archer'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {archer.school || 'No School'} • {archer.grade || 'No Grade'}
+                          {archer.school || 'No School'} • {archer.grade || 'No Grade'} • {archer.role || 'Archer'}
                         </div>
                       </div>
                     </td>
@@ -526,16 +527,21 @@ const TeamArcherManagement = ({ onNavigate }) => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Grade
+                      Role
                     </label>
-                    <input
-                      type="text"
-                      name="grade"
-                      value={newArcherData.grade}
+                    <select
+                      name="role"
+                      value={newArcherData.role}
                       onChange={handleInputChange}
-                      placeholder="e.g., 10th, 11th, 12th"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      <option value="Archer">Archer</option>
+                      <option value="Team Captain">Team Captain</option>
+                      <option value="Coach">Coach</option>
+                      <option value="Referee">Referee</option>
+                      <option value="Event Manager">Event Manager</option>
+                      <option value="System Admin">System Admin</option>
+                    </select>
                   </div>
                   
                   <div>
