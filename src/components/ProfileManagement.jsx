@@ -15,6 +15,8 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     const [isEditing, setIsEditing] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saveMessage, setSaveMessage] = useState('');
     const [showProfileSelection, setShowProfileSelection] = useState(true);
 
     // Profile form state
@@ -142,6 +144,9 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
 
     const saveProfile = async (profileData) => {
         try {
+            setSaving(true);
+            setSaveMessage('');
+            
             console.log('=== SAVE PROFILE DEBUG ===');
             console.log('Profile data to save:', profileData);
             console.log('Current user:', currentUser);
@@ -150,12 +155,29 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             console.log('Is creating:', isCreating);
             console.log('Selected profile:', selectedProfile);
             
+            // Validate required fields
+            if (!profileData.firstName?.trim() || !profileData.lastName?.trim()) {
+                setSaveMessage('First name and last name are required.');
+                return;
+            }
+            
+            // Check for duplicates
+            const duplicateError = checkForDuplicateProfile(profileData);
+            if (duplicateError) {
+                setSaveMessage(duplicateError);
+                return;
+            }
+            
             let updatedProfiles;
             let profileToSave;
             
             if (isEditing && selectedProfile) {
                 // Update existing profile
-                profileToSave = { ...selectedProfile, ...profileData };
+                profileToSave = { 
+                    ...selectedProfile, 
+                    ...profileData,
+                    updatedAt: new Date().toISOString()
+                };
                 updatedProfiles = profiles.map(p => 
                     p.id === selectedProfile.id ? profileToSave : p
                 );
@@ -196,18 +218,70 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             setIsCreating(false);
             setIsEditing(false);
             
+            // Show success message
+            setSaveMessage('Profile saved successfully!');
+            
             // Notify parent component
             if (onProfileSelect) {
                 onProfileSelect(profileToSave);
             }
             
+            // Clear success message after 3 seconds
+            setTimeout(() => setSaveMessage(''), 3000);
+            
         } catch (error) {
             console.error('Error saving profile:', error);
+            setSaveMessage('Error saving profile. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const cleanupOrphanedScores = (deletedProfileId) => {
+        try {
+            // Clean up bale data that references the deleted profile
+            const baleData = localStorage.getItem('baleData');
+            if (baleData) {
+                const parsedBaleData = JSON.parse(baleData);
+                if (parsedBaleData && parsedBaleData.archers) {
+                    // Remove the deleted profile from archers list
+                    const updatedArchers = parsedBaleData.archers.filter(
+                        archer => archer.id !== deletedProfileId
+                    );
+                    
+                    if (updatedArchers.length !== parsedBaleData.archers.length) {
+                        const updatedBaleData = {
+                            ...parsedBaleData,
+                            archers: updatedArchers
+                        };
+                        localStorage.setItem('baleData', JSON.stringify(updatedBaleData));
+                        console.log('Cleaned up bale data for deleted profile');
+                    }
+                }
+            }
+            
+            // Clean up app state that references the deleted profile
+            const appState = localStorage.getItem('appState');
+            if (appState) {
+                const parsedAppState = JSON.parse(appState);
+                if (parsedAppState && parsedAppState.selectedProfile && 
+                    parsedAppState.selectedProfile.id === deletedProfileId) {
+                    // Clear the selected profile if it was the deleted one
+                    const updatedAppState = {
+                        ...parsedAppState,
+                        selectedProfile: null
+                    };
+                    localStorage.setItem('appState', JSON.stringify(updatedAppState));
+                    console.log('Cleaned up app state for deleted profile');
+                }
+            }
+        } catch (error) {
+            console.error('Error cleaning up orphaned scores:', error);
         }
     };
 
     const deleteProfile = async (profileId) => {
-        if (!window.confirm('Are you sure you want to delete this profile?')) {
+        if (!window.confirm('Are you sure you want to delete this profile? This will also remove any associated score records.')) {
             return;
         }
         
@@ -215,6 +289,9 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             const updatedProfiles = profiles.filter(p => p.id !== profileId);
             localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
             setProfiles(updatedProfiles);
+            
+            // Clean up orphaned score records
+            cleanupOrphanedScores(profileId);
             
             if (selectedProfile && selectedProfile.id === profileId) {
                 setSelectedProfile(null);
@@ -284,6 +361,34 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         console.log('Form data:', profileForm);
         console.log('Form event:', e);
         saveProfile(profileForm);
+    };
+
+    const checkForDuplicateProfile = (profileData) => {
+        const { firstName, lastName, email } = profileData;
+        
+        // Check for exact name match
+        const nameMatch = profiles.find(profile => 
+            profile.firstName?.toLowerCase() === firstName?.toLowerCase() &&
+            profile.lastName?.toLowerCase() === lastName?.toLowerCase()
+        );
+        
+        if (nameMatch && nameMatch.id !== selectedProfile?.id) {
+            return `A profile for ${firstName} ${lastName} already exists.`;
+        }
+        
+        // Check for email match (if email is provided)
+        if (email) {
+            const emailMatch = profiles.find(profile => 
+                profile.email?.toLowerCase() === email?.toLowerCase() &&
+                profile.id !== selectedProfile?.id
+            );
+            
+            if (emailMatch) {
+                return `A profile with email ${email} already exists.`;
+            }
+        }
+        
+        return null;
     };
 
     const handleInputChange = (field, value) => {
@@ -576,20 +681,44 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                         </div>
                     </div>
 
+                    {/* Save Message */}
+                    {saveMessage && (
+                        <div className={`mt-4 p-3 rounded-md ${
+                            saveMessage.includes('Error') || saveMessage.includes('required') || saveMessage.includes('already exists')
+                                ? 'bg-red-100 text-red-700 border border-red-200'
+                                : 'bg-green-100 text-green-700 border border-green-200'
+                        }`}>
+                            {saveMessage}
+                        </div>
+                    )}
+
                     {/* Submit Button */}
                     <div className="flex justify-end space-x-3 pt-6 border-t">
                         <button
                             type="button"
                             onClick={() => setShowProfileSelection(true)}
                             className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                            disabled={saving}
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            disabled={saving}
+                            className={`px-6 py-2 rounded-md transition-colors ${
+                                saving 
+                                    ? 'bg-gray-400 cursor-not-allowed' 
+                                    : 'bg-blue-600 hover:bg-blue-700'
+                            } text-white`}
                         >
-                            {isCreating ? 'Create Profile' : 'Save Changes'}
+                            {saving ? (
+                                <span className="flex items-center">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Saving...
+                                </span>
+                            ) : (
+                                isCreating ? 'Create Profile' : 'Save Changes'
+                            )}
                         </button>
                     </div>
                 </form>
