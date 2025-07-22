@@ -133,7 +133,15 @@ export function AuthProvider({ children }) {
   // Sign out
   const logout = async () => {
     try {
-      await signOut(auth);
+      // Clear current user state first
+      setCurrentUser(null);
+      
+      // Try Firebase sign out (will fail for mock users, but that's ok)
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.log('Firebase sign out failed (expected for mock users):', error);
+      }
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;

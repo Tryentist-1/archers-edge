@@ -40,6 +40,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     const loadProfiles = async () => {
         try {
             setLoading(true);
+            console.log('=== LOAD PROFILES DEBUG ===');
             console.log('Loading profiles...');
             console.log('Current user:', currentUser);
             console.log('Is online:', isOnline());
@@ -61,6 +62,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             
             // Fallback to local storage
             const savedProfiles = localStorage.getItem('archerProfiles');
+            console.log('Raw localStorage data:', savedProfiles);
             if (savedProfiles) {
                 const parsedProfiles = JSON.parse(savedProfiles);
                 console.log('Profiles loaded from localStorage:', parsedProfiles);
@@ -113,6 +115,11 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         }
     }, [loading, profiles, currentUser]);
 
+    // Debug profileForm state
+    useEffect(() => {
+        console.log('ProfileForm state changed:', profileForm);
+    }, [profileForm]);
+
     const selectProfile = (profile) => {
         setSelectedProfile(profile);
         setShowProfileSelection(false);
@@ -133,9 +140,13 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
 
     const saveProfile = async (profileData) => {
         try {
-            console.log('Saving profile:', profileData);
+            console.log('=== SAVE PROFILE DEBUG ===');
+            console.log('Profile data to save:', profileData);
             console.log('Current user:', currentUser);
             console.log('Is online:', isOnline());
+            console.log('Is editing:', isEditing);
+            console.log('Is creating:', isCreating);
+            console.log('Selected profile:', selectedProfile);
             
             let updatedProfiles;
             let profileToSave;
@@ -260,11 +271,19 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
 
     const handleFormSubmit = (e) => {
         e.preventDefault();
+        console.log('=== FORM SUBMIT DEBUG ===');
+        console.log('Form data:', profileForm);
+        console.log('Form event:', e);
         saveProfile(profileForm);
     };
 
     const handleInputChange = (field, value) => {
-        setProfileForm(prev => ({ ...prev, [field]: value }));
+        console.log('Input change:', field, value);
+        setProfileForm(prev => {
+            const newForm = { ...prev, [field]: value };
+            console.log('Updated form:', newForm);
+            return newForm;
+        });
     };
 
     if (loading) {
