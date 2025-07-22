@@ -138,6 +138,30 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         }
     }, [loading, profiles, currentUser]);
 
+    // Update form when selected profile changes (for editing)
+    useEffect(() => {
+        if (selectedProfile && isEditing) {
+            console.log('=== POPULATE FORM DEBUG ===');
+            console.log('Selected profile for editing:', selectedProfile);
+            const formData = {
+                firstName: selectedProfile.firstName || '',
+                lastName: selectedProfile.lastName || '',
+                role: selectedProfile.role || 'Archer',
+                profileType: selectedProfile.profileType || 'Compound',
+                dominantHand: selectedProfile.dominantHand || 'Right',
+                dominantEye: selectedProfile.dominantEye || 'Right',
+                bowWeight: selectedProfile.bowWeight || '',
+                drawLength: selectedProfile.drawLength || '',
+                usArcheryNumber: selectedProfile.usArcheryNumber || '',
+                nfaaNumber: selectedProfile.nfaaNumber || '',
+                defaultClassification: selectedProfile.defaultClassification || 'Varsity',
+                sponsorships: selectedProfile.sponsorships || ''
+            };
+            console.log('Setting form data:', formData);
+            setProfileForm(formData);
+        }
+    }, [selectedProfile, isEditing]);
+
     // Debug profileForm state
     useEffect(() => {
         console.log('ProfileForm state changed:', profileForm);
@@ -585,6 +609,18 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                     </div>
                 </div>
 
+                {/* Debug Form State */}
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h4 className="font-medium text-yellow-800 mb-2">Form Debug Info:</h4>
+                    <div className="text-sm text-yellow-700 space-y-1">
+                        <div>isEditing: {isEditing ? 'Yes' : 'No'}</div>
+                        <div>isCreating: {isCreating ? 'Yes' : 'No'}</div>
+                        <div>Selected Profile: {selectedProfile ? `${selectedProfile.firstName} ${selectedProfile.lastName}` : 'None'}</div>
+                        <div>Form firstName: "{profileForm.firstName}"</div>
+                        <div>Form lastName: "{profileForm.lastName}"</div>
+                    </div>
+                </div>
+
                 <form 
                     onSubmit={handleFormSubmit} 
                     className="space-y-6"
@@ -599,7 +635,11 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                                 onChange={(e) => handleInputChange('firstName', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
+                                placeholder="Enter first name"
                             />
+                            <div className="text-xs text-gray-500 mt-1">
+                                Debug: "{profileForm.firstName}" (length: {profileForm.firstName?.length || 0})
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
@@ -609,7 +649,11 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                                 onChange={(e) => handleInputChange('lastName', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
+                                placeholder="Enter last name"
                             />
+                            <div className="text-xs text-gray-500 mt-1">
+                                Debug: "{profileForm.lastName}" (length: {profileForm.lastName?.length || 0})
+                            </div>
                         </div>
                     </div>
 
