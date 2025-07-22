@@ -268,6 +268,16 @@ export const isOnline = () => {
     return navigator.onLine;
 };
 
+// Check if user is a mock user (mobile test login)
+export const isMockUser = (userId) => {
+    return userId === 'mobile-test-user' || userId === 'mobile@test.com';
+};
+
+// Enhanced online check that considers mock users
+export const shouldUseFirebase = (userId) => {
+    return isOnline() && !isMockUser(userId);
+};
+
 export const setupNetworkListeners = (onOnline, onOffline) => {
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);

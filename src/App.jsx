@@ -15,7 +15,8 @@ import {
     syncFirebaseDataToLocal, 
     isOnline, 
     setupNetworkListeners,
-    loadAppStateFromFirebase
+    loadAppStateFromFirebase,
+    shouldUseFirebase
 } from './services/firebaseService';
 
 function AppContent() {
@@ -53,8 +54,8 @@ function AppContent() {
           setCurrentView('home');
         }
 
-        // Sync with Firebase if online and load any missing data
-        if (isOnline) {
+        // Sync with Firebase if online and not mock user
+        if (shouldUseFirebase(currentUser?.uid)) {
           syncWithFirebase();
           // Also try to load app state from Firebase
           loadAppStateFromFirebase(currentUser.uid).then(firebaseAppState => {
@@ -65,6 +66,8 @@ function AppContent() {
           }).catch(error => {
             console.error('Error loading app state from Firebase:', error);
           });
+        } else {
+          console.log('Skipping Firebase sync - offline or mock user');
         }
 
         return cleanup;
@@ -169,7 +172,10 @@ function AppContent() {
   };
 
   const syncWithFirebase = async () => {
-    if (!currentUser || !isOnline) return;
+    if (!shouldUseFirebase(currentUser?.uid)) {
+      console.log('Skipping Firebase sync - offline or mock user');
+      return;
+    }
     
     try {
       setSyncStatus('syncing');

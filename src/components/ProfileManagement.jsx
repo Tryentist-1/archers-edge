@@ -4,7 +4,8 @@ import {
     saveProfileToFirebase, 
     loadProfilesFromFirebase, 
     deleteProfileFromFirebase,
-    isOnline 
+    isOnline,
+    shouldUseFirebase
 } from '../services/firebaseService';
 
 const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSelectedProfile }) => {
@@ -44,8 +45,8 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             console.log('Current user:', currentUser);
             console.log('Is online:', isOnline());
             
-            // Try to load from Firebase first if online
-            if (isOnline() && currentUser) {
+            // Try to load from Firebase first if online and not mock user
+            if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     console.log('Attempting to load from Firebase...');
                     const firebaseProfiles = await loadProfilesFromFirebase(currentUser.uid);
@@ -56,7 +57,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                     console.error('Error loading from Firebase, falling back to local:', error);
                 }
             } else {
-                console.log('Skipping Firebase load - offline or no user');
+                console.log('Skipping Firebase load - offline, no user, or mock user');
             }
             
             // Fallback to local storage
@@ -178,14 +179,16 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
             setProfiles(updatedProfiles);
             
-            // Save to Firebase if online
-            if (isOnline() && currentUser) {
+            // Save to Firebase if online and not mock user
+            if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     await saveProfileToFirebase(profileToSave, currentUser.uid);
                     console.log('Profile saved to Firebase successfully');
                 } catch (error) {
                     console.error('Error saving to Firebase:', error);
                 }
+            } else {
+                console.log('Skipping Firebase save - offline or mock user');
             }
             
             // Set as selected profile
@@ -218,14 +221,16 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 setShowProfileSelection(true);
             }
             
-            // Delete from Firebase if online
-            if (isOnline() && currentUser) {
+            // Delete from Firebase if online and not mock user
+            if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     await deleteProfileFromFirebase(profileId, currentUser.uid);
                     console.log('Profile deleted from Firebase successfully');
                 } catch (error) {
                     console.error('Error deleting from Firebase:', error);
                 }
+            } else {
+                console.log('Skipping Firebase delete - offline or mock user');
             }
         } catch (error) {
             console.error('Error deleting profile:', error);
