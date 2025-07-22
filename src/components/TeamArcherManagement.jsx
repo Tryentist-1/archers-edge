@@ -231,6 +231,9 @@ const TeamArcherManagement = ({ onNavigate }) => {
 
   const filteredArchers = getFilteredArchers();
 
+  // Ensure allArchers is always an array
+  const safeArchers = Array.isArray(allArchers) ? allArchers : [];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -245,9 +248,6 @@ const TeamArcherManagement = ({ onNavigate }) => {
       </div>
     );
   }
-
-  // Ensure allArchers is always an array
-  const safeArchers = Array.isArray(allArchers) ? allArchers : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
