@@ -23,6 +23,7 @@ function AppContent() {
   const [currentView, setCurrentView] = useState('home'); // 'home', 'setup', 'scoring', 'card', 'profile', 'scores'
   const [baleData, setBaleData] = useState(null);
   const [selectedArcherId, setSelectedArcherId] = useState(null);
+  const [selectedProfile, setSelectedProfile] = useState(null);
   const [error, setError] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'syncing', 'success', 'error'
@@ -81,11 +82,12 @@ function AppContent() {
         currentView,
         baleData,
         selectedArcherId,
+        selectedProfile,
         timestamp: new Date().toISOString()
       };
       LocalStorage.saveAppState(appState);
     }
-  }, [currentView, baleData, selectedArcherId, loading]);
+  }, [currentView, baleData, selectedArcherId, selectedProfile, loading]);
 
   const handleSetupComplete = (newBaleData) => {
     setBaleData(newBaleData);
@@ -263,6 +265,16 @@ function AppContent() {
 
               {/* User info and logout */}
               <div className="flex items-center space-x-3">
+                {selectedProfile && (
+                  <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      {selectedProfile.firstName} {selectedProfile.lastName}
+                    </span>
+                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                      {selectedProfile.role}
+                    </span>
+                  </div>
+                )}
                 <div className="hidden sm:block text-sm text-gray-600 truncate max-w-32">
                   {currentUser.email}
                 </div>
@@ -311,7 +323,11 @@ function AppContent() {
         )}
         
         {currentView === 'profile' && (
-          <ProfileManagement onNavigate={handleNavigation} />
+          <ProfileManagement 
+            onNavigate={handleNavigation}
+            onProfileSelect={setSelectedProfile}
+            selectedProfile={selectedProfile}
+          />
         )}
         
         {currentView === 'competitions' && (
