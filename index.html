@@ -6,6 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Archer's Edge</title>
     <!-- reCAPTCHA for Phone Authentication -->
+    <script>
+      // Debug reCAPTCHA loading
+      window.addEventListener('load', function() {
+        console.log('Page loaded, checking reCAPTCHA...');
+        setTimeout(() => {
+          if (window.grecaptcha) {
+            console.log('reCAPTCHA loaded successfully');
+          } else {
+            console.log('reCAPTCHA not loaded - this is normal in development');
+          }
+        }, 2000);
+      });
+    </script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </head>
   <body>

@@ -44,6 +44,7 @@ export function AuthProvider({ children }) {
         console.log('reCAPTCHA initialized successfully');
       } catch (error) {
         console.error('reCAPTCHA initialization error:', error);
+        console.log('This is expected in development without proper reCAPTCHA site key configuration');
       }
     };
 
@@ -62,7 +63,7 @@ export function AuthProvider({ children }) {
       // Cleanup after 10 seconds
       setTimeout(() => {
         clearInterval(checkRecaptcha);
-        console.log('reCAPTCHA script not loaded after 10 seconds');
+        console.log('reCAPTCHA script not loaded after 10 seconds - this is normal in development');
       }, 10000);
     }
   }, []);
@@ -70,7 +71,10 @@ export function AuthProvider({ children }) {
   // Phone number authentication
   const signInWithPhone = async (phoneNumber) => {
     try {
+      console.log('=== PHONE AUTH DEBUG ===');
       console.log('Attempting phone sign-in with:', phoneNumber);
+      console.log('reCAPTCHA verifier exists:', !!recaptchaVerifier);
+      console.log('grecaptcha available:', !!window.grecaptcha);
       
       if (!recaptchaVerifier) {
         console.log('reCAPTCHA not ready, initializing...');
@@ -83,24 +87,28 @@ export function AuthProvider({ children }) {
         const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           'size': 'invisible',
           'callback': () => {
-            console.log('reCAPTCHA solved');
+            console.log('reCAPTCHA solved successfully');
           },
           'expired-callback': () => {
             console.log('reCAPTCHA expired');
           }
         });
         
+        console.log('Created reCAPTCHA verifier:', verifier);
         const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
-        console.log('Phone sign-in successful');
+        console.log('Phone sign-in successful, confirmation result:', confirmationResult);
         return confirmationResult;
       } else {
         console.log('Using existing reCAPTCHA verifier');
         const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-        console.log('Phone sign-in successful');
+        console.log('Phone sign-in successful, confirmation result:', confirmationResult);
         return confirmationResult;
       }
     } catch (error) {
-      console.error('Phone sign-in error:', error);
+      console.error('=== PHONE AUTH ERROR ===');
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Full error:', error);
       
       // Provide more helpful error messages
       if (error.code === 'auth/invalid-phone-number') {
@@ -111,6 +119,8 @@ export function AuthProvider({ children }) {
         throw new Error('Too many attempts. Please wait a few minutes and try again.');
       } else if (error.code === 'auth/captcha-check-failed') {
         throw new Error('reCAPTCHA verification failed. Please refresh the page and try again.');
+      } else if (error.code === 'auth/recaptcha-not-enabled') {
+        throw new Error('reCAPTCHA is not enabled for this domain. Please check Firebase Console settings.');
       } else {
         throw new Error(`Phone authentication failed: ${error.message}`);
       }
