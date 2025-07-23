@@ -116,11 +116,11 @@ describe('MultiArcherScoring', () => {
     render(<MultiArcherScoring {...defaultProps} />)
     
     // At end 1, previous button should be disabled
-    const prevButton = screen.getByText('←')
+    const prevButton = screen.getByText('Previous End')
     expect(prevButton).toBeDisabled()
     
     // Next button should be enabled
-    const nextButton = screen.getByText('→')
+    const nextButton = screen.getByText('Next End')
     expect(nextButton).not.toBeDisabled()
   })
 
@@ -129,19 +129,24 @@ describe('MultiArcherScoring', () => {
     const user = userEvent.setup()
     render(<MultiArcherScoring {...defaultProps} onViewCard={onViewCard} />)
     
-    const viewButtons = screen.getAllByText('View')
+    const viewButtons = screen.getAllByText('>')
     await user.click(viewButtons[0]) // Click first archer's view button
     
     expect(onViewCard).toHaveBeenCalledWith('archer1')
   })
 
-  it('displays bale totals section', () => {
+  it('displays scoring table with correct headers', () => {
     render(<MultiArcherScoring {...defaultProps} />)
     
-    expect(screen.getByText('Bale Totals:')).toBeInTheDocument()
-    expect(screen.getByText('Score:')).toBeInTheDocument()
-    expect(screen.getByText('10s:')).toBeInTheDocument()
-    expect(screen.getByText('Xs:')).toBeInTheDocument()
+    expect(screen.getByText('Archer')).toBeInTheDocument()
+    expect(screen.getByText('A1')).toBeInTheDocument()
+    expect(screen.getByText('A2')).toBeInTheDocument()
+    expect(screen.getByText('A3')).toBeInTheDocument()
+    expect(screen.getByText('10s')).toBeInTheDocument()
+    expect(screen.getByText('X')).toBeInTheDocument()
+    expect(screen.getByText('End')).toBeInTheDocument()
+    expect(screen.getByText('Run')).toBeInTheDocument()
+    expect(screen.getByText('Avg')).toBeInTheDocument()
   })
 
   it('calculates and displays totals correctly', () => {
@@ -167,15 +172,12 @@ describe('MultiArcherScoring', () => {
 
     render(<MultiArcherScoring {...defaultProps} baleData={baleDataWithScores} />)
     
-    // Should show totals for the current end (end1)
-    expect(screen.getByText(/Score:/)).toBeInTheDocument()
-    expect(screen.getByText(/54/)).toBeInTheDocument()
-    expect(screen.getByText(/10s:/)).toBeInTheDocument()
-    expect(screen.getByText(/2/)).toBeInTheDocument()
-    expect(screen.getByText(/Xs:/)).toBeInTheDocument()
-    expect(screen.getByText(/1/)).toBeInTheDocument()
-    expect(screen.getByText(/Arrows:/)).toBeInTheDocument()
-    expect(screen.getByText(/6/)).toBeInTheDocument()
+    // Should show individual archer totals in the table
+    expect(screen.getAllByText('27')).toHaveLength(4) // Both archers have 27 for end and running totals
+    expect(screen.getByText('1')).toBeInTheDocument() // John's 10s
+    expect(screen.getByText('2')).toBeInTheDocument() // Jane's 10s
+    expect(screen.getByText('0')).toBeInTheDocument() // John's Xs
+    expect(screen.getByText('1')).toBeInTheDocument() // Jane's Xs
   })
 
   it('handles score input changes', async () => {

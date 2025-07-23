@@ -20,11 +20,51 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
 
-  // Initialize reCAPTCHA - Disabled for now to prevent console errors
+  // Initialize reCAPTCHA
   useEffect(() => {
-    // Temporarily disable reCAPTCHA initialization to prevent console errors
-    // This will be re-enabled when phone authentication is properly configured
-    console.log('reCAPTCHA initialization disabled - phone auth not yet configured');
+    const initializeRecaptcha = () => {
+      try {
+        console.log('Initializing reCAPTCHA...');
+        const existingRecaptcha = document.querySelector('#recaptcha-container');
+        if (existingRecaptcha) {
+          existingRecaptcha.innerHTML = '';
+        }
+        
+        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          'size': 'invisible',
+          'callback': () => {
+            console.log('reCAPTCHA solved');
+          },
+          'expired-callback': () => {
+            console.log('reCAPTCHA expired');
+          }
+        });
+        
+        setRecaptchaVerifier(verifier);
+        console.log('reCAPTCHA initialized successfully');
+      } catch (error) {
+        console.error('reCAPTCHA initialization error:', error);
+      }
+    };
+
+    // Wait for reCAPTCHA script to load
+    if (window.grecaptcha) {
+      initializeRecaptcha();
+    } else {
+      // Wait for reCAPTCHA to be available
+      const checkRecaptcha = setInterval(() => {
+        if (window.grecaptcha) {
+          clearInterval(checkRecaptcha);
+          initializeRecaptcha();
+        }
+      }, 100);
+      
+      // Cleanup after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkRecaptcha);
+        console.log('reCAPTCHA script not loaded after 10 seconds');
+      }, 10000);
+    }
   }, []);
 
   // Phone number authentication

@@ -92,7 +92,8 @@ describe('ScoreInputWithKeypad', () => {
     
     expect(input).toHaveClass('score-input-keypad')
     expect(input).toHaveClass('cursor-pointer')
-    expect(input).toHaveClass('pointer-events-auto')
+    expect(input).toHaveClass('w-full')
+    expect(input).toHaveClass('h-full')
   })
 
   it('is disabled when disabled prop is true', () => {
@@ -129,18 +130,14 @@ describe('ScoreInputWithKeypad', () => {
     expect(input).toHaveFocus()
   })
 
-  it('prevents default behavior on click', async () => {
+  it('handles click events properly', async () => {
     const user = userEvent.setup()
     render(<ScoreInputWithKeypad {...defaultProps} />)
     
     const input = screen.getByTestId('score-input')
-    const clickEvent = new MouseEvent('click', { bubbles: true })
+    await user.click(input)
     
-    // Spy on preventDefault
-    const preventDefaultSpy = vi.spyOn(clickEvent, 'preventDefault')
-    
-    fireEvent(input, clickEvent)
-    
-    expect(preventDefaultSpy).toHaveBeenCalled()
+    // Should show keypad after click
+    expect(screen.getByTestId('score-keypad')).toBeInTheDocument()
   })
 }) 

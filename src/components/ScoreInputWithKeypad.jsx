@@ -201,6 +201,7 @@ function ScoreInputWithKeypad({
                 disabled={disabled}
                 autoFocus={autoFocus}
                 readOnly
+                data-testid="score-input"
                 className={`
                     score-input-keypad
                     w-full h-full text-center text-sm font-bold border-0 
