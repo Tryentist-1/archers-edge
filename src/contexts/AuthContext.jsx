@@ -1,13 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  signInWithPhoneNumber, 
-  GoogleAuthProvider, 
-  signInWithPopup,
-  onAuthStateChanged,
-  signOut,
-  RecaptchaVerifier
-} from 'firebase/auth';
-import { auth } from '../config/firebase.js';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
@@ -18,205 +9,156 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
+  const [userPreferences, setUserPreferences] = useState({
+    myProfileId: null,
+    favoriteProfileIds: [],
+    lastLogin: null
+  });
 
-  // Initialize reCAPTCHA
+  // Load user preferences from cookies/localStorage on mount
   useEffect(() => {
-    const initializeRecaptcha = () => {
+    const loadUserPreferences = () => {
       try {
-        console.log('Initializing reCAPTCHA...');
-        const existingRecaptcha = document.querySelector('#recaptcha-container');
-        if (existingRecaptcha) {
-          existingRecaptcha.innerHTML = '';
+        // Try to get from localStorage first
+        const stored = localStorage.getItem('archers_edge_user_preferences');
+        if (stored) {
+          const preferences = JSON.parse(stored);
+          setUserPreferences(preferences);
+          
+          // Create a simple user object
+          const user = {
+            uid: preferences.myProfileId || 'anonymous',
+            email: 'user@archers-edge.local',
+            displayName: preferences.myProfileId ? 'Authenticated User' : 'Anonymous User',
+            isAnonymous: !preferences.myProfileId
+          };
+          
+          setCurrentUser(user);
+        } else {
+          // Create anonymous user
+          setCurrentUser({
+            uid: 'anonymous',
+            email: 'anonymous@archers-edge.local',
+            displayName: 'Anonymous User',
+            isAnonymous: true
+          });
         }
-        
-        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'invisible',
-          'callback': () => {
-            console.log('reCAPTCHA solved');
-          },
-          'expired-callback': () => {
-            console.log('reCAPTCHA expired');
-          }
-        });
-        
-        setRecaptchaVerifier(verifier);
-        console.log('reCAPTCHA initialized successfully');
       } catch (error) {
-        console.error('reCAPTCHA initialization error:', error);
-        console.log('This is expected in development without proper reCAPTCHA site key configuration');
+        console.error('Error loading user preferences:', error);
+        // Fallback to anonymous user
+        setCurrentUser({
+          uid: 'anonymous',
+          email: 'anonymous@archers-edge.local',
+          displayName: 'Anonymous User',
+          isAnonymous: true
+        });
+      } finally {
+        setLoading(false);
       }
     };
 
-    // Wait for reCAPTCHA script to load
-    if (window.grecaptcha) {
-      initializeRecaptcha();
-    } else {
-      // Wait for reCAPTCHA to be available
-      const checkRecaptcha = setInterval(() => {
-        if (window.grecaptcha) {
-          clearInterval(checkRecaptcha);
-          initializeRecaptcha();
-        }
-      }, 100);
-      
-      // Cleanup after 10 seconds
-      setTimeout(() => {
-        clearInterval(checkRecaptcha);
-        console.log('reCAPTCHA script not loaded after 10 seconds - this is normal in development');
-      }, 10000);
-    }
+    loadUserPreferences();
   }, []);
 
-  // Phone number authentication
-  const signInWithPhone = async (phoneNumber) => {
+  // Save user preferences to localStorage
+  const saveUserPreferences = (preferences) => {
     try {
-      console.log('=== PHONE AUTH DEBUG ===');
-      console.log('Attempting phone sign-in with:', phoneNumber);
-      console.log('reCAPTCHA verifier exists:', !!recaptchaVerifier);
-      console.log('grecaptcha available:', !!window.grecaptcha);
+      const updatedPreferences = {
+        ...userPreferences,
+        ...preferences,
+        lastLogin: new Date().toISOString()
+      };
       
-      if (!recaptchaVerifier) {
-        console.log('reCAPTCHA not ready, initializing...');
-        // Try to initialize reCAPTCHA on demand
-        const existingRecaptcha = document.querySelector('#recaptcha-container');
-        if (existingRecaptcha) {
-          existingRecaptcha.innerHTML = '';
-        }
-        
-        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'invisible',
-          'callback': () => {
-            console.log('reCAPTCHA solved successfully');
-          },
-          'expired-callback': () => {
-            console.log('reCAPTCHA expired');
-          }
-        });
-        
-        console.log('Created reCAPTCHA verifier:', verifier);
-        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
-        console.log('Phone sign-in successful, confirmation result:', confirmationResult);
-        return confirmationResult;
-      } else {
-        console.log('Using existing reCAPTCHA verifier');
-        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-        console.log('Phone sign-in successful, confirmation result:', confirmationResult);
-        return confirmationResult;
-      }
-    } catch (error) {
-      console.error('=== PHONE AUTH ERROR ===');
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      console.error('Full error:', error);
+      localStorage.setItem('archers_edge_user_preferences', JSON.stringify(updatedPreferences));
+      setUserPreferences(updatedPreferences);
       
-      // Provide more helpful error messages
-      if (error.code === 'auth/invalid-phone-number') {
-        throw new Error('Invalid phone number format. Please use +1234567890 format.');
-      } else if (error.code === 'auth/operation-not-allowed') {
-        throw new Error('Phone authentication is not enabled in Firebase. Please enable it in the Firebase Console.');
-      } else if (error.code === 'auth/too-many-requests') {
-        throw new Error('Too many attempts. Please wait a few minutes and try again.');
-      } else if (error.code === 'auth/captcha-check-failed') {
-        throw new Error('reCAPTCHA verification failed. Please refresh the page and try again.');
-      } else if (error.code === 'auth/recaptcha-not-enabled') {
-        throw new Error('reCAPTCHA is not enabled for this domain. Please check Firebase Console settings.');
-      } else {
-        throw new Error(`Phone authentication failed: ${error.message}`);
-      }
-    }
-  };
-
-  // Google authentication
-  const signInWithGoogle = async () => {
-    try {
-      console.log('Attempting Google sign-in...');
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      console.log('Google sign-in successful:', result.user);
-      return result;
-    } catch (error) {
-      console.error('Google sign-in error:', error);
+      // Update current user
+      const user = {
+        uid: updatedPreferences.myProfileId || 'anonymous',
+        email: 'user@archers-edge.local',
+        displayName: updatedPreferences.myProfileId ? 'Authenticated User' : 'Anonymous User',
+        isAnonymous: !updatedPreferences.myProfileId
+      };
       
-      // If Firebase auth fails on mobile, use mock authentication
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (isMobile) {
-        console.log('Firebase auth failed on mobile, using mock authentication');
-        const mockUser = {
-          uid: 'mobile-test-user',
-          email: 'mobile@test.com',
-          displayName: 'Mobile Test User',
-          isAnonymous: false
-        };
-        setCurrentUser(mockUser);
-        return { user: mockUser };
-      }
-      
-      throw error;
-    }
-  };
-
-  // Manual mobile login for testing
-  const signInAsMobile = () => {
-    console.log('signInAsMobile called');
-    
-    // Prevent multiple calls
-    if (currentUser) {
-      console.log('User already logged in, skipping mobile login');
-      return;
-    }
-    
-    const mockUser = {
-      uid: 'mobile-test-user',
-      email: 'mobile@test.com',
-      displayName: 'Mobile Test User',
-      isAnonymous: false
-    };
-    console.log('Setting mock user:', mockUser);
-    
-    // Set user immediately for better UX
-    setCurrentUser(mockUser);
-    setLoading(false);
-    console.log('Mobile login complete');
-  };
-
-  // Sign out
-  const logout = async () => {
-    try {
-      // Clear current user state first
-      setCurrentUser(null);
-      
-      // Try Firebase sign out (will fail for mock users, but that's ok)
-      try {
-        await signOut(auth);
-      } catch (error) {
-        console.log('Firebase sign out failed (expected for mock users):', error);
-      }
-    } catch (error) {
-      console.error('Sign out error:', error);
-      throw error;
-    }
-  };
-
-  // Listen for auth state changes
-  useEffect(() => {
-    console.log('Setting up auth state listener...');
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       setCurrentUser(user);
-      setLoading(false);
-    });
+    } catch (error) {
+      console.error('Error saving user preferences:', error);
+    }
+  };
 
-    return unsubscribe;
-  }, []);
+  // Set "Me" profile
+  const setMyProfile = (profileId) => {
+    saveUserPreferences({ myProfileId: profileId });
+  };
+
+  // Add/remove favorite profiles
+  const toggleFavorite = (profileId) => {
+    const currentFavorites = userPreferences.favoriteProfileIds || [];
+    const newFavorites = currentFavorites.includes(profileId)
+      ? currentFavorites.filter(id => id !== profileId)
+      : [...currentFavorites, profileId];
+    
+    saveUserPreferences({ favoriteProfileIds: newFavorites });
+  };
+
+  // Get "Me" profile ID
+  const getMyProfileId = () => {
+    return userPreferences.myProfileId;
+  };
+
+  // Get favorite profile IDs
+  const getFavoriteProfileIds = () => {
+    return userPreferences.favoriteProfileIds || [];
+  };
+
+  // Check if a profile is favorited
+  const isFavorite = (profileId) => {
+    return userPreferences.favoriteProfileIds?.includes(profileId) || false;
+  };
+
+  // Simple login (just update preferences)
+  const login = (profileId) => {
+    setMyProfile(profileId);
+  };
+
+  // Simple logout (clear preferences)
+  const logout = () => {
+    try {
+      localStorage.removeItem('archers_edge_user_preferences');
+      setUserPreferences({
+        myProfileId: null,
+        favoriteProfileIds: [],
+        lastLogin: null
+      });
+      
+      setCurrentUser({
+        uid: 'anonymous',
+        email: 'anonymous@archers-edge.local',
+        displayName: 'Anonymous User',
+        isAnonymous: true
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
+  // Check if user has set up their preferences
+  const isSetup = () => {
+    return !!userPreferences.myProfileId;
+  };
 
   const value = {
     currentUser,
-    signInWithPhone,
-    signInWithGoogle,
-    signInAsMobile,
+    loading,
+    userPreferences,
+    setMyProfile,
+    toggleFavorite,
+    getMyProfileId,
+    getFavoriteProfileIds,
+    isFavorite,
+    login,
     logout,
-    loading
+    isSetup
   };
 
   return (

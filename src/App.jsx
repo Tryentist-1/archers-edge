@@ -26,7 +26,7 @@ import {
 } from './services/firebaseService';
 
 function AppContent() {
-  const { currentUser, loading, logout } = useAuth();
+  const { currentUser, loading, logout, isSetup } = useAuth();
   const [currentView, setCurrentView] = useState('home'); // 'home', 'new-round', 'setup', 'scoring', 'card', 'profile', 'scores', 'data-sync', 'archer-stats', 'first-login-prompt'
   const [baleData, setBaleData] = useState(null);
   const [selectedArcherId, setSelectedArcherId] = useState(null);
@@ -41,7 +41,7 @@ function AppContent() {
   // Load existing bale data and app state from local storage and Firebase
   useEffect(() => {
     try {
-      if (!loading && currentUser) {
+      if (!loading) {
         // Set up network listeners
         const cleanup = setupNetworkListeners(
           () => setIsOnline(true),
@@ -75,8 +75,8 @@ function AppContent() {
           }
         }
 
-        // Sync with Firebase if online and not mock user
-        if (shouldUseFirebase(currentUser?.uid)) {
+        // Sync with Firebase if online and user has set up their profile
+        if (shouldUseFirebase(currentUser?.uid) && isSetup()) {
           syncWithFirebase();
           // Also try to load app state from Firebase
           loadAppStateFromFirebase(currentUser.uid).then(firebaseAppState => {
@@ -88,7 +88,7 @@ function AppContent() {
             console.error('Error loading app state from Firebase:', error);
           });
         } else {
-          console.log('Skipping Firebase sync - offline or mock user');
+          console.log('Skipping Firebase sync - offline, mock user, or no profile setup');
         }
 
         return cleanup;
@@ -97,7 +97,7 @@ function AppContent() {
       console.error('Error in AppContent useEffect:', error);
       setError(error.message);
     }
-  }, [loading, currentUser, isOnline]);
+  }, [loading, currentUser, isOnline, isSetup]);
 
   // Save app state to local storage whenever it changes
   useEffect(() => {
@@ -291,115 +291,61 @@ function AppContent() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <strong>Error:</strong> {error}
-          </div>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentUser) {
-    return <Login />;
-  }
-
   return (
-    <div className="min-h-screen bg-white">
-      
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="w-full px-4">
-          <div className="flex justify-between items-center h-14">
-            {/* Left side - App title and Home button */}
-            <div className="flex items-center space-x-3">
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
               <button
-                onClick={() => handleNavigation('home')}
-                className="text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                onClick={() => setCurrentView('home')}
+                className="text-xl font-bold text-blue-600 hover:text-blue-700"
               >
                 Archer's Edge
               </button>
-              {baleData && currentView === 'scoring' && (
-                <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    Bale {baleData.baleNumber}
-                  </span>
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                    {baleData.archers?.length || 0} archers
-                  </span>
-                </div>
-              )}
             </div>
-
-            {/* Right side - Navigation and user info */}
-            <div className="flex items-center space-x-3">
-
-              {/* Sync Status */}
-              {syncStatus !== 'idle' && (
-                <div className={`text-xs px-2 py-1 rounded-full ${
-                  syncStatus === 'syncing' ? 'bg-yellow-100 text-yellow-800' :
-                  syncStatus === 'success' ? 'bg-green-100 text-green-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {syncStatus === 'syncing' ? '🔄 Syncing' :
-                   syncStatus === 'success' ? '✅ Synced' :
-                   '❌ Error'}
-                </div>
+            
+            <div className="flex items-center space-x-4">
+              {currentUser && !currentUser.isAnonymous && (
+                <span className="text-sm text-gray-600">
+                  {currentUser.displayName}
+                </span>
               )}
-
-              {/* User info and logout */}
-              <div className="flex items-center space-x-3">
-                {myProfile && (
-                  <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
-                    <button
-                      onClick={() => handleNavigation('profile')}
-                      className="bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-colors cursor-pointer"
-                    >
-                      {myProfile.firstName} {myProfile.lastName}
-                    </button>
-                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                      {myProfile.role}
-                    </span>
-                  </div>
-                )}
-                <div className="hidden sm:block text-sm text-gray-600 truncate max-w-32">
-                  {currentUser.email}
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
+              <button
+                onClick={handleLogout}
+                className="text-sm text-red-600 hover:text-red-800"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="w-full">
-        {currentView === 'first-login-prompt' && (
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        )}
+
+        {/* Login Screen */}
+        {!loading && (!currentUser || currentUser.isAnonymous) && (
+          <Login />
+        )}
+
+        {/* First Login Prompt */}
+        {!loading && currentUser && !currentUser.isAnonymous && !hasCompletedFirstLogin && currentView === 'first-login-prompt' && (
           <FirstLoginPrompt 
             onComplete={handleFirstLoginComplete}
             onSkip={handleFirstLoginSkip}
