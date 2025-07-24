@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   loadProfilesFromFirebase,
   saveProfileToFirebase,
+  deleteProfileFromFirebase,
   shouldUseFirebase,
   isOnline
 } from '../services/firebaseService';
@@ -362,6 +363,94 @@ const TeamArcherManagement = ({ onNavigate }) => {
     }));
   };
 
+  // Profile management functions moved from ProfileManagement
+  const toggleTag = async (profileId, tagType) => {
+    try {
+      const profile = allArchers.find(p => p.id === profileId);
+      if (!profile) return;
+
+      // Toggle the tag
+      const updatedProfile = {
+        ...profile,
+        [tagType]: !profile[tagType],
+        updatedAt: new Date().toISOString()
+      };
+
+      // If setting "isMe" to true, unset it for all other profiles
+      if (tagType === 'isMe' && !profile[tagType]) {
+        const updatedProfiles = allArchers.map(p => ({
+          ...p,
+          isMe: p.id === profileId ? true : false,
+          updatedAt: new Date().toISOString()
+        }));
+        setAllArchers(updatedProfiles);
+        localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
+        
+        // Save to Firebase
+        if (shouldUseFirebase(currentUser?.uid)) {
+          for (const prof of updatedProfiles) {
+            try {
+              await saveProfileToFirebase(prof, currentUser.uid);
+            } catch (error) {
+              console.error('Error saving profile to Firebase:', error);
+            }
+          }
+        }
+      } else {
+        // Update single profile
+        const updatedProfiles = allArchers.map(p => 
+          p.id === profileId ? updatedProfile : p
+        );
+        setAllArchers(updatedProfiles);
+        localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
+        
+        // Save to Firebase
+        if (shouldUseFirebase(currentUser?.uid)) {
+          try {
+            await saveProfileToFirebase(updatedProfile, currentUser.uid);
+          } catch (error) {
+            console.error('Error saving profile to Firebase:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling tag:', error);
+    }
+  };
+
+  const deleteProfile = async (profileId) => {
+    if (!window.confirm('Are you sure you want to delete this profile? This will also remove any associated score records.')) {
+      return;
+    }
+    
+    try {
+      const updatedProfiles = allArchers.filter(p => p.id !== profileId);
+      localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
+      setAllArchers(updatedProfiles);
+      
+      // Delete from Firebase if online and not mock user
+      if (shouldUseFirebase(currentUser?.uid)) {
+        try {
+          await deleteProfileFromFirebase(profileId, currentUser.uid);
+          console.log('Profile deleted from Firebase successfully');
+        } catch (error) {
+          console.error('Error deleting from Firebase:', error);
+        }
+      } else {
+        console.log('Skipping Firebase delete - offline or mock user');
+      }
+    } catch (error) {
+      console.error('Error deleting profile:', error);
+    }
+  };
+
+  const handleViewStats = (profileId) => {
+    // Navigate to archer stats view
+    if (onNavigate) {
+      onNavigate('archer-stats', { archerId: profileId });
+    }
+  };
+
   const filteredArchers = getFilteredArchers();
 
   if (loading) {
@@ -386,10 +475,10 @@ const TeamArcherManagement = ({ onNavigate }) => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Coaches</h1>
               <p className="text-gray-600 mt-1">
                 {userRole === 'Coach' || userRole === 'Team Captain' || userRole === 'Event Manager' || userRole === 'System Admin' 
-                  ? 'Manage all team archers for OAS qualification rounds'
+                  ? 'Manage all team archers and profiles for OAS qualification rounds'
                   : 'View team archers (you can only edit your own profile)'
                 }
               </p>
@@ -653,6 +742,43 @@ const TeamArcherManagement = ({ onNavigate }) => {
                         >
                           Score
                         </button>
+                        <button
+                          onClick={() => handleViewStats(archer.id)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          Stats
+                        </button>
+                        {/* Profile management actions for coaches */}
+                        {(userRole === 'Coach' || userRole === 'Team Captain' || userRole === 'Event Manager' || userRole === 'System Admin') && (
+                          <>
+                            <button
+                              onClick={() => toggleTag(archer.id, 'isMe')}
+                              className={`px-2 py-1 rounded text-xs ${
+                                archer.isMe 
+                                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                              }`}
+                            >
+                              {archer.isMe ? 'Me' : 'Tag Me'}
+                            </button>
+                            <button
+                              onClick={() => toggleTag(archer.id, 'isFavorite')}
+                              className={`px-2 py-1 rounded text-xs ${
+                                archer.isFavorite 
+                                  ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
+                                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                              }`}
+                            >
+                              {archer.isFavorite ? '⭐' : '⭐'}
+                            </button>
+                            <button
+                              onClick={() => deleteProfile(archer.id)}
+                              className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
                         {/* Show "Me" indicator for own profile */}
                         {myProfile && archer.id === myProfile.id && (
                           <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">

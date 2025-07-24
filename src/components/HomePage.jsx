@@ -251,7 +251,7 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                         </div>
                     </div>
 
-                    {/* Team Archer Management Card (Coach Tools) */}
+                    {/* Coaches Card (Coach Tools) */}
                     <div 
                         className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
                         onClick={() => handleNavigation('team-archers')}
@@ -263,7 +263,7 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-gray-800">Team Archer Management</h3>
+                                <h3 className="text-lg font-semibold text-gray-800">Coaches</h3>
                                 <p className="text-sm text-gray-600">Coach Tools - Manage all team profiles and assignments</p>
                             </div>
                             <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

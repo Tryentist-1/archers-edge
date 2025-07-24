@@ -3,7 +3,7 @@
 ## 🐛 BUGS AND TWEAKS TODO
 - [x] **Header Navigation Fix** - "Archer's Edge" → Home, "First Last" → My Profile, "Logout" (remove selected profile confusion) ✅ COMPLETED
 - [x] **Home Page Card Layout** - "My Profile", "New Ranking Round", "Score History" (default to "Show My Scores Only") ✅ COMPLETED
-- [x] **Team Archer Management** - Replicate Profile Management for coaches to manage all team profiles ✅ COMPLETED
+- [x] **Coaches** - Consolidate Profile Management into Team Archer Management and rename to "Coaches" ✅ COMPLETED
 - [x] **Remove Quick Stats** - Clean up homepage layout ✅ COMPLETED
 - [x] **Competitions** - Add to homepage ✅ COMPLETED
 - [x] **Data Sync** - Add to homepage ✅ COMPLETED
