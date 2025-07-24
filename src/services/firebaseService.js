@@ -8,47 +8,50 @@ import {
     where, 
     deleteDoc,
     updateDoc,
-    serverTimestamp 
+    serverTimestamp,
+    orderBy
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 // Profile Management
 export const saveProfileToFirebase = async (profile, userId) => {
     try {
-        console.log('Saving profile to Firebase:', { profile, userId });
+        console.log('Saving shared profile to Firebase:', { profile, userId });
         const profileRef = doc(db, 'profiles', profile.id);
         const profileData = {
             ...profile,
-            userId,
-            updatedAt: serverTimestamp()
+            createdBy: userId, // Track who created it
+            updatedBy: userId, // Track who last updated it
+            updatedAt: serverTimestamp(),
+            isShared: true // Mark as shared profile
         };
-        console.log('Profile data to save:', profileData);
+        console.log('Shared profile data to save:', profileData);
         await setDoc(profileRef, profileData);
-        console.log('Profile saved to Firebase successfully');
+        console.log('Shared profile saved to Firebase successfully');
         return true;
     } catch (error) {
-        console.error('Error saving profile to Firebase:', error);
+        console.error('Error saving shared profile to Firebase:', error);
         throw error;
     }
 };
 
 export const loadProfilesFromFirebase = async (userId) => {
     try {
-        console.log('Loading profiles from Firebase for user:', userId);
+        console.log('Loading shared profiles from Firebase for user:', userId);
         const profilesRef = collection(db, 'profiles');
-        const q = query(profilesRef, where('userId', '==', userId));
-        console.log('Executing query:', q);
-        const querySnapshot = await getDocs(q);
+        
+        // Load ALL profiles (shared system) - no user filtering
+        const querySnapshot = await getDocs(profilesRef);
         
         const profiles = [];
         querySnapshot.forEach((doc) => {
             profiles.push({ id: doc.id, ...doc.data() });
         });
         
-        console.log('Profiles loaded from Firebase:', profiles);
+        console.log(`Shared profiles loaded from Firebase: ${profiles.length} profiles`);
         return profiles;
     } catch (error) {
-        console.error('Error loading profiles from Firebase:', error);
+        console.error('Error loading shared profiles from Firebase:', error);
         throw error;
     }
 };
@@ -286,4 +289,512 @@ export const setupNetworkListeners = (onOnline, onOffline) => {
         window.removeEventListener('online', onOnline);
         window.removeEventListener('offline', onOffline);
     };
+}; 
+
+// Round Management - Professional OAS Format
+export const saveCompletedRoundToFirebase = async (roundData, userId) => {
+    try {
+        const roundRef = doc(db, 'completedRounds', `${userId}_${Date.now()}`);
+        const roundRecord = {
+            ...roundData,
+            id: roundRef.id,
+            userId,
+            completedAt: new Date().toISOString(), // Use ISO string for localStorage compatibility
+            roundType: 'OAS Qualification Round',
+            status: 'verified'
+        };
+        
+        // Save to Firebase
+        await setDoc(roundRef, {
+            ...roundRecord,
+            completedAt: serverTimestamp() // Use serverTimestamp for Firebase
+        });
+        console.log('Completed round saved to Firebase:', roundRecord);
+        
+        // Also save to localStorage as backup
+        try {
+            const existingRounds = JSON.parse(localStorage.getItem('completedRounds') || '[]');
+            const updatedRounds = [roundRecord, ...existingRounds];
+            localStorage.setItem('completedRounds', JSON.stringify(updatedRounds));
+            console.log('Completed round also saved to localStorage');
+        } catch (localError) {
+            console.error('Error saving to localStorage:', localError);
+        }
+        
+        return roundRef.id;
+    } catch (error) {
+        console.error('Error saving completed round to Firebase:', error);
+        
+        // If Firebase fails, still try to save to localStorage
+        try {
+            const roundRecord = {
+                ...roundData,
+                id: `local_${Date.now()}`,
+                userId,
+                completedAt: new Date().toISOString(),
+                roundType: 'OAS Qualification Round',
+                status: 'verified'
+            };
+            
+            const existingRounds = JSON.parse(localStorage.getItem('completedRounds') || '[]');
+            const updatedRounds = [roundRecord, ...existingRounds];
+            localStorage.setItem('completedRounds', JSON.stringify(updatedRounds));
+            console.log('Completed round saved to localStorage as backup');
+            return roundRecord.id;
+        } catch (localError) {
+            console.error('Error saving to localStorage backup:', localError);
+        }
+        
+        throw error;
+    }
+};
+
+export const loadCompletedRoundsFromFirebase = async (userId) => {
+    try {
+        const roundsQuery = query(
+            collection(db, 'completedRounds'),
+            where('userId', '==', userId),
+            orderBy('completedAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(roundsQuery);
+        const rounds = [];
+        
+        querySnapshot.forEach((doc) => {
+            rounds.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        console.log('Completed rounds loaded from Firebase:', rounds);
+        return rounds;
+    } catch (error) {
+        console.error('Error loading completed rounds from Firebase:', error);
+        return [];
+    }
+};
+
+export const saveArcherRoundToProfile = async (archerId, roundData, userId) => {
+    try {
+        // Save round data tied to specific archer profile
+        const profileRoundRef = doc(db, 'archerRounds', `${archerId}_${Date.now()}`);
+        const archerRoundRecord = {
+            archerId,
+            userId,
+            ...roundData,
+            completedAt: serverTimestamp(),
+            roundType: 'OAS Qualification Round'
+        };
+        
+        await setDoc(profileRoundRef, archerRoundRecord);
+        console.log('Archer round saved to profile:', archerRoundRecord);
+        return profileRoundRef.id;
+    } catch (error) {
+        console.error('Error saving archer round to profile:', error);
+        throw error;
+    }
+};
+
+export const loadArcherRoundsFromFirebase = async (archerId) => {
+    try {
+        const roundsQuery = query(
+            collection(db, 'archerRounds'),
+            where('archerId', '==', archerId),
+            orderBy('completedAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(roundsQuery);
+        const rounds = [];
+        
+        querySnapshot.forEach((doc) => {
+            rounds.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        console.log('Archer rounds loaded from Firebase:', rounds);
+        return rounds;
+    } catch (error) {
+        console.error('Error loading archer rounds from Firebase:', error);
+        return [];
+    }
+};
+
+// ===== ENHANCED SCORING SYSTEM =====
+// Proper scoring data model with archer profile and event relationships
+
+export const saveCompetitionScore = async (scoreData, userId) => {
+    try {
+        const {
+            archerId,
+            archerName,
+            competitionId,
+            competitionName,
+            baleNumber,
+            targetAssignment,
+            division,
+            gender,
+            roundType,
+            totalEnds,
+            arrowsPerEnd,
+            ends,
+            totals,
+            verifiedBy,
+            paperConfirmed = false
+        } = scoreData;
+
+        // Handle practice rounds (competitionId is null)
+        const isPracticeRound = !competitionId;
+        const safeCompetitionId = competitionId || 'practice';
+        const safeCompetitionName = competitionName || 'Practice Round';
+
+        // Create comprehensive score record
+        const scoreRef = doc(db, 'competitionScores', `${archerId}_${safeCompetitionId}_${Date.now()}`);
+        const scoreRecord = {
+            id: scoreRef.id,
+            archerId,
+            archerName,
+            competitionId: safeCompetitionId,
+            competitionName: safeCompetitionName,
+            baleNumber,
+            targetAssignment,
+            division,
+            gender,
+            roundType,
+            totalEnds,
+            arrowsPerEnd,
+            ends,
+            totals,
+            verifiedBy,
+            paperConfirmed,
+            scoredBy: userId,
+            completedAt: serverTimestamp(),
+            status: 'verified',
+            isShared: true, // All competition scores are shared
+            isPracticeRound: isPracticeRound // Flag for practice rounds
+        };
+
+        await setDoc(scoreRef, scoreRecord);
+        console.log('Competition score saved to Firebase:', scoreRecord);
+
+        // Also save to archer's profile history
+        await saveArcherRoundToProfile(archerId, scoreRecord, userId);
+
+        // Update archer's profile with latest performance stats
+        await updateArcherPerformanceStats(archerId, scoreRecord);
+
+        return scoreRef.id;
+    } catch (error) {
+        console.error('Error saving competition score:', error);
+        throw error;
+    }
+};
+
+export const loadCompetitionScores = async (competitionId) => {
+    try {
+        // Handle practice rounds
+        const safeCompetitionId = competitionId || 'practice';
+        
+        const scoresQuery = query(
+            collection(db, 'competitionScores'),
+            where('competitionId', '==', safeCompetitionId),
+            orderBy('completedAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(scoresQuery);
+        const scores = [];
+        
+        querySnapshot.forEach((doc) => {
+            scores.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        console.log(`Competition scores loaded for ${safeCompetitionId}:`, scores.length);
+        return scores;
+    } catch (error) {
+        console.error('Error loading competition scores:', error);
+        return [];
+    }
+};
+
+export const loadArcherCompetitionScores = async (archerId, competitionId = null) => {
+    try {
+        let scoresQuery;
+        
+        if (competitionId) {
+            // Load scores for specific competition
+            scoresQuery = query(
+                collection(db, 'competitionScores'),
+                where('archerId', '==', archerId),
+                where('competitionId', '==', competitionId),
+                orderBy('completedAt', 'desc')
+            );
+        } else {
+            // Load all scores for archer
+            scoresQuery = query(
+                collection(db, 'competitionScores'),
+                where('archerId', '==', archerId),
+                orderBy('completedAt', 'desc')
+            );
+        }
+        
+        const querySnapshot = await getDocs(scoresQuery);
+        const scores = [];
+        
+        querySnapshot.forEach((doc) => {
+            scores.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        console.log(`Archer scores loaded for ${archerId}:`, scores.length);
+        return scores;
+    } catch (error) {
+        console.error('Error loading archer competition scores:', error);
+        return [];
+    }
+};
+
+export const updateArcherPerformanceStats = async (archerId, scoreRecord) => {
+    try {
+        // Load archer profile
+        const profileRef = doc(db, 'profiles', archerId);
+        const profileDoc = await getDoc(profileRef);
+        
+        if (!profileDoc.exists()) {
+            console.warn('Archer profile not found for stats update:', archerId);
+            return;
+        }
+
+        const profile = profileDoc.data();
+        
+        // Load all scores for this archer
+        const allScores = await loadArcherCompetitionScores(archerId);
+        
+        // Calculate performance statistics
+        const stats = calculateArcherStats(allScores);
+        
+        // Update profile with new stats
+        await setDoc(profileRef, {
+            ...profile,
+            performanceStats: stats,
+            lastScoreUpdate: serverTimestamp()
+        }, { merge: true });
+        
+        console.log('Archer performance stats updated:', archerId, stats);
+    } catch (error) {
+        console.error('Error updating archer performance stats:', error);
+    }
+};
+
+export const calculateArcherStats = (scores) => {
+    if (!scores || scores.length === 0) {
+        return {
+            totalRounds: 0,
+            averageScore: 0,
+            bestScore: 0,
+            totalTens: 0,
+            totalXs: 0,
+            consistency: 0,
+            lastRoundDate: null
+        };
+    }
+
+    let totalScore = 0;
+    let totalArrows = 0;
+    let totalTens = 0;
+    let totalXs = 0;
+    let bestScore = 0;
+    let roundScores = [];
+
+    scores.forEach(score => {
+        if (score.totals && score.totals.totalScore) {
+            const roundScore = score.totals.totalScore;
+            totalScore += roundScore;
+            roundScores.push(roundScore);
+            
+            if (roundScore > bestScore) {
+                bestScore = roundScore;
+            }
+        }
+
+        if (score.totals) {
+            totalTens += score.totals.totalTens || 0;
+            totalXs += score.totals.totalXs || 0;
+        }
+
+        // Count total arrows
+        if (score.totalEnds && score.arrowsPerEnd) {
+            totalArrows += score.totalEnds * score.arrowsPerEnd;
+        }
+    });
+
+    // Calculate consistency (standard deviation of scores)
+    const averageScore = roundScores.length > 0 ? totalScore / roundScores.length : 0;
+    const variance = roundScores.reduce((sum, score) => sum + Math.pow(score - averageScore, 2), 0) / roundScores.length;
+    const consistency = Math.sqrt(variance);
+
+    return {
+        totalRounds: scores.length,
+        averageScore: Math.round(averageScore * 10) / 10,
+        bestScore,
+        totalTens,
+        totalXs,
+        consistency: Math.round(consistency * 10) / 10,
+        lastRoundDate: scores[0]?.completedAt || null,
+        totalArrows
+    };
+};
+
+export const loadArcherProfileWithScores = async (archerId) => {
+    try {
+        // Load profile
+        const profileRef = doc(db, 'profiles', archerId);
+        const profileDoc = await getDoc(profileRef);
+        
+        if (!profileDoc.exists()) {
+            console.warn('Archer profile not found:', archerId);
+            return null;
+        }
+
+        const profile = { id: profileDoc.id, ...profileDoc.data() };
+        
+        // Load recent scores
+        const recentScores = await loadArcherCompetitionScores(archerId);
+        
+        // Calculate current stats
+        const stats = calculateArcherStats(recentScores);
+        
+        return {
+            ...profile,
+            recentScores: recentScores.slice(0, 10), // Last 10 scores
+            performanceStats: stats
+        };
+    } catch (error) {
+        console.error('Error loading archer profile with scores:', error);
+        return null;
+    }
+}; 
+
+export const findMyArcherProfile = async (userId, userEmail = null) => {
+    try {
+        // Load all profiles for the current user
+        let profiles = [];
+        if (userId) {
+            try {
+                profiles = await loadProfilesFromFirebase(userId);
+            } catch (error) {
+                console.error('Error loading profiles:', error);
+            }
+        }
+        
+        // Fallback to localStorage
+        if (profiles.length === 0) {
+            const savedProfiles = localStorage.getItem('archerProfiles');
+            if (savedProfiles) {
+                profiles = JSON.parse(savedProfiles);
+            }
+        }
+
+        // Find "my" profile by matching email or auto-selecting first profile
+        let myProfile = null;
+        
+        // First try to match by email
+        if (userEmail) {
+            myProfile = profiles.find(profile => 
+                profile.email && profile.email.toLowerCase() === userEmail.toLowerCase()
+            );
+        }
+        
+        // If no email match, use the first profile (most common case)
+        if (!myProfile && profiles.length > 0) {
+            myProfile = profiles[0];
+        }
+
+        return myProfile;
+    } catch (error) {
+        console.error('Error finding my archer profile:', error);
+        return null;
+    }
+};
+
+export const loadMyScores = async (userId, userEmail = null) => {
+    try {
+        const myProfile = await findMyArcherProfile(userId, userEmail);
+        if (!myProfile) {
+            console.log('No archer profile found for user');
+            return [];
+        }
+
+        // Load scores for this specific archer
+        const scores = await loadArcherCompetitionScores(myProfile.id);
+        return scores;
+    } catch (error) {
+        console.error('Error loading my scores:', error);
+        return [];
+    }
+}; 
+
+export const loadAllUserScores = async (userId) => {
+    try {
+        const allScores = [];
+        
+        // Load from completedRounds collection
+        try {
+            const roundsQuery = query(
+                collection(db, 'completedRounds'),
+                where('userId', '==', userId),
+                orderBy('completedAt', 'desc')
+            );
+            
+            const roundsSnapshot = await getDocs(roundsQuery);
+            roundsSnapshot.forEach((doc) => {
+                allScores.push({
+                    id: doc.id,
+                    ...doc.data(),
+                    source: 'completedRounds'
+                });
+            });
+        } catch (error) {
+            console.error('Error loading from completedRounds:', error);
+        }
+        
+        // Load from competitionScores collection
+        try {
+            const scoresQuery = query(
+                collection(db, 'competitionScores'),
+                where('scoredBy', '==', userId),
+                orderBy('completedAt', 'desc')
+            );
+            
+            const scoresSnapshot = await getDocs(scoresQuery);
+            scoresSnapshot.forEach((doc) => {
+                allScores.push({
+                    id: doc.id,
+                    ...doc.data(),
+                    source: 'competitionScores'
+                });
+            });
+        } catch (error) {
+            console.error('Error loading from competitionScores:', error);
+        }
+        
+        // Sort by completedAt date (newest first)
+        allScores.sort((a, b) => {
+            const dateA = a.completedAt?.toDate?.() || new Date(a.completedAt);
+            const dateB = b.completedAt?.toDate?.() || new Date(b.completedAt);
+            return dateB - dateA;
+        });
+        
+        console.log('All user scores loaded:', allScores.length);
+        return allScores;
+    } catch (error) {
+        console.error('Error loading all user scores:', error);
+        return [];
+    }
 }; 
