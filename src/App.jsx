@@ -99,6 +99,17 @@ function AppContent() {
     }
   }, [loading, currentUser, isOnline, isSetup]);
 
+  // Handle navigation events from Login component
+  useEffect(() => {
+    const handleNavigate = (event) => {
+      const { destination } = event.detail;
+      setCurrentView(destination);
+    };
+
+    window.addEventListener('navigate', handleNavigate);
+    return () => window.removeEventListener('navigate', handleNavigate);
+  }, []);
+
   // Save app state to local storage whenever it changes
   useEffect(() => {
     if (!loading) {
@@ -308,16 +319,18 @@ function AppContent() {
             
             <div className="flex items-center space-x-4">
               {currentUser && !currentUser.isAnonymous && (
-                <span className="text-sm text-gray-600">
-                  {currentUser.displayName}
-                </span>
+                <>
+                  <span className="text-sm text-gray-600">
+                    {currentUser.displayName}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
+                    Logout
+                  </button>
+                </>
               )}
-              <button
-                onClick={handleLogout}
-                className="text-sm text-red-600 hover:text-red-800"
-              >
-                Logout
-              </button>
             </div>
           </div>
         </div>
@@ -341,7 +354,9 @@ function AppContent() {
 
         {/* Login Screen */}
         {!loading && (!currentUser || currentUser.isAnonymous) && (
-          <Login />
+          <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
+            <Login />
+          </div>
         )}
 
         {/* First Login Prompt */}

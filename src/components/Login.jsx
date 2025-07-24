@@ -179,9 +179,31 @@ function Login() {
         {profiles.length === 0 && (
           <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
             <p className="text-gray-600 mb-2">No profiles found</p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 mb-4">
               Create your first profile to get started with scoring
             </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  // Set current view to profile management
+                  window.dispatchEvent(new CustomEvent('navigate', { 
+                    detail: { destination: 'profile' } 
+                  }));
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Create Profile
+              </button>
+              <div>
+                <button
+                  onClick={handleLogout}
+                  disabled={loading}
+                  className="text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                >
+                  Continue as Anonymous
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
