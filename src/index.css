@@ -19,11 +19,21 @@
   .score-input-keypad {
     min-height: 44px; /* iOS minimum touch target */
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
   
   /* Ensure table doesn't overflow on mobile */
   .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Improve focus visibility */
+  .score-input-keypad:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
   }
 }
 
@@ -227,4 +237,12 @@ h1 {
 
 .read-the-docs {
   color: #888;
+}
+
+/* reCAPTCHA container styling */
+#recaptcha-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
 } 

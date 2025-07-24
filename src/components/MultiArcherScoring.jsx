@@ -4,15 +4,18 @@ import { doc, setDoc, getDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getScoreColorClass, parseScoreValue } from '../utils/scoring';
 import { LocalStorage } from '../utils/localStorage';
+import { saveCompletedRoundToFirebase, saveArcherRoundToProfile } from '../services/firebaseService';
 import ScoreInput from './ScoreInput.jsx';
 import ScoreInputWithKeypad from './ScoreInputWithKeypad.jsx';
+import ScorecardVerificationFlow from './ScorecardVerificationFlow.jsx';
 
-const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
+const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate }) => {
     const { currentUser } = useAuth();
     const [archers, setArchers] = useState(baleData.archers || []);
     const [currentEnd, setCurrentEnd] = useState(baleData.currentEnd || 1);
     const [loading, setLoading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [showVerificationFlow, setShowVerificationFlow] = useState(false);
     
     // Default to keypad only
     const [useKeypad, setUseKeypad] = useState(true);
@@ -46,6 +49,14 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                 return archer;
             })
         );
+    };
+
+    const handleNextEndWithSave = async () => {
+        if (hasUnsavedChanges) {
+            await saveScores();
+            setHasUnsavedChanges(false);
+        }
+        changeEnd(1);
     };
 
     const saveScores = async () => {
@@ -102,7 +113,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             
             setCurrentEnd(newEnd);
             
-            // Auto-focus the first arrow of the first archer after a longer delay
+            // Auto-focus the first arrow of the first archer with improved timing
             setTimeout(() => {
                 // Find all score inputs and focus the first one
                 const allInputs = document.querySelectorAll('.score-input-keypad');
@@ -110,17 +121,27 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                 if (allInputs.length > 0) {
                     const firstInput = allInputs[0];
                     
-                    // Force focus and trigger keypad
-                    firstInput.focus();
-                    firstInput.click();
+                    // Use improved focus management
+                    const ensureFocus = (element) => {
+                        if (!element) return;
+                        
+                        requestAnimationFrame(() => {
+                            element.focus();
+                            element.click();
+                            
+                            // Double-check focus after a short delay
+                            setTimeout(() => {
+                                if (document.activeElement !== element) {
+                                    element.focus();
+                                    element.click();
+                                }
+                            }, 10);
+                        });
+                    };
                     
-                    // Additional focus attempt after a short delay
-                    setTimeout(() => {
-                        firstInput.focus();
-                        firstInput.click();
-                    }, 100);
+                    ensureFocus(firstInput);
                 }
-            }, 500); // Increased delay to ensure DOM is fully updated
+            }, 200); // Further reduced delay for faster response
         }
     };
 
@@ -265,36 +286,17 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
         });
     };
 
-    // Handle final scorecard verification
-    const handleVerifyScorecard = async () => {
-        const finalScores = calculateFinalScores();
-        
-        // Save final scores to Firebase
-        try {
-            const finalScorecard = {
-                baleNumber: baleData.baleNumber,
-                competitionId: baleData.competitionId,
-                competitionName: baleData.competitionName,
-                finalScores,
-                completedAt: new Date(),
-                createdBy: baleData.createdBy
-            };
-            
-            // Save to Firebase
-            const userDoc = doc(db, 'users', currentUser.uid);
-            await setDoc(userDoc, {
-                completedScorecards: arrayUnion(finalScorecard),
-                lastUpdated: new Date()
-            }, { merge: true });
-            
-            alert('Scorecard verified and saved! Final scores have been recorded.');
-            
-            // Clear current bale data
-            onBaleDataUpdate(null);
-        } catch (error) {
-            console.error('Error saving final scorecard:', error);
-            alert('Error saving final scorecard. Please try again.');
-        }
+    // Handle opening verification flow
+    const handleStartVerification = () => {
+        setShowVerificationFlow(true);
+    };
+
+    // Handle verification completion
+    const handleVerificationComplete = (completedArchers) => {
+        console.log('Verification complete for:', completedArchers);
+        setShowVerificationFlow(false);
+        // Clear current bale data
+        onBaleDataUpdate(null);
     };
 
     // Load current end from saved data when component mounts
@@ -304,21 +306,18 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
         }
     }, [baleData.currentEnd]);
 
-    // Auto-save when scores change
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            const endKey = `end${currentEnd}`;
-            const hasScores = archers.some(archer => {
-                const endScores = archer.scores[endKey];
-                return endScores && (endScores.arrow1 || endScores.arrow2 || endScores.arrow3);
-            });
-            
-            if (hasScores) {
-                saveScores();
-            }
-        }, 1000);
+    // Track if current end has unsaved changes
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-        return () => clearTimeout(timeoutId);
+    // Update unsaved changes flag when scores change
+    useEffect(() => {
+        const endKey = `end${currentEnd}`;
+        const hasScores = archers.some(archer => {
+            const endScores = archer.scores[endKey];
+            return endScores && (endScores.arrow1 || endScores.arrow2 || endScores.arrow3);
+        });
+        
+        setHasUnsavedChanges(hasScores);
     }, [archers, currentEnd]);
 
     return (
@@ -326,9 +325,17 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
             <div className="bg-white">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-base font-bold text-gray-800">
-                        Bale {baleData.baleNumber} - End {currentEnd}
-                    </h2>
+                    <div>
+                        <h2 className="text-base font-bold text-gray-800">
+                            Bale {baleData.baleNumber} - End {currentEnd}
+                        </h2>
+                        {hasUnsavedChanges && (
+                            <div className="flex items-center space-x-2 mt-1">
+                                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                                <span className="text-xs text-orange-600 font-medium">Unsaved changes</span>
+                            </div>
+                        )}
+                    </div>
                     <div className="flex items-center space-x-2">
                         <button
                             onClick={() => changeEnd(-1)}
@@ -341,11 +348,13 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                             {currentEnd}/{totalEnds}
                         </span>
                         <button
-                            onClick={() => changeEnd(1)}
+                            onClick={handleNextEndWithSave}
                             disabled={currentEnd >= totalEnds}
-                            className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium disabled:opacity-50 hover:bg-blue-700 transition-colors"
+                            className={`px-4 py-2 text-white rounded text-sm font-medium disabled:opacity-50 transition-colors ${
+                                hasUnsavedChanges ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'
+                            }`}
                         >
-                            Next End
+                            {hasUnsavedChanges ? 'Save & Next' : 'Next End'}
                         </button>
                     </div>
                 </div>
@@ -356,13 +365,13 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="text-lg font-semibold text-green-800">All Ends Completed!</h3>
-                                <p className="text-sm text-green-600">Ready to verify and save final scores</p>
+                                <p className="text-sm text-green-600">Ready to verify each scorecard with paper scoring</p>
                             </div>
                             <button
-                                onClick={handleVerifyScorecard}
+                                onClick={handleStartVerification}
                                 className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
                             >
-                                Verify Scorecard
+                                📋 Start Verification
                             </button>
                         </div>
                     </div>
@@ -388,6 +397,8 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                         </div>
                     </div>
                 )}
+
+
 
                 {/* Scoring Table */}
                 <div className="w-full">
@@ -483,6 +494,15 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate }) => {
                     </table>
                 </div>
             </div>
+
+            {/* Scorecard Verification Flow */}
+            {showVerificationFlow && (
+                <ScorecardVerificationFlow
+                    baleData={{ ...baleData, archers }}
+                    onVerificationComplete={handleVerificationComplete}
+                    onNavigate={onNavigate}
+                />
+            )}
         </div>
     );
 };

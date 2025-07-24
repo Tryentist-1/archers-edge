@@ -6,6 +6,26 @@ import ScoreKeypad from './ScoreKeypad.jsx';
 let currentlyFocusedInput = null;
 let blurTimeout = null;
 
+// Focus management utility
+const ensureFocus = (element, callback = null) => {
+    if (!element) return;
+    
+    // Use multiple strategies to ensure focus
+    requestAnimationFrame(() => {
+        element.focus();
+        element.click();
+        
+        // Double-check focus after a short delay
+        setTimeout(() => {
+            if (document.activeElement !== element) {
+                element.focus();
+                element.click();
+            }
+            if (callback) callback();
+        }, 10);
+    });
+};
+
 /**
  * ScoreInputWithKeypad Component
  * 
@@ -79,15 +99,21 @@ function ScoreInputWithKeypad({
             blurTimeout = null;
         }
         
-        // Show keypad
+        // Show keypad immediately
         setIsKeypadVisible(true);
-        inputRef.current?.select();
+        
+        // Ensure input is selected
+        if (inputRef.current) {
+            inputRef.current.select();
+        }
+        
         onFocus?.(e);
     };
 
     const handleInputBlur = (e) => {
         if (blurTimeout) clearTimeout(blurTimeout);
         
+        // Reduced timeout for faster response
         blurTimeout = setTimeout(() => {
             const activeElement = document.activeElement;
             const scoreKeypad = document.getElementById('score-keypad');
@@ -104,7 +130,7 @@ function ScoreInputWithKeypad({
                 currentlyFocusedInput = null;
             }
             blurTimeout = null;
-        }, 150);
+        }, 50); // Reduced from 150ms to 50ms for faster response
         
         onBlur?.(e);
     };
@@ -122,10 +148,8 @@ function ScoreInputWithKeypad({
             onChange?.(newValue);
         }
         
-        // Auto-advance to next field after a short delay
-        setTimeout(() => {
-            handleNext();
-        }, 100);
+        // Auto-advance to next field immediately for better responsiveness
+        handleNext();
     };
 
     const handleNext = () => {
@@ -139,8 +163,8 @@ function ScoreInputWithKeypad({
         if (currentIndex !== -1 && currentIndex < allInputs.length - 1) {
             const nextInput = allInputs[currentIndex + 1];
             if (nextInput) {
-                nextInput.focus();
-                nextInput.click(); // Trigger focus to show keypad
+                // Use improved focus management
+                ensureFocus(nextInput);
             }
         } else {
             // If we're at the last input, hide keypad
@@ -161,8 +185,8 @@ function ScoreInputWithKeypad({
         if (currentIndex > 0) {
             const prevInput = allInputs[currentIndex - 1];
             if (prevInput) {
-                prevInput.focus();
-                prevInput.click(); // Trigger focus to show keypad
+                // Use improved focus management
+                ensureFocus(prevInput);
             }
         }
     };
@@ -170,7 +194,10 @@ function ScoreInputWithKeypad({
     const handleClear = () => {
         setInputValue('');
         onChange?.('');
-        inputRef.current?.focus();
+        // Ensure focus stays on current input after clear
+        if (inputRef.current) {
+            inputRef.current.focus();
+        }
     };
 
     const handleCloseKeypad = () => {
