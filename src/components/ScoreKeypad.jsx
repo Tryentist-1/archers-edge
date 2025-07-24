@@ -48,12 +48,22 @@ function ScoreKeypad({
 
     if (!isVisible) return null;
 
+    // Check if we're on desktop
+    const isDesktop = window.innerWidth > 768;
+
     return (
         <div 
             id="score-keypad" 
             className="fixed bottom-0 left-0 w-full bg-gray-800 p-1 shadow-lg z-40 grid grid-cols-4 gap-1"
             onClick={handleKeypadClick}
         >
+            {/* Desktop keyboard help */}
+            {isDesktop && (
+                <div className="col-span-4 bg-gray-700 text-white text-xs p-2 text-center border-b border-gray-600">
+                    💡 Desktop: Type X, 0-9, M • Space/Enter: Next • Tab: Previous
+                </div>
+            )}
+            
             {/* Top row */}
             <button 
                 type="button" 

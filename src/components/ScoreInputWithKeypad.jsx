@@ -37,6 +37,7 @@ const ensureFocus = (element, callback = null) => {
  * 
  * A controlled input component for archery scores with integrated keypad.
  * Optimized for mobile use with touch-friendly keypad interface.
+ * Also supports desktop keyboard input for better accessibility.
  */
 function ScoreInputWithKeypad({ 
     value = '', 
@@ -154,6 +155,61 @@ function ScoreInputWithKeypad({
         onBlur?.(e);
     };
 
+    // Handle keyboard input for desktop users
+    const handleKeyDown = (e) => {
+        if (disabled) return;
+
+        // Allow navigation keys
+        if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
+            return;
+        }
+
+        // Handle score input via keyboard
+        const key = e.key.toLowerCase();
+        let scoreValue = null;
+
+        // Map keyboard keys to scores
+        switch (key) {
+            case 'x':
+                scoreValue = 'X';
+                break;
+            case '0':
+                scoreValue = '10';
+                break;
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                scoreValue = key;
+                break;
+            case 'm':
+                scoreValue = 'M';
+                break;
+            case 'enter':
+            case ' ':
+                // Auto-advance to next field
+                handleNext();
+                return;
+            case 'tab':
+                // Let default tab behavior work
+                return;
+            default:
+                // Prevent other keys
+                e.preventDefault();
+                return;
+        }
+
+        if (scoreValue) {
+            e.preventDefault();
+            handleScoreInput(scoreValue);
+        }
+    };
+
     const handleScoreInput = (scoreValue) => {
         const newValue = scoreValue;
         setInputValue(newValue);
@@ -252,12 +308,14 @@ function ScoreInputWithKeypad({
                 onChange={() => {}} // Read-only for keypad input
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
+                onKeyDown={handleKeyDown}
                 onClick={handleInputFocus}
                 placeholder={placeholder}
                 disabled={disabled}
                 autoFocus={autoFocus}
                 readOnly
                 data-testid="score-input"
+                title="Click to show keypad • Desktop: Type X, 0-9, M • Space/Enter: Next field"
                 className={`
                     score-input-keypad
                     w-full h-full text-center text-sm font-bold border-0 
