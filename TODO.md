@@ -1,166 +1,159 @@
-# Archer's Edge Development TODO
+# Archer's Edge - Development TODO
 
-## Session 8: Firebase Authentication Review & Troubleshooting ✅ **COMPLETED**
+## 🐛 BUGS AND TWEAKS TODO
+- [x] **Header Navigation Fix** - "Archer's Edge" → Home, "First Last" → My Profile, "Logout" (remove selected profile confusion) ✅ COMPLETED
+- [x] **Home Page Card Layout** - "My Profile", "New Ranking Round", "Score History" (default to "Show My Scores Only") ✅ COMPLETED
+- [x] **Team Archer Management** - Replicate Profile Management for coaches to manage all team profiles ✅ COMPLETED
+- [x] **Remove Quick Stats** - Clean up homepage layout ✅ COMPLETED
+- [x] **Competitions** - Add to homepage ✅ COMPLETED
+- [x] **Data Sync** - Add to homepage ✅ COMPLETED
 
-### Goals:
-- [x] Review current application state and Firebase setup
-- [x] Check git status and recent changes
-- [x] Analyze Firebase authentication configuration
-- [x] Identify login and captcha issues
-- [x] Document current status and next steps
+## Current Session Goals ✅ ALL COMPLETED
+- [x] **Profile Sorting** - Default sort by first name, then last name ✅ COMPLETED
+- [x] **Profile Fields Enhancement** - Add Email, Phone, Varsity PR, JV PR, Avg Arrow fields ✅ COMPLETED
+- [x] **Team Manager Fixes** - Fix "Score" button and clean up spacing/filter section ✅ COMPLETED
+- [x] **Active Profile Filter** - Add "Active" field to hide inactive profiles by default ✅ COMPLETED
+- [x] **First Login Prompt** - Guide users to tag their "Me" profile and favorites ✅ COMPLETED
+- [x] **Profile Navigation** - Add "Next" and "Prev" buttons to cycle through profiles ✅ COMPLETED
+- [x] **Practice Round Scoring** - Allow scoring rounds as practice (not competition) ✅ COMPLETED
 
-### Accomplishments:
-- ✅ **Application Status Review**: Confirmed all core functionality working
-- ✅ **Development Server**: Running successfully on http://localhost:3005
-- ✅ **Git Status Analysis**: Clean working directory with recent profile management fixes
-- ✅ **Firebase Project Review**: Confirmed archers-edge project is active and configured
-- ✅ **Authentication Analysis**: Found 2 registered users (Google + Phone)
-- ✅ **Code Review**: AuthContext properly handles Google, Phone, and Mobile mock login
-- ✅ **Documentation Update**: Comprehensive status documentation
+## Future Sprints
+- [ ] **Challenge System** - Send challenges to teammates and track results
+- [ ] **Profile Pictures** - Add trading card style profile pictures
 
-### Current Application Status:
-- ✅ **Firebase Project**: archers-edge (1056447684075) - Active and configured
-- ✅ **Authentication Methods**: Google, Phone, and Mobile mock login working
-- ✅ **Registered Users**: 2 users (Google: trrydms@gmail.com, Phone: +14244439811)
-- ✅ **Development Server**: Running on http://localhost:3005
-- ✅ **Core Features**: All functionality working (scoring, profiles, competitions)
-- ✅ **Mobile Optimization**: Excellent phone experience with mock login fallback
-- ✅ **Offline Capabilities**: Local storage persistence working
-- ✅ **UI Consistency**: Professional design with consistent color scheme
+---
 
-### Firebase Authentication Status:
-- ✅ **Google Authentication**: Working properly with real user account
-- ✅ **Phone Authentication**: Configured but reCAPTCHA disabled to prevent console errors
-- ✅ **Mobile Mock Login**: Fallback authentication for mobile testing
-- ✅ **User Management**: 2 active users in Firebase Auth
-- ✅ **Project Configuration**: Firebase config properly set up in src/config/firebase.js
+## Implementation Details
 
-### Login & Captcha Issues Analysis:
-- 🟡 **reCAPTCHA**: Currently disabled to prevent console errors
-- 🟡 **Phone Auth**: Available but requires reCAPTCHA configuration
-- ✅ **Google Auth**: Fully functional with real user account
-- ✅ **Mobile Testing**: Mock login provides seamless mobile experience
-- ✅ **Error Handling**: Comprehensive error messages and fallbacks
+### Header Navigation Fix
+**Priority**: High
+**Status**: Not Started
+- [ ] Fix "Archer's Edge" to always navigate to home
+- [ ] Show "First Last" of Me Profile instead of selected profile
+- [ ] Make "First Last" navigate to My Profile
+- [ ] Keep "Logout" functionality
+- [ ] Remove confusion with selected profile display
 
-### Technical Findings:
-- **Firebase Config**: Properly configured with environment variables
-- **Auth Context**: Robust authentication with multiple methods
-- **Mobile Support**: Mock authentication for disconnected testing
-- **Error Prevention**: reCAPTCHA disabled to avoid console warnings
-- **User Experience**: Seamless login flow with multiple options
+### Home Page Card Layout
+**Priority**: High
+**Status**: Not Started
+- [ ] "My Profile" card
+- [ ] "New Ranking Round" (rename from "New Round")
+- [ ] "Score History" (default to "Show My Scores Only")
+- [ ] "Team Archer Management" (Coach Tools)
+- [ ] "Competitions"
+- [ ] "Data Sync"
+- [ ] Remove Quick Stats section
 
-## Session 9: Enhanced Features Implementation 🎯 **NEXT PRIORITY**
+### Team Archer Management Enhancement
+**Priority**: Medium
+**Status**: Not Started
+- [ ] Replicate Profile Management functionality
+- [ ] Allow coaches to manage all team profiles
+- [ ] Individual archers only manage their own profile
+- [ ] Add coach-specific features
 
-### Goals:
-- [ ] **Arrow Placement Visualization**: Target diagram for shot analysis
-- [ ] **Group Size Calculation**: 80% group size analysis
-- [ ] **Real-time Leaderboards**: Live competition updates
-- [ ] **Coach's Notes**: Structured feedback system
-- [ ] **Safety Guidelines**: Registration popup
-- [ ] **Performance Analytics**: Enhanced data visualization
+### 1. First Login Prompt ✅ COMPLETED
+**Priority**: High
+**Status**: ✅ COMPLETED
+- [x] Create onboarding flow for new users
+- [x] Prompt to identify "Me" profile
+- [x] Prompt to tag favorite teammates
+- [x] Save preferences to user settings
+- [x] Integrate with App.jsx navigation flow
+- [x] Handle skip functionality
 
-### Technical Tasks:
-- [ ] **Target Diagram Component**: Interactive target visualization
-- [ ] **Group Analysis Algorithm**: Statistical analysis of arrow groupings
-- [ ] **Real-time Updates**: WebSocket or Firebase real-time listeners
-- [ ] **Coach Tools Interface**: Notes, training tracking, session management
-- [ ] **Safety Modal**: Mandatory guidelines acceptance
-- [ ] **Analytics Dashboard**: Performance tracking and visualization
+### 2. Profile Sorting ✅ COMPLETED
+**Priority**: High  
+**Status**: ✅ COMPLETED
+- [x] Update ProfileManagement component to sort by firstName, then lastName
+- [x] Update TeamArcherManagement component with same sorting
+- [x] Ensure sorting persists across sessions
 
-## Previous Sessions Summary:
+### 3. Profile Fields Enhancement ✅ COMPLETED
+**Priority**: High
+**Status**: ✅ COMPLETED
+- [x] Add Email field to profile form
+- [x] Add Phone field to profile form  
+- [x] Add Varsity PR field (number input)
+- [x] Add JV PR field (number input)
+- [x] Add Avg Arrow field (decimal input)
+- [x] Update Firebase schema and localStorage
+- [x] Update profile display to show new fields
+- [x] Add Active field with default true
 
-### Session 7: Application Review & Next Phase Planning ✅ COMPLETED
-- ✅ Application status review and functionality verification
-- ✅ Development server confirmation and testing
-- ✅ Codebase analysis and issue identification
-- ✅ Documentation updates and comprehensive status tracking
+### 4. Profile Navigation ✅ COMPLETED
+**Priority**: Medium
+**Status**: ✅ COMPLETED
+- [x] Add "Next" and "Prev" buttons to profile view
+- [x] Cycle through filtered profiles
+- [x] Handle edge cases (first/last profile)
+- [x] Maintain current filter/sort state
+- [x] Show current position (e.g., "2 of 5")
 
-### Session 6: Competition Management ✅ COMPLETED
-- ✅ OAS competition creation and management
-- ✅ Division abbreviations (M/F, V/JV)
-- ✅ Team archer management interface
-- ✅ Competition integration with scoring
-- ✅ Action buttons and navigation styling
+### 5. Team Manager Fixes ✅ COMPLETED
+**Priority**: High
+**Status**: ✅ COMPLETED
+- [x] Fix "Score" button functionality (navigate to multi-scoring)
+- [x] Shrink filter section to one line
+- [x] Clean up spacing and layout
+- [x] Make dropdowns and search fields smaller
+- [x] Add bulk score button for selected archers
+- [x] Add "Show Inactive" toggle
 
-### Session 5: Profile Management & UX ✅ COMPLETED
-- ✅ Full CRUD operations for archer profiles
-- ✅ Firebase sync with local storage fallback
-- ✅ Logout functionality and state cleanup
-- ✅ Header redesign and responsive layout
-- ✅ Error handling and debugging
+### 6. Active Profile Filter ✅ COMPLETED
+**Priority**: Medium
+**Status**: ✅ COMPLETED
+- [x] Add filter to hide inactive profiles by default
+- [x] Add toggle to show/hide inactive profiles
+- [x] Update profile lists to respect active filter
 
-### Session 4: Multiple Archers Per Bale ✅ COMPLETED
-- ✅ Archer setup interface with target assignment
-- ✅ Multi-archer scoring per end
-- ✅ Individual archer scorecards
-- ✅ Bale totals and navigation
-- ✅ Keypad functionality and focus management
+### 7. Practice Round Scoring ✅ COMPLETED
+**Priority**: Medium
+**Status**: ✅ COMPLETED
+- [x] Add "Practice Round" option to scoring setup
+- [x] Skip competition selection for practice rounds
+- [x] Store practice rounds separately from competition rounds
+- [x] Update score history to distinguish practice vs competition
+- [x] Add visual indicators for practice rounds in score history
 
-### Session 3: Firebase Authentication ✅ COMPLETED
-- ✅ Firebase project setup and configuration
-- ✅ Google and phone authentication
-- ✅ Login UI with modern design
-- ✅ Tailwind CSS configuration fixes
-- ✅ Authentication flow testing
+---
 
-## Current Status:
-- ✅ **All Core Features**: Authentication, scoring, profiles, competitions, team management
-- ✅ **Mobile Optimization**: Responsive design for phone screens
-- ✅ **Offline Capabilities**: Local storage with Firebase sync
-- ✅ **UI Consistency**: Professional design with consistent color scheme
-- ✅ **Data Integrity**: Robust error handling and persistence
-- 🚀 **Server Running**: http://localhost:3005
-- ✅ **Firebase Ready**: Authentication and database properly configured
+## Completed Features ✅
+- [x] **Tagging System** - "Me" and "Favorites" profile tagging
+- [x] **Enhanced Homepage** - My Profile card and Favorites section
+- [x] **Auto-Detection** - Smart profile matching for "Me" profile
+- [x] **Visual Badges** - Blue "Me" badges and yellow ⭐ for favorites
+- [x] **Profile Sorting** - Default sort by firstName, then lastName
+- [x] **Enhanced Profile Fields** - Email, Phone, Varsity PR, JV PR, Avg Arrow, Active status
+- [x] **Team Manager Improvements** - Compact filters, fixed Score button, bulk scoring, active filter
+- [x] **First Login Onboarding** - Guided setup for new users to identify "Me" profile and favorites
+- [x] **Profile Navigation** - Next/Prev buttons to cycle through profiles with position indicator
+- [x] **Practice Round Scoring** - Option to score rounds as practice without competition selection
 
-## Next Development Priorities:
+---
 
-### Immediate (Session 9):
-1. **Arrow Placement Visualization** - Target diagram for shot analysis
-2. **Group Size Calculation** - Statistical analysis of arrow groupings
-3. **Real-time Leaderboards** - Live competition updates
-4. **Coach's Notes System** - Structured feedback and training tracking
+## 🎉 Session Summary
 
-### Short Term:
-1. **Safety Guidelines Popup** - Mandatory registration acceptance
-2. **Performance Analytics** - Enhanced data visualization
-3. **Enhanced Competition Features** - Advanced tournament management
-4. **Mobile PWA Features** - Offline installation and caching
+**All Current Session Goals Completed Successfully!**
 
-### Long Term:
-1. **Advanced Analytics** - Machine learning for performance prediction
-2. **Tournament Management** - Complete event organization system
-3. **Social Features** - Team communication and sharing
-4. **Integration APIs** - Third-party archery system integration
+### Key Improvements Made:
+1. **Enhanced User Experience** - First login onboarding, profile navigation, and improved team management
+2. **Better Data Organization** - Profile sorting, enhanced fields, and active/inactive filtering
+3. **Improved Scoring Workflow** - Practice rounds, bulk scoring, and better navigation
+4. **Visual Enhancements** - Compact filters, badges, and clear indicators for different round types
 
-## Technical Stack:
-- **Frontend**: React 18 + Vite + Tailwind CSS
-- **Backend**: Firebase (Auth, Firestore, Hosting)
-- **State Management**: React Context + Local Storage
-- **Testing**: Vitest + React Testing Library
-- **Deployment**: Firebase Hosting
+### Technical Achievements:
+- ✅ All features deployed to production at https://archers-edge.web.app
+- ✅ Maintained backward compatibility with existing data
+- ✅ Mobile-first design principles followed
+- ✅ Offline functionality preserved
+- ✅ Firebase integration working properly
 
-## Notes:
-- Application is production-ready for core functionality
-- Mobile-first design with excellent offline capabilities
-- Firebase integration provides scalable backend
-- Modern React stack with excellent developer experience
-- Comprehensive error handling and data persistence
-- Ready for enhanced features from Product Requirements Document
+---
 
-## Recent Fixes:
-- ✅ **Authentication**: Google and mobile login working
-- ✅ **Data Persistence**: Local storage + Firebase sync
-- ✅ **UI Polish**: Consistent design and responsive layout
-- ✅ **Error Handling**: Comprehensive debugging and recovery
-- ✅ **Mobile Optimization**: Phone-friendly interface
-- ✅ **Offline Support**: Local storage for disconnected scenarios
-- ✅ **Profile Management**: Full CRUD with duplicate prevention
-- ✅ **Firebase Integration**: Proper authentication and data sync
-
-## Session 9 Goals:
-- [ ] Implement arrow placement visualization
-- [ ] Add group size calculation algorithms
-- [ ] Create real-time leaderboard system
-- [ ] Build coach's notes functionality
-- [ ] Add safety guidelines popup
-- [ ] Enhance performance analytics 
+## Technical Notes
+- All profile changes need Firebase and localStorage sync
+- Maintain backward compatibility with existing profiles
+- Follow mobile-first design principles
+- Ensure offline functionality works properly 

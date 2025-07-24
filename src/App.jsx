@@ -5,10 +5,16 @@ import ScoringInterface from './components/ScoringInterface';
 import ArcherSetup from './components/ArcherSetup';
 import MultiArcherScoring from './components/MultiArcherScoring';
 import ArcherScorecard from './components/ArcherScorecard';
+import OASScorecard from './components/OASScorecard';
 import HomePage from './components/HomePage';
 import ProfileManagement from './components/ProfileManagement';
 import CompetitionManagement from './components/CompetitionManagement';
 import TeamArcherManagement from './components/TeamArcherManagement';
+import ProfileRoundSetup from './components/ProfileRoundSetup';
+import ScoreHistory from './components/ScoreHistory';
+import DataSyncPanel from './components/DataSyncPanel';
+import ArcherProfileWithStats from './components/ArcherProfileWithStats';
+import FirstLoginPrompt from './components/FirstLoginPrompt';
 import { LocalStorage } from './utils/localStorage';
 import { 
     syncLocalDataToFirebase, 
@@ -21,13 +27,16 @@ import {
 
 function AppContent() {
   const { currentUser, loading, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'setup', 'scoring', 'card', 'profile', 'scores'
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'new-round', 'setup', 'scoring', 'card', 'profile', 'scores', 'data-sync', 'archer-stats', 'first-login-prompt'
   const [baleData, setBaleData] = useState(null);
   const [selectedArcherId, setSelectedArcherId] = useState(null);
   const [selectedProfile, setSelectedProfile] = useState(null);
+  const [archerStatsData, setArcherStatsData] = useState(null);
   const [error, setError] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'syncing', 'success', 'error'
+  const [hasCompletedFirstLogin, setHasCompletedFirstLogin] = useState(false);
+  const [myProfile, setMyProfile] = useState(null);
 
   // Load existing bale data and app state from local storage and Firebase
   useEffect(() => {
@@ -43,6 +52,13 @@ function AppContent() {
         const savedAppState = LocalStorage.loadAppState();
         const savedBaleData = LocalStorage.loadBaleData();
         
+        // Check if user has completed first login setup
+        const firstLoginCompleted = localStorage.getItem('firstLoginCompleted');
+        setHasCompletedFirstLogin(!!firstLoginCompleted);
+        
+        // Load user's "Me" profile
+        loadMyProfile();
+        
         if (savedAppState) {
           setCurrentView(savedAppState.currentView || 'home');
           setBaleData(savedAppState.baleData || savedBaleData || null);
@@ -51,7 +67,12 @@ function AppContent() {
           setBaleData(savedBaleData);
           setCurrentView('scoring');
         } else {
-          setCurrentView('home');
+          // If no saved state and first login not completed, show first login prompt
+          if (!firstLoginCompleted) {
+            setCurrentView('first-login-prompt');
+          } else {
+            setCurrentView('home');
+          }
         }
 
         // Sync with Firebase if online and not mock user
@@ -115,6 +136,17 @@ function AppContent() {
     setSelectedArcherId(null);
   };
 
+  const handleRoundCompleted = (roundData) => {
+    console.log('Round completed:', roundData);
+    // Clear current bale data and return to home
+    setBaleData(null);
+    setSelectedArcherId(null);
+    setCurrentView('home');
+    
+    // Clear local storage for completed round
+    LocalStorage.clearBaleData();
+  };
+
   const handleNewBale = () => {
     setBaleData(null);
     setCurrentView('setup');
@@ -123,7 +155,7 @@ function AppContent() {
     LocalStorage.clearAll();
   };
 
-  const handleNavigation = (destination) => {
+  const handleNavigation = (destination, data = null) => {
     switch (destination) {
       case 'home':
         setCurrentView('home');
@@ -140,16 +172,63 @@ function AppContent() {
       case 'scores':
         setCurrentView('scores');
         break;
+      case 'data-sync':
+        setCurrentView('data-sync');
+        break;
       case 'new-round':
-        setCurrentView('setup');
+        setCurrentView('new-round');
         break;
       case 'scoring':
         console.log('Navigating to scoring, baleData:', baleData);
         setCurrentView('scoring');
         break;
+      case 'archer-stats':
+        setCurrentView('archer-stats');
+        if (data && data.archerId) {
+          setArcherStatsData({ archerId: data.archerId });
+        }
+        break;
       default:
         setCurrentView('home');
     }
+  };
+
+  const handleFirstLoginComplete = (updatedProfiles) => {
+    // Mark first login as completed
+    localStorage.setItem('firstLoginCompleted', 'true');
+    setHasCompletedFirstLogin(true);
+    
+    // Navigate to home
+    setCurrentView('home');
+    
+    // Show success message
+    console.log('First login setup completed successfully!');
+  };
+
+  const loadMyProfile = async () => {
+    try {
+      // Load profiles from localStorage
+      const savedProfiles = localStorage.getItem('archerProfiles');
+      if (savedProfiles) {
+        const profiles = JSON.parse(savedProfiles);
+        // Find the profile tagged as "Me"
+        const meProfile = profiles.find(profile => profile.isMe === true);
+        if (meProfile) {
+          setMyProfile(meProfile);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading my profile:', error);
+    }
+  };
+
+  const handleFirstLoginSkip = () => {
+    // Mark first login as completed (even if skipped)
+    localStorage.setItem('firstLoginCompleted', 'true');
+    setHasCompletedFirstLogin(true);
+    
+    // Navigate to home
+    setCurrentView('home');
   };
 
   const handleLogout = async () => {
@@ -161,6 +240,7 @@ function AppContent() {
       setBaleData(null);
       setSelectedArcherId(null);
       setCurrentView('home');
+      setHasCompletedFirstLogin(false);
       
       // Sign out from Firebase
       await logout();
@@ -271,27 +351,28 @@ function AppContent() {
 
               {/* User info and logout */}
               <div className="flex items-center space-x-3">
-                {selectedProfile && (
+                {myProfile && (
                   <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {selectedProfile.firstName} {selectedProfile.lastName}
-                    </span>
+                    <button
+                      onClick={() => handleNavigation('profile')}
+                      className="bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-colors cursor-pointer"
+                    >
+                      {myProfile.firstName} {myProfile.lastName}
+                    </button>
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                      {selectedProfile.role}
+                      {myProfile.role}
                     </span>
                   </div>
                 )}
                 <div className="hidden sm:block text-sm text-gray-600 truncate max-w-32">
                   {currentUser.email}
                 </div>
-                {currentView === 'home' && (
-                  <button
-                    onClick={handleLogout}
-                    className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
-                  >
-                    Logout
-                  </button>
-                )}
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </div>
@@ -300,11 +381,25 @@ function AppContent() {
 
       {/* Main Content */}
       <main className="w-full">
+        {currentView === 'first-login-prompt' && (
+          <FirstLoginPrompt 
+            onComplete={handleFirstLoginComplete}
+            onSkip={handleFirstLoginSkip}
+          />
+        )}
+        
         {currentView === 'home' && (
           <HomePage 
             currentUser={currentUser}
             onNavigate={handleNavigation}
             baleData={baleData}
+          />
+        )}
+        
+        {currentView === 'new-round' && (
+          <ProfileRoundSetup 
+            onSetupComplete={handleSetupComplete}
+            onNavigate={handleNavigation}
           />
         )}
         
@@ -317,14 +412,16 @@ function AppContent() {
             baleData={baleData} 
             onViewCard={handleViewCard}
             onBaleDataUpdate={handleBaleDataUpdate}
+            onNavigate={handleNavigation}
           />
         )}
         
         {currentView === 'card' && baleData && selectedArcherId && (
-          <ArcherScorecard 
+          <OASScorecard 
             baleData={baleData} 
             archerId={selectedArcherId}
             onBackToScoring={handleBackToScoring}
+            onRoundCompleted={handleRoundCompleted}
           />
         )}
         
@@ -344,10 +441,18 @@ function AppContent() {
         )}
         
         {currentView === 'scores' && (
-          <div className="p-4">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Your Scores</h2>
-            <p className="text-gray-600">Score history coming soon...</p>
-          </div>
+          <ScoreHistory onNavigate={handleNavigation} />
+        )}
+        
+        {currentView === 'data-sync' && (
+          <DataSyncPanel onNavigate={handleNavigation} />
+        )}
+        
+        {currentView === 'archer-stats' && archerStatsData && (
+          <ArcherProfileWithStats 
+            archerId={archerStatsData.archerId}
+            onNavigate={handleNavigation}
+          />
         )}
       </main>
     </div>
