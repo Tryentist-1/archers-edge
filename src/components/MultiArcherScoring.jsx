@@ -303,6 +303,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
     // Track if current end has unsaved changes
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [lastSavedEnd, setLastSavedEnd] = useState(null);
+    const [isSynced, setIsSynced] = useState(false);
 
     // Update unsaved changes flag when scores change
     useEffect(() => {
@@ -315,6 +316,9 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
         // Only show unsaved changes if we have scores AND they haven't been saved yet
         const hasUnsaved = hasScores && lastSavedEnd !== currentEnd;
         setHasUnsavedChanges(hasUnsaved);
+        
+        // Check if current end is synced
+        setIsSynced(lastSavedEnd === currentEnd && hasScores);
     }, [archers, currentEnd, lastSavedEnd]);
 
     const handleNextEndWithSave = async () => {
@@ -355,7 +359,13 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
                         {hasUnsavedChanges && (
                             <div className="flex items-center space-x-2 mt-1">
                                 <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                                <span className="text-xs text-orange-600 font-medium">Unsaved changes</span>
+                                <span className="text-xs text-orange-600 font-medium">Not synced changes</span>
+                            </div>
+                        )}
+                        {isSynced && (
+                            <div className="flex items-center space-x-2 mt-1">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span className="text-xs text-green-600 font-medium">Synced</span>
                             </div>
                         )}
                     </div>
@@ -387,7 +397,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
                                 disabled={loading}
                                 className="px-3 py-1 bg-green-600 text-white rounded text-xs disabled:opacity-50 hover:bg-green-700 transition-colors"
                             >
-                                {loading ? 'Saving...' : 'Save'}
+                                {loading ? 'Syncing...' : 'Sync'}
                             </button>
                         )}
                         <button
@@ -397,7 +407,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
                                 hasUnsavedChanges ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'
                             }`}
                         >
-                            {hasUnsavedChanges ? 'Save & Next' : 'Next End'}
+                            {hasUnsavedChanges ? 'Sync & Next' : 'Next End'}
                         </button>
                     </div>
                 </div>
@@ -425,7 +435,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
                     <div className="fixed top-4 right-4 p-2 bg-blue-50 border border-blue-200 rounded-md shadow-lg z-40">
                         <div className="flex items-center justify-center space-x-2">
                             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-                            <span className="text-xs text-blue-700">Saving...</span>
+                            <span className="text-xs text-blue-700">Syncing...</span>
                         </div>
                     </div>
                 )}
@@ -436,7 +446,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
                             <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
-                            <span className="text-xs text-green-700">Saved!</span>
+                            <span className="text-xs text-green-700">Synced!</span>
                         </div>
                     </div>
                 )}
