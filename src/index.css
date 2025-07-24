@@ -74,40 +74,6 @@
   user-select: none;
   /* Prevent zoom on iOS */
   font-size: 16px !important;
-  /* Desktop hover effects */
-  transition: all 0.2s ease;
-}
-
-/* Desktop-specific keypad styles */
-@media (min-width: 769px) {
-  #score-keypad {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: auto;
-    min-width: 400px;
-    max-width: 600px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  }
-  
-  .keypad-btn {
-    min-height: 50px;
-    min-width: 50px;
-    font-size: 1.2rem !important;
-    font-weight: bold;
-    border-radius: 8px;
-  }
-  
-  .keypad-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .keypad-btn:active {
-    transform: translateY(0);
-  }
 }
 
 @media (max-width: 600px) {
