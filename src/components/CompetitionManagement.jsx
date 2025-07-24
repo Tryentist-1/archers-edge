@@ -4,6 +4,8 @@ import {
   saveCompetitionToFirebase, 
   loadCompetitionsFromFirebase,
   deleteCompetitionFromFirebase,
+  loadCompetitionScores,
+  shouldUseFirebase,
   isOnline 
 } from '../services/firebaseService';
 
@@ -11,9 +13,15 @@ const CompetitionManagement = ({ onNavigate }) => {
   const { currentUser } = useAuth();
   const [competitions, setCompetitions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
+  const [competitionStats, setCompetitionStats] = useState({});
+  const [competitionResults, setCompetitionResults] = useState({});
+  const [showResults, setShowResults] = useState(false);
+  const [selectedCompetitionForResults, setSelectedCompetitionForResults] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -51,28 +59,208 @@ const CompetitionManagement = ({ onNavigate }) => {
     loadCompetitions();
   }, [currentUser]);
 
+  const showMessage = (msg, type = 'info') => {
+    setMessage({ text: msg, type });
+    setTimeout(() => setMessage(''), 5000);
+  };
+
   const loadCompetitions = async () => {
     try {
       setLoading(true);
       console.log('Loading competitions...');
+      console.log('Current user:', currentUser);
+      console.log('Should use Firebase:', shouldUseFirebase(currentUser?.uid));
 
-      if (isOnline() && currentUser) {
+      let loadedCompetitions = [];
+      
+      // Use same loading logic as ProfileManagement
+      if (shouldUseFirebase(currentUser?.uid)) {
         try {
           console.log('Attempting to load from Firebase...');
           const firebaseCompetitions = await loadCompetitionsFromFirebase(currentUser.uid);
           console.log('Competitions loaded from Firebase:', firebaseCompetitions);
-          setCompetitions(firebaseCompetitions);
+          if (firebaseCompetitions && firebaseCompetitions.length > 0) {
+            loadedCompetitions = firebaseCompetitions;
+            localStorage.setItem('oasCompetitions', JSON.stringify(firebaseCompetitions));
+          }
         } catch (error) {
-          console.error('Error loading from Firebase:', error);
+          console.error('Error loading from Firebase, falling back to local:', error);
         }
       } else {
-        console.log('Skipping Firebase load - offline or no user');
+        console.log('Skipping Firebase load - offline, no user, or mock user');
+      }
+      
+      // Fallback to local storage if no Firebase data (same as ProfileManagement)
+      if (loadedCompetitions.length === 0) {
+        const savedCompetitions = localStorage.getItem('oasCompetitions');
+        console.log('Raw localStorage data:', savedCompetitions);
+        if (savedCompetitions) {
+          const parsedCompetitions = JSON.parse(savedCompetitions);
+          console.log('Competitions loaded from localStorage:', parsedCompetitions);
+          loadedCompetitions = parsedCompetitions;
+        } else {
+          console.log('No competitions found in localStorage');
+        }
+      }
+      
+      console.log('Final loaded competitions:', loadedCompetitions);
+      setCompetitions(loadedCompetitions);
+      
+      // Load stats for each competition
+      await loadCompetitionStats(loadedCompetitions);
+      
+      if (loadedCompetitions.length === 0) {
+        showMessage('No competitions found. Create your first competition below.', 'info');
       }
     } catch (error) {
       console.error('Error loading competitions:', error);
+      showMessage(`Error loading competitions: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadCompetitionStats = async (competitionsList) => {
+    try {
+      const stats = {};
+      const results = {};
+      
+      console.log('Loading stats for competitions:', competitionsList);
+      
+      for (const competition of competitionsList) {
+        console.log(`Loading stats for competition: ${competition.id} - ${competition.name}`);
+        
+        if (shouldUseFirebase(currentUser?.uid)) {
+          try {
+            const scores = await loadCompetitionScores(competition.id);
+            console.log(`Scores loaded for ${competition.id}:`, scores.length, scores);
+            
+            const competitionStats = calculateCompetitionStats(scores);
+            const competitionResults = calculateCompetitionResults(scores);
+            
+            console.log(`Stats calculated for ${competition.id}:`, competitionStats);
+            
+            stats[competition.id] = competitionStats;
+            results[competition.id] = competitionResults;
+          } catch (error) {
+            console.error(`Error loading stats for competition ${competition.id}:`, error);
+            stats[competition.id] = getDefaultStats();
+            results[competition.id] = [];
+          }
+        } else {
+          console.log(`Skipping Firebase load for ${competition.id} - offline or mock user`);
+          stats[competition.id] = getDefaultStats();
+          results[competition.id] = [];
+        }
+      }
+      
+      console.log('Final competition stats:', stats);
+      setCompetitionStats(stats);
+      setCompetitionResults(results);
+    } catch (error) {
+      console.error('Error loading competition stats:', error);
+    }
+  };
+
+  const calculateCompetitionStats = (scores) => {
+    if (!scores || scores.length === 0) {
+      return getDefaultStats();
+    }
+
+    const uniqueArchers = new Set(scores.map(score => score.archerId));
+    const uniqueBales = new Set(scores.map(score => score.baleNumber));
+    const completedRounds = scores.length;
+    
+    // Calculate average scores by division
+    const divisionStats = {};
+    scores.forEach(score => {
+      const division = score.division || 'Unknown';
+      if (!divisionStats[division]) {
+        divisionStats[division] = { totalScore: 0, count: 0, scores: [] };
+      }
+      divisionStats[division].totalScore += score.totals?.totalScore || 0;
+      divisionStats[division].count += 1;
+      divisionStats[division].scores.push(score.totals?.totalScore || 0);
+    });
+
+    // Calculate averages and best scores per division
+    Object.keys(divisionStats).forEach(division => {
+      const stats = divisionStats[division];
+      stats.averageScore = stats.count > 0 ? Math.round((stats.totalScore / stats.count) * 10) / 10 : 0;
+      stats.bestScore = Math.max(...stats.scores);
+    });
+
+    return {
+      totalArchers: uniqueArchers.size,
+      totalBales: uniqueBales.size,
+      completedRounds,
+      divisionStats,
+      lastUpdated: new Date().toISOString()
+    };
+  };
+
+  const calculateCompetitionResults = (scores) => {
+    if (!scores || scores.length === 0) {
+      return [];
+    }
+
+    // Group scores by division
+    const divisionResults = {};
+    scores.forEach(score => {
+      const division = score.division || 'Unknown';
+      if (!divisionResults[division]) {
+        divisionResults[division] = [];
+      }
+      divisionResults[division].push({
+        archerId: score.archerId,
+        archerName: score.archerName,
+        totalScore: score.totals?.totalScore || 0,
+        totalTens: score.totals?.totalTens || 0,
+        totalXs: score.totals?.totalXs || 0,
+        average: score.totals?.totalScore ? (score.totals.totalScore / (score.totalEnds * score.arrowsPerEnd)).toFixed(1) : '0.0',
+        baleNumber: score.baleNumber,
+        targetAssignment: score.targetAssignment,
+        completedAt: score.completedAt
+      });
+    });
+
+    // Sort each division by score (highest first)
+    Object.keys(divisionResults).forEach(division => {
+      divisionResults[division].sort((a, b) => b.totalScore - a.totalScore);
+    });
+
+    return divisionResults;
+  };
+
+  const getDefaultStats = () => ({
+    totalArchers: 0,
+    totalBales: 0,
+    completedRounds: 0,
+    divisionStats: {},
+    lastUpdated: null
+  });
+
+  const handleViewResults = (competition) => {
+    setSelectedCompetitionForResults(competition);
+    setShowResults(true);
+  };
+
+  const handleCloseResults = () => {
+    setShowResults(false);
+    setSelectedCompetitionForResults(null);
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 9.0) return 'text-yellow-600 font-bold';
+    if (score >= 7.0) return 'text-red-600 font-bold';
+    if (score >= 5.0) return 'text-blue-600 font-bold';
+    return 'text-gray-600';
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
   };
 
   const resetForm = () => {
@@ -130,10 +318,24 @@ const CompetitionManagement = ({ onNavigate }) => {
   };
 
   const saveCompetition = async () => {
+    // Validate required fields
+    if (!formData.name.trim() || !formData.date || !formData.location.trim()) {
+      showMessage('Competition name, date, and location are required.', 'error');
+      return;
+    }
+
+    if (formData.divisions.length === 0) {
+      showMessage('Please select at least one OAS division.', 'error');
+      return;
+    }
+
+    setSaving(true);
+    showMessage('Saving competition...', 'info');
+
     try {
       console.log('Saving competition:', formData);
       console.log('Current user:', currentUser);
-      console.log('Is online:', isOnline());
+      console.log('Should use Firebase:', shouldUseFirebase(currentUser?.uid));
 
       let updatedCompetitions;
       let competitionToSave;
@@ -152,7 +354,7 @@ const CompetitionManagement = ({ onNavigate }) => {
       } else {
         // Create new competition
         competitionToSave = {
-          id: Date.now().toString(),
+          id: `comp_${Date.now()}`,
           userId: currentUser.uid,
           ...formData,
           createdAt: new Date().toISOString(),
@@ -162,10 +364,14 @@ const CompetitionManagement = ({ onNavigate }) => {
         console.log('Creating new competition:', competitionToSave);
       }
 
+      // Always update local storage (same as ProfileManagement)
+      localStorage.setItem('oasCompetitions', JSON.stringify(updatedCompetitions));
+      console.log('Updated localStorage with:', updatedCompetitions);
+      
       setCompetitions(updatedCompetitions);
 
-      // Sync to Firebase if online
-      if (isOnline() && currentUser) {
+      // Save to Firebase if possible
+      if (shouldUseFirebase(currentUser?.uid)) {
         try {
           console.log('Attempting to sync to Firebase...');
           await saveCompetitionToFirebase(competitionToSave, currentUser.uid);
@@ -174,32 +380,51 @@ const CompetitionManagement = ({ onNavigate }) => {
           console.error('Error syncing to Firebase:', error);
         }
       } else {
-        console.log('Skipping Firebase sync - offline or no user');
+        console.log('Skipping Firebase sync - offline or mock user');
       }
+
+      showMessage(
+        isEditing 
+          ? 'Competition updated successfully!' 
+          : 'Competition created successfully!', 
+        'success'
+      );
 
       resetForm();
     } catch (error) {
       console.error('Error saving competition:', error);
+      showMessage(`Error saving competition: ${error.message}`, 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
   const deleteCompetition = async (competitionId) => {
-    if (window.confirm('Are you sure you want to delete this competition?')) {
-      try {
-        const updatedCompetitions = competitions.filter(c => c.id !== competitionId);
-        setCompetitions(updatedCompetitions);
+    if (!window.confirm('Are you sure you want to delete this competition?')) {
+      return;
+    }
 
-        if (isOnline() && currentUser) {
-          try {
-            await deleteCompetitionFromFirebase(competitionId, currentUser.uid);
-            console.log('Competition deleted from Firebase');
-          } catch (error) {
-            console.error('Error deleting from Firebase:', error);
-          }
+    try {
+      const updatedCompetitions = competitions.filter(c => c.id !== competitionId);
+      
+      // Update localStorage
+      localStorage.setItem('oasCompetitions', JSON.stringify(updatedCompetitions));
+      setCompetitions(updatedCompetitions);
+
+      // Delete from Firebase if possible
+      if (shouldUseFirebase(currentUser?.uid)) {
+        try {
+          await deleteCompetitionFromFirebase(competitionId, currentUser.uid);
+          console.log('Competition deleted from Firebase');
+        } catch (error) {
+          console.error('Error deleting from Firebase:', error);
         }
-      } catch (error) {
-        console.error('Error deleting competition:', error);
       }
+
+      showMessage('Competition deleted successfully.', 'success');
+    } catch (error) {
+      console.error('Error deleting competition:', error);
+      showMessage(`Error deleting competition: ${error.message}`, 'error');
     }
   };
 
@@ -257,11 +482,32 @@ const CompetitionManagement = ({ onNavigate }) => {
       </header>
 
       <div className="p-4">
+        {/* Status Message */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            message.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+            message.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+            'bg-blue-100 text-blue-800 border border-blue-200'
+          }`}>
+            {message.text}
+          </div>
+        )}
         {/* Competition List */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-800">Your OAS Competitions ({competitions.length})</h2>
             <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  if (window.confirm('Refresh competition data? This will reload all competitions from Firebase/localStorage.')) {
+                    loadCompetitions();
+                  }
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                title="Refresh competition data"
+              >
+                🔄 Refresh
+              </button>
               <button
                 onClick={() => setIsCreating(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -362,14 +608,19 @@ const CompetitionManagement = ({ onNavigate }) => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div className="space-y-1">
                             <div className="text-xs">
-                              <span className="font-medium">Archers:</span> {competition.stats?.totalArchers || '0'}
+                              <span className="font-medium">Archers:</span> {competitionStats[competition.id]?.totalArchers || '0'}
                             </div>
                             <div className="text-xs">
-                              <span className="font-medium">Bales:</span> {competition.stats?.totalBales || '0'}
+                              <span className="font-medium">Bales:</span> {competitionStats[competition.id]?.totalBales || '0'}
                             </div>
                             <div className="text-xs">
-                              <span className="font-medium">Completed:</span> {competition.stats?.completedRounds || '0'}
+                              <span className="font-medium">Completed:</span> {competitionStats[competition.id]?.completedRounds || '0'}
                             </div>
+                            {competitionStats[competition.id]?.divisionStats && Object.keys(competitionStats[competition.id].divisionStats).length > 0 && (
+                              <div className="text-xs text-blue-600">
+                                <span className="font-medium">Divisions:</span> {Object.keys(competitionStats[competition.id].divisionStats).length}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -381,11 +632,23 @@ const CompetitionManagement = ({ onNavigate }) => {
                               Edit
                             </button>
                             <button
-                              onClick={() => onNavigate('scoring', { competitionId: competition.id })}
+                              onClick={() => onNavigate('scoring', { 
+                                competitionId: competition.id,
+                                competitionName: competition.name,
+                                competitionType: competition.type
+                              })}
                               className="text-green-600 hover:text-green-900"
                             >
                               Score
                             </button>
+                            {competitionStats[competition.id]?.completedRounds > 0 && (
+                              <button
+                                onClick={() => handleViewResults(competition)}
+                                className="text-purple-600 hover:text-purple-900"
+                              >
+                                Results
+                              </button>
+                            )}
                             <button
                               onClick={() => deleteCompetition(competition.id)}
                               className="text-red-600 hover:text-red-900"
@@ -718,11 +981,190 @@ const CompetitionManagement = ({ onNavigate }) => {
               </button>
               <button
                 onClick={saveCompetition}
-                disabled={!formData.name || !formData.date || !formData.location || formData.divisions.length === 0 || formData.rounds.length === 0}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={saving || !formData.name || !formData.date || !formData.location || formData.divisions.length === 0 || formData.rounds.length === 0}
+                className={`px-4 py-2 text-white rounded-md transition-colors ${
+                  saving || !formData.name || !formData.date || !formData.location || formData.divisions.length === 0 || formData.rounds.length === 0
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                {isEditing ? 'Update Competition' : 'Create Competition'}
+                {saving ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Saving...</span>
+                  </div>
+                ) : (
+                  isEditing ? 'Update Competition' : 'Create Competition'
+                )}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Competition Results Modal */}
+        {showResults && selectedCompetitionForResults && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      {selectedCompetitionForResults.name} - Results
+                    </h2>
+                    <p className="text-gray-600 mt-1">
+                      {selectedCompetitionForResults.date} • {selectedCompetitionForResults.location}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleCloseResults}
+                    className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Competition Stats Summary */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Competition Summary</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {competitionStats[selectedCompetitionForResults.id]?.totalArchers || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Total Archers</div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">
+                        {competitionStats[selectedCompetitionForResults.id]?.totalBales || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Total Bales</div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {competitionStats[selectedCompetitionForResults.id]?.completedRounds || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Completed Rounds</div>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {Object.keys(competitionStats[selectedCompetitionForResults.id]?.divisionStats || {}).length}
+                      </div>
+                      <div className="text-sm text-gray-600">Divisions</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Division Results */}
+                {competitionResults[selectedCompetitionForResults.id] && 
+                 Object.keys(competitionResults[selectedCompetitionForResults.id]).length > 0 ? (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Division Results</h3>
+                    {Object.entries(competitionResults[selectedCompetitionForResults.id]).map(([division, results]) => (
+                      <div key={division} className="mb-8">
+                        <h4 className="text-md font-semibold text-gray-700 mb-3 bg-gray-50 p-3 rounded-lg">
+                          {division} Division ({results.length} archers)
+                        </h4>
+                        
+                        {/* Division Stats */}
+                        {competitionStats[selectedCompetitionForResults.id]?.divisionStats[division] && (
+                          <div className="mb-4 grid grid-cols-3 gap-4">
+                            <div className="bg-gray-50 p-3 rounded-lg">
+                              <div className="text-lg font-semibold text-gray-800">
+                                {competitionStats[selectedCompetitionForResults.id].divisionStats[division].averageScore}
+                              </div>
+                              <div className="text-sm text-gray-600">Average Score</div>
+                            </div>
+                            <div className="bg-gray-50 p-3 rounded-lg">
+                              <div className="text-lg font-semibold text-gray-800">
+                                {competitionStats[selectedCompetitionForResults.id].divisionStats[division].bestScore}
+                              </div>
+                              <div className="text-sm text-gray-600">Best Score</div>
+                            </div>
+                            <div className="bg-gray-50 p-3 rounded-lg">
+                              <div className="text-lg font-semibold text-gray-800">
+                                {competitionStats[selectedCompetitionForResults.id].divisionStats[division].count}
+                              </div>
+                              <div className="text-sm text-gray-600">Participants</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Results Table */}
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Rank
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Archer
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Total Score
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Average
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    10s / Xs
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Bale/Target
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {results.map((result, index) => (
+                                  <tr key={result.archerId} className={index < 3 ? 'bg-yellow-50' : ''}>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                      {index + 1}
+                                      {index === 0 && <span className="ml-1 text-yellow-600">🥇</span>}
+                                      {index === 1 && <span className="ml-1 text-gray-600">🥈</span>}
+                                      {index === 2 && <span className="ml-1 text-orange-600">🥉</span>}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap">
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {result.archerName}
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap">
+                                      <div className={`text-lg font-bold ${getScoreColor(parseFloat(result.average))}`}>
+                                        {result.totalScore}
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap">
+                                      <div className={`text-sm font-semibold ${getScoreColor(parseFloat(result.average))}`}>
+                                        {result.average}
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                      <div>
+                                        <span className="font-medium">{result.totalTens}</span> / <span className="font-medium">{result.totalXs}</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                      <div>
+                                        Bale {result.baleNumber} • Target {result.targetAssignment}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500 text-lg mb-2">No results available</div>
+                    <div className="text-gray-400 text-sm">Complete scoring sessions to see results</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

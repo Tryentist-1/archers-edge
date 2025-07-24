@@ -179,7 +179,25 @@ function AppContent() {
         setCurrentView('new-round');
         break;
       case 'scoring':
-        console.log('Navigating to scoring, baleData:', baleData);
+        console.log('Navigating to scoring, data:', data);
+        if (data && data.competitionId) {
+          // Create baleData from competition for scoring
+          const baleData = {
+            baleNumber: 1,
+            competitionId: data.competitionId,
+            competitionName: data.competitionName || 'Competition',
+            competitionType: data.competitionType || 'qualification',
+            isPracticeRound: false,
+            archers: data.archers || [],
+            currentEnd: 1,
+            totalEnds: 12,
+            createdBy: currentUser?.uid,
+            createdAt: new Date(),
+            status: 'active'
+          };
+          setBaleData(baleData);
+          console.log('Created baleData for scoring:', baleData);
+        }
         setCurrentView('scoring');
         break;
       case 'archer-stats':
@@ -414,6 +432,25 @@ function AppContent() {
             onBaleDataUpdate={handleBaleDataUpdate}
             onNavigate={handleNavigation}
           />
+        )}
+        
+        {currentView === 'scoring' && !baleData && (
+          <div className="min-h-screen bg-gray-50 p-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="text-center">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">No Round Data Available</h2>
+                  <p className="text-gray-600 mb-4">Please set up a new round to begin scoring.</p>
+                  <button
+                    onClick={() => setCurrentView('new-round')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Start New Round
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
         
         {currentView === 'card' && baleData && selectedArcherId && (
