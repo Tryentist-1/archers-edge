@@ -3,16 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Archer's Edge</title>
     <!-- reCAPTCHA for Phone Authentication -->
     <script>
       // Debug reCAPTCHA loading
       window.addEventListener('load', function() {
         console.log('Page loaded, checking reCAPTCHA...');
+        console.log('Current domain:', window.location.hostname);
         setTimeout(() => {
           if (window.grecaptcha) {
             console.log('reCAPTCHA loaded successfully');
+            console.log('reCAPTCHA version:', window.grecaptcha.getResponse);
           } else {
             console.log('reCAPTCHA not loaded - this is normal in development');
           }
@@ -23,6 +25,8 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- reCAPTCHA container for phone authentication -->
+    <div id="recaptcha-container"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html> 

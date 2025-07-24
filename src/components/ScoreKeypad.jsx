@@ -18,6 +18,10 @@ function ScoreKeypad({
         const button = event.target.closest('button');
         if (!button) return;
         
+        // Prevent event bubbling
+        event.preventDefault();
+        event.stopPropagation();
+        
         const value = button.dataset.value;
         const action = button.dataset.action;
         
@@ -35,6 +39,7 @@ function ScoreKeypad({
                     onClear?.();
                     break;
                 case 'close':
+                    // Force close immediately
                     onClose?.();
                     break;
             }
@@ -46,7 +51,7 @@ function ScoreKeypad({
     return (
         <div 
             id="score-keypad" 
-            className="fixed bottom-0 left-0 w-full bg-gray-800 p-1 shadow-lg z-50 grid grid-cols-4 gap-1"
+            className="fixed bottom-0 left-0 w-full bg-gray-800 p-1 shadow-lg z-40 grid grid-cols-4 gap-1"
             onClick={handleKeypadClick}
         >
             {/* Top row */}

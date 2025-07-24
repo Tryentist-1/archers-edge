@@ -6,6 +6,12 @@ import ScoreKeypad from './ScoreKeypad.jsx';
 let currentlyFocusedInput = null;
 let blurTimeout = null;
 
+// Global keypad hide function
+export const hideKeypad = () => {
+    // Dispatch a custom event to hide all keypads
+    window.dispatchEvent(new CustomEvent('hideKeypad'));
+};
+
 // Focus management utility
 const ensureFocus = (element, callback = null) => {
     if (!element) return;
@@ -81,11 +87,24 @@ function ScoreInputWithKeypad({
             }
         };
 
+        const handleHideKeypad = () => {
+            // Hide keypad when global hide event is triggered
+            setIsKeypadVisible(false);
+            setIsFocused(false);
+            currentlyFocusedInput = null;
+            if (blurTimeout) {
+                clearTimeout(blurTimeout);
+                blurTimeout = null;
+            }
+        };
+
         // Listen for end navigation events (you can customize this based on your app's navigation)
         window.addEventListener('endChange', handleEndChange);
+        window.addEventListener('hideKeypad', handleHideKeypad);
         
         return () => {
             window.removeEventListener('endChange', handleEndChange);
+            window.removeEventListener('hideKeypad', handleHideKeypad);
         };
     }, []);
 
@@ -201,14 +220,24 @@ function ScoreInputWithKeypad({
     };
 
     const handleCloseKeypad = () => {
+        // Force hide keypad immediately
         setIsKeypadVisible(false);
         setIsFocused(false);
         currentlyFocusedInput = null;
+        
+        // Clear any pending blur timeout
+        if (blurTimeout) {
+            clearTimeout(blurTimeout);
+            blurTimeout = null;
+        }
         
         // Also blur the current input
         if (inputRef.current) {
             inputRef.current.blur();
         }
+        
+        // Force focus to body to ensure keypad is completely hidden
+        document.body.focus();
     };
 
     const colorClass = getScoreColorClass(inputValue);

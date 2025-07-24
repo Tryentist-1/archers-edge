@@ -22,7 +22,11 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
+    /* Prevent zoom on iOS */
+    font-size: 16px !important;
   }
   
   /* Ensure table doesn't overflow on mobile */
@@ -63,6 +67,13 @@
   min-width: 44px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Prevent zoom on iOS */
+  font-size: 16px !important;
 }
 
 @media (max-width: 600px) {
