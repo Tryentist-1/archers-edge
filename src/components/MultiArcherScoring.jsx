@@ -51,14 +51,6 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
         );
     };
 
-    const handleNextEndWithSave = async () => {
-        if (hasUnsavedChanges) {
-            await saveScores();
-            setHasUnsavedChanges(false);
-        }
-        changeEnd(1);
-    };
-
     const saveScores = async () => {
         if (!currentUser || loading) return;
         
@@ -82,6 +74,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
             LocalStorage.saveBaleData(updatedBaleData);
 
             setSaveSuccess(true);
+            setLastSavedEnd(currentEnd); // Mark this end as saved
             
             // Update the parent component with the new bale data
             if (onBaleDataUpdate) {
@@ -100,6 +93,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
             };
             LocalStorage.saveBaleData(updatedBaleData);
             console.log('Saved to local storage as backup');
+            // Don't update lastSavedEnd if Firebase save failed
         } finally {
             setLoading(false);
         }
@@ -308,6 +302,7 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
 
     // Track if current end has unsaved changes
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [lastSavedEnd, setLastSavedEnd] = useState(null);
 
     // Update unsaved changes flag when scores change
     useEffect(() => {
@@ -317,8 +312,36 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
             return endScores && (endScores.arrow1 || endScores.arrow2 || endScores.arrow3);
         });
         
-        setHasUnsavedChanges(hasScores);
-    }, [archers, currentEnd]);
+        // Only show unsaved changes if we have scores AND they haven't been saved yet
+        const hasUnsaved = hasScores && lastSavedEnd !== currentEnd;
+        setHasUnsavedChanges(hasUnsaved);
+    }, [archers, currentEnd, lastSavedEnd]);
+
+    const handleNextEndWithSave = async () => {
+        // Always save if there are changes, regardless of hasUnsavedChanges flag
+        const endKey = `end${currentEnd}`;
+        const hasScores = archers.some(archer => {
+            const endScores = archer.scores[endKey];
+            return endScores && (endScores.arrow1 || endScores.arrow2 || endScores.arrow3);
+        });
+
+        if (hasScores) {
+            setLoading(true);
+            try {
+                await saveScores();
+                setLastSavedEnd(currentEnd);
+                setHasUnsavedChanges(false);
+            } catch (error) {
+                console.error('Error saving scores before next end:', error);
+                // Still advance even if save fails
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        // Always advance to next end after save attempt
+        changeEnd(1);
+    };
 
     return (
         <div className="w-full">
@@ -347,6 +370,26 @@ const MultiArcherScoring = ({ baleData, onViewCard, onBaleDataUpdate, onNavigate
                         <span className="text-xs font-medium px-2">
                             {currentEnd}/{totalEnds}
                         </span>
+                        {hasUnsavedChanges && (
+                            <button
+                                onClick={async () => {
+                                    setLoading(true);
+                                    try {
+                                        await saveScores();
+                                        setLastSavedEnd(currentEnd);
+                                        setHasUnsavedChanges(false);
+                                    } catch (error) {
+                                        console.error('Error saving scores:', error);
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={loading}
+                                className="px-3 py-1 bg-green-600 text-white rounded text-xs disabled:opacity-50 hover:bg-green-700 transition-colors"
+                            >
+                                {loading ? 'Saving...' : 'Save'}
+                            </button>
+                        )}
                         <button
                             onClick={handleNextEndWithSave}
                             disabled={currentEnd >= totalEnds}
