@@ -7,6 +7,25 @@
 - [x] **Remove Quick Stats** - Clean up homepage layout ✅ COMPLETED
 - [x] **Competitions** - Add to homepage ✅ COMPLETED
 - [x] **Data Sync** - Add to homepage ✅ COMPLETED
+- [ ] **Save/Next Button Issue** - Ranking round save and next button requires 2 presses instead of 1
+- [ ] **Unsaved Changes Helper Text** - Shows "unsaved changes" when navigating to previous end even though scores are synced to Firebase
+- [ ] **Local Storage Sync Investigation** - Check if app has ability to save changes locally until connection to sync back to Firebase
+
+## 🚀 NEW ARCHER STARTUP PROCESS CLEANUP ✅ COMPLETED
+- [x] **Streamlined Profile Selection** - Create a single, clear flow for new archers to select their profile ✅ COMPLETED
+- [x] **Auto-Detection Enhancement** - Improve email matching and profile auto-selection logic ✅ COMPLETED
+- [x] **Profile Creation Integration** - Allow new archers to create their profile during startup if not found ✅ COMPLETED
+- [x] **Simplified Navigation** - Reduce the number of steps and components involved in startup ✅ COMPLETED
+- [x] **Clear "New Archer" Path** - Create a dedicated onboarding flow for first-time users ✅ COMPLETED
+- [x] **Profile Validation** - Ensure selected profile has all required fields before proceeding ✅ COMPLETED
+
+### Key Improvements Made:
+1. **NewArcherStartup Component** - Created a dedicated component that consolidates profile selection and creation into a single, intuitive flow
+2. **Enhanced Auto-Selection** - Improved logic to prioritize "Me" tagged profiles, then email matching, then first profile
+3. **Integrated Profile Creation** - Users can now create their profile directly during startup if not found
+4. **Simplified UI** - Clean, mobile-friendly interface with clear sections for existing profiles and profile creation
+5. **Better Validation** - Ensures required fields are filled before allowing continuation
+6. **Consistent Data Flow** - Properly saves to both Firebase and localStorage with consistent logic
 
 ## Current Session Goals ✅ ALL COMPLETED
 - [x] **Profile Sorting** - Default sort by first name, then last name ✅ COMPLETED
@@ -20,6 +39,12 @@
 ## Future Sprints
 - [ ] **Challenge System** - Send challenges to teammates and track results
 - [ ] **Profile Pictures** - Add trading card style profile pictures
+- [ ] **Bale Assignment Management** - Create and manage bale assignments for competitions
+  - [ ] Create bale assignments for events with archer selection from profile list
+  - [ ] Add/remove archers from bale assignments
+  - [ ] Swap archers between bales
+  - [ ] View bale assignments by competition
+  - [ ] Export bale assignments for event organizers
 
 ---
 
@@ -52,6 +77,34 @@
 - [ ] Allow coaches to manage all team profiles
 - [ ] Individual archers only manage their own profile
 - [ ] Add coach-specific features
+
+### Bale Assignment Management
+**Priority**: High
+**Status**: Not Started
+- [ ] **Bale Assignment Interface**
+  - [ ] Add "Bale Assignments" section to Competition Management
+  - [ ] Create bale assignment form with archer selection
+  - [ ] Display existing bale assignments for each competition
+  - [ ] Add drag-and-drop functionality for archer swapping
+- [ ] **Archer Management**
+  - [ ] Pull archer list from existing profiles
+  - [ ] Filter archers by division, gender, school
+  - [ ] Add/remove archers from bale assignments
+  - [ ] Swap archers between different bales
+  - [ ] Validate bale capacity (max 4 archers per bale)
+- [ ] **Data Structure**
+  - [ ] Create baleAssignment collection in Firebase
+  - [ ] Store bale assignments linked to competitions
+  - [ ] Include archer IDs, bale numbers, target assignments
+  - [ ] Add assignment timestamps and created by user
+- [ ] **Export Features**
+  - [ ] Generate PDF bale assignment sheets
+  - [ ] Export to CSV for event organizers
+  - [ ] Print-friendly bale assignment cards
+- [ ] **Integration**
+  - [ ] Link bale assignments to scoring interface
+  - [ ] Pre-populate archer lists in scoring setup
+  - [ ] Show bale assignments in competition details
 
 ### 1. First Login Prompt ✅ COMPLETED
 **Priority**: High

@@ -15,6 +15,7 @@ import ScoreHistory from './components/ScoreHistory';
 import DataSyncPanel from './components/DataSyncPanel';
 import ArcherProfileWithStats from './components/ArcherProfileWithStats';
 import FirstLoginPrompt from './components/FirstLoginPrompt';
+import NewArcherStartup from './components/NewArcherStartup';
 import { LocalStorage } from './utils/localStorage';
 import { 
     syncLocalDataToFirebase, 
@@ -27,7 +28,7 @@ import {
 
 function AppContent() {
   const { currentUser, loading, logout, isSetup } = useAuth();
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'new-round', 'setup', 'scoring', 'card', 'profile', 'scores', 'data-sync', 'archer-stats', 'first-login-prompt'
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'new-round', 'setup', 'scoring', 'card', 'profile', 'scores', 'data-sync', 'archer-stats', 'first-login-prompt', 'new-archer-startup'
   const [baleData, setBaleData] = useState(null);
   const [selectedArcherId, setSelectedArcherId] = useState(null);
   const [selectedProfile, setSelectedProfile] = useState(null);
@@ -67,9 +68,9 @@ function AppContent() {
           setBaleData(savedBaleData);
           setCurrentView('scoring');
         } else {
-          // If no saved state and first login not completed, show first login prompt
+          // If no saved state and first login not completed, show new archer startup
           if (!firstLoginCompleted) {
-            setCurrentView('first-login-prompt');
+            setCurrentView('new-archer-startup');
           } else {
             setCurrentView('home');
           }
@@ -260,6 +261,20 @@ function AppContent() {
     setCurrentView('home');
   };
 
+  const handleNewArcherStartupComplete = (updatedProfiles) => {
+    console.log('New archer startup completed with profiles:', updatedProfiles);
+    setHasCompletedFirstLogin(true);
+    localStorage.setItem('firstLoginCompleted', 'true');
+    setCurrentView('home');
+  };
+
+  const handleNewArcherStartupSkip = () => {
+    console.log('New archer startup skipped');
+    setHasCompletedFirstLogin(true);
+    localStorage.setItem('firstLoginCompleted', 'true');
+    setCurrentView('home');
+  };
+
   const handleLogout = async () => {
     try {
       // Clear local storage
@@ -364,6 +379,14 @@ function AppContent() {
           <FirstLoginPrompt 
             onComplete={handleFirstLoginComplete}
             onSkip={handleFirstLoginSkip}
+          />
+        )}
+
+        {/* New Archer Startup */}
+        {!loading && currentUser && !currentUser.isAnonymous && !hasCompletedFirstLogin && currentView === 'new-archer-startup' && (
+          <NewArcherStartup 
+            onComplete={handleNewArcherStartupComplete}
+            onSkip={handleNewArcherStartupSkip}
           />
         )}
         
