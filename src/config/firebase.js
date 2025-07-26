@@ -3,16 +3,34 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Firebase configuration
-// Replace these values with your actual Firebase project configuration
-// You can find these in your Firebase Console > Project Settings > General > Your apps
+// All values must be provided via environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDjCqHqMT-3LkKWGFlRx2Mls37vJTN0d7k",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "archers-edge.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "archers-edge",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "archers-edge.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1056447684075",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1056447684075:web:9fdd213f321c50f4758dae"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+// Validate that all required environment variables are present
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN', 
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID'
+];
+
+const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
+
+if (missingVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}. Please check your .env file.`);
+}
+
+// reCAPTCHA site key
+export const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || null;
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

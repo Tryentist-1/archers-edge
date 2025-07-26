@@ -1,5 +1,67 @@
 # Archer's Edge - Development TODO
 
+## 🔐 SECURE AUTHENTICATION RESTORATION (CURRENT SESSION)
+**Branch**: `auth-restoration-secure`
+**Priority**: CRITICAL - Security and functionality
+
+### Security Checklist ✅
+- [x] **Environment Variables**: Firebase config uses env vars (not hardcoded)
+- [x] **Git Ignore**: .env file properly ignored
+- [x] **No Hardcoded Keys**: No API keys in git history
+- [x] **Secure Branch**: Working on isolated branch
+
+### Authentication Restoration Tasks
+- [ ] **Restore Original Auth Files**
+  - [ ] Restore `src/contexts/AuthContext.jsx` from commit 322e926
+  - [ ] Restore `src/components/Login.jsx` from commit 322e926
+  - [ ] Update `src/config/firebase.js` with proper environment setup
+  - [ ] Test Google authentication
+  - [ ] Test Phone authentication with reCAPTCHA
+
+- [ ] **Role-Based Access Control**
+  - [ ] Define user roles: Coach, Event Manager, Ref, Archer
+  - [ ] Create role-based routing system
+  - [ ] Implement role-specific UI components
+  - [ ] Add role-based permissions
+
+- [ ] **Coach-Specific Features**
+  - [ ] Coach dashboard interface
+  - [ ] Team management tools
+  - [ ] Event creation and management
+  - [ ] Archer profile management
+
+- [ ] **Event Manager Features**
+  - [ ] Event creation interface
+  - [ ] Bale assignment management
+  - [ ] Competition setup tools
+  - [ ] Results management
+
+- [ ] **Referee Features**
+  - [ ] Referee scoring interface
+  - [ ] Score validation tools
+  - [ ] Competition oversight features
+
+### Security Measures
+- [ ] **Environment Setup**
+  - [ ] Verify .env file is not tracked
+  - [ ] Update .env.example with all required variables
+  - [ ] Test with placeholder values
+  - [ ] Document environment setup process
+
+- [ ] **Testing**
+  - [ ] Test authentication in development
+  - [ ] Test role-based access
+  - [ ] Test offline functionality
+  - [ ] Test mobile compatibility
+
+### Deployment Safety
+- [ ] **Pre-Deployment Checklist**
+  - [ ] No hardcoded credentials
+  - [ ] Environment variables properly set
+  - [ ] Role-based access working
+  - [ ] Mobile authentication tested
+  - [ ] Offline functionality preserved
+
 ## 🐛 BUGS AND TWEAKS TODO
 - [x] **Header Navigation Fix** - "Archer's Edge" → Home, "First Last" → My Profile, "Logout" (remove selected profile confusion) ✅ COMPLETED
 - [x] **Home Page Card Layout** - "My Profile", "New Ranking Round", "Score History" (default to "Show My Scores Only") ✅ COMPLETED
@@ -10,6 +72,9 @@
 - [ ] **Save/Next Button Issue** - Ranking round save and next button requires 2 presses instead of 1
 - [ ] **Unsaved Changes Helper Text** - Shows "unsaved changes" when navigating to previous end even though scores are synced to Firebase
 - [ ] **Local Storage Sync Investigation** - Check if app has ability to save changes locally until connection to sync back to Firebase
+- [x] **Mobile-Friendly Coach Management** - Convert table layout to card-based layout for better mobile experience ✅ COMPLETED
+- [x] **Clean Coach Management UI** - Remove checkboxes, bulk functions, make names clickable, improve favorites, fix stats loading ✅ COMPLETED
+- [x] **Archer Search Functionality** - Add search by name for existing archers in startup flow ✅ COMPLETED
 
 ## 🚀 NEW ARCHER STARTUP PROCESS CLEANUP ✅ COMPLETED
 - [x] **Streamlined Profile Selection** - Create a single, clear flow for new archers to select their profile ✅ COMPLETED
