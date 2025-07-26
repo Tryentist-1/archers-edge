@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-    loadCompletedRoundsFromFirebase,
-    loadAllUserScores,
+    loadCompletedRoundsFromFirebase, 
     shouldUseFirebase,
     findMyArcherProfile,
     loadMyScores
@@ -44,8 +43,8 @@ const ScoreHistory = ({ onNavigate }) => {
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     console.log('Attempting to load from Firebase...');
-                    const firebaseRounds = await loadAllUserScores(currentUser.uid);
-                    console.log('All scores loaded from Firebase:', firebaseRounds);
+                    const firebaseRounds = await loadCompletedRoundsFromFirebase(currentUser.uid);
+                    console.log('Rounds loaded from Firebase:', firebaseRounds);
                     if (firebaseRounds && firebaseRounds.length > 0) {
                         loadedRounds = firebaseRounds;
                         localStorage.setItem('completedRounds', JSON.stringify(firebaseRounds));

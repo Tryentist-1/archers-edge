@@ -445,19 +445,14 @@ export const saveCompetitionScore = async (scoreData, userId) => {
             paperConfirmed = false
         } = scoreData;
 
-        // Handle practice rounds (competitionId is null)
-        const isPracticeRound = !competitionId;
-        const safeCompetitionId = competitionId || 'practice';
-        const safeCompetitionName = competitionName || 'Practice Round';
-
         // Create comprehensive score record
-        const scoreRef = doc(db, 'competitionScores', `${archerId}_${safeCompetitionId}_${Date.now()}`);
+        const scoreRef = doc(db, 'competitionScores', `${archerId}_${competitionId}_${Date.now()}`);
         const scoreRecord = {
             id: scoreRef.id,
             archerId,
             archerName,
-            competitionId: safeCompetitionId,
-            competitionName: safeCompetitionName,
+            competitionId,
+            competitionName,
             baleNumber,
             targetAssignment,
             division,
@@ -472,8 +467,7 @@ export const saveCompetitionScore = async (scoreData, userId) => {
             scoredBy: userId,
             completedAt: serverTimestamp(),
             status: 'verified',
-            isShared: true, // All competition scores are shared
-            isPracticeRound: isPracticeRound // Flag for practice rounds
+            isShared: true // All competition scores are shared
         };
 
         await setDoc(scoreRef, scoreRecord);
@@ -494,12 +488,9 @@ export const saveCompetitionScore = async (scoreData, userId) => {
 
 export const loadCompetitionScores = async (competitionId) => {
     try {
-        // Handle practice rounds
-        const safeCompetitionId = competitionId || 'practice';
-        
         const scoresQuery = query(
             collection(db, 'competitionScores'),
-            where('competitionId', '==', safeCompetitionId),
+            where('competitionId', '==', competitionId),
             orderBy('completedAt', 'desc')
         );
         
@@ -513,7 +504,7 @@ export const loadCompetitionScores = async (competitionId) => {
             });
         });
         
-        console.log(`Competition scores loaded for ${safeCompetitionId}:`, scores.length);
+        console.log(`Competition scores loaded for ${competitionId}:`, scores.length);
         return scores;
     } catch (error) {
         console.error('Error loading competition scores:', error);
@@ -736,65 +727,6 @@ export const loadMyScores = async (userId, userEmail = null) => {
         return scores;
     } catch (error) {
         console.error('Error loading my scores:', error);
-        return [];
-    }
-}; 
-
-export const loadAllUserScores = async (userId) => {
-    try {
-        const allScores = [];
-        
-        // Load from completedRounds collection
-        try {
-            const roundsQuery = query(
-                collection(db, 'completedRounds'),
-                where('userId', '==', userId),
-                orderBy('completedAt', 'desc')
-            );
-            
-            const roundsSnapshot = await getDocs(roundsQuery);
-            roundsSnapshot.forEach((doc) => {
-                allScores.push({
-                    id: doc.id,
-                    ...doc.data(),
-                    source: 'completedRounds'
-                });
-            });
-        } catch (error) {
-            console.error('Error loading from completedRounds:', error);
-        }
-        
-        // Load from competitionScores collection
-        try {
-            const scoresQuery = query(
-                collection(db, 'competitionScores'),
-                where('scoredBy', '==', userId),
-                orderBy('completedAt', 'desc')
-            );
-            
-            const scoresSnapshot = await getDocs(scoresQuery);
-            scoresSnapshot.forEach((doc) => {
-                allScores.push({
-                    id: doc.id,
-                    ...doc.data(),
-                    source: 'competitionScores'
-                });
-            });
-        } catch (error) {
-            console.error('Error loading from competitionScores:', error);
-        }
-        
-        // Sort by completedAt date (newest first)
-        allScores.sort((a, b) => {
-            const dateA = a.completedAt?.toDate?.() || new Date(a.completedAt);
-            const dateB = b.completedAt?.toDate?.() || new Date(b.completedAt);
-            return dateB - dateA;
-        });
-        
-        console.log('All user scores loaded:', allScores.length);
-        return allScores;
-    } catch (error) {
-        console.error('Error loading all user scores:', error);
         return [];
     }
 }; 

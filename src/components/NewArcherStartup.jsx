@@ -9,9 +9,12 @@ import {
 const NewArcherStartup = ({ onComplete, onSkip }) => {
     const { currentUser } = useAuth();
     const [profiles, setProfiles] = useState([]);
+    const [allProfiles, setAllProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [showCreateProfile, setShowCreateProfile] = useState(false);
+    const [showSearch, setShowSearch] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
     const [newProfileData, setNewProfileData] = useState({
         firstName: '',
         lastName: '',
@@ -47,6 +50,7 @@ const NewArcherStartup = ({ onComplete, onSkip }) => {
         try {
             setLoading(true);
             let loadedProfiles = [];
+            let allLoadedProfiles = [];
             
             // Try to load from Firebase first
             if (shouldUseFirebase(currentUser?.uid)) {
@@ -54,6 +58,7 @@ const NewArcherStartup = ({ onComplete, onSkip }) => {
                     const firebaseProfiles = await loadProfilesFromFirebase(currentUser.uid);
                     if (firebaseProfiles && firebaseProfiles.length > 0) {
                         loadedProfiles = firebaseProfiles;
+                        allLoadedProfiles = firebaseProfiles;
                         localStorage.setItem('archerProfiles', JSON.stringify(firebaseProfiles));
                     }
                 } catch (error) {
@@ -66,6 +71,7 @@ const NewArcherStartup = ({ onComplete, onSkip }) => {
                 const savedProfiles = localStorage.getItem('archerProfiles');
                 if (savedProfiles) {
                     loadedProfiles = JSON.parse(savedProfiles);
+                    allLoadedProfiles = JSON.parse(savedProfiles);
                 }
             }
 
@@ -82,7 +88,20 @@ const NewArcherStartup = ({ onComplete, onSkip }) => {
                 return lastNameA.localeCompare(lastNameB);
             });
 
+            const sortedAllProfiles = allLoadedProfiles.sort((a, b) => {
+                const firstNameA = (a.firstName || '').toLowerCase();
+                const firstNameB = (b.firstName || '').toLowerCase();
+                const lastNameA = (a.lastName || '').toLowerCase();
+                const lastNameB = (b.lastName || '').toLowerCase();
+                
+                if (firstNameA !== firstNameB) {
+                    return firstNameA.localeCompare(firstNameB);
+                }
+                return lastNameA.localeCompare(lastNameB);
+            });
+
             setProfiles(sortedProfiles);
+            setAllProfiles(sortedAllProfiles);
 
             // Auto-select profile if email matches
             if (currentUser?.email) {
@@ -106,6 +125,29 @@ const NewArcherStartup = ({ onComplete, onSkip }) => {
 
     const handleCreateProfile = () => {
         setShowCreateProfile(true);
+    };
+
+    const handleSearchProfiles = () => {
+        setShowSearch(true);
+    };
+
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
+
+    const getFilteredProfiles = () => {
+        if (!searchTerm.trim()) return allProfiles;
+        
+        const searchLower = searchTerm.toLowerCase();
+        return allProfiles.filter(profile => {
+            const firstName = (profile.firstName || '').toLowerCase();
+            const lastName = (profile.lastName || '').toLowerCase();
+            const fullName = `${firstName} ${lastName}`.trim();
+            
+            return firstName.includes(searchLower) || 
+                   lastName.includes(searchLower) || 
+                   fullName.includes(searchLower);
+        });
     };
 
     const handleNewProfileChange = (field, value) => {
@@ -198,7 +240,7 @@ const NewArcherStartup = ({ onComplete, onSkip }) => {
                     </p>
                 </div>
 
-                {!showCreateProfile ? (
+                {!showCreateProfile && !showSearch ? (
                     <div>
                         {/* Existing Profiles Section */}
                         {profiles.length > 0 && (
@@ -242,6 +284,19 @@ const NewArcherStartup = ({ onComplete, onSkip }) => {
                             </div>
                         )}
 
+                        {/* Search for Existing Profile */}
+                        <div className="mb-6">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                                Search for Existing Profile
+                            </h2>
+                            <button
+                                onClick={handleSearchProfiles}
+                                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                🔍 Search by Name
+                            </button>
+                        </div>
+
                         {/* Create New Profile Option */}
                         <div className="border-t pt-6">
                             <h2 className="text-xl font-semibold text-gray-800 mb-4">
@@ -275,6 +330,81 @@ const NewArcherStartup = ({ onComplete, onSkip }) => {
                                 Continue
                             </button>
                         </div>
+                    </div>
+                ) : showSearch ? (
+                    <div>
+                        {/* Search Interface */}
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-semibold text-gray-800">
+                                Search for Your Profile
+                            </h2>
+                            <button
+                                onClick={() => setShowSearch(false)}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ← Back
+                            </button>
+                        </div>
+                        
+                        {/* Search Input */}
+                        <div className="mb-6">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                placeholder="Enter first name, last name, or full name..."
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                            />
+                        </div>
+                        
+                        {/* Search Results */}
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                            {getFilteredProfiles().map(profile => (
+                                <div
+                                    key={profile.id}
+                                    className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                                        selectedProfile?.id === profile.id
+                                            ? 'border-blue-500 bg-blue-50'
+                                            : 'border-gray-200 hover:bg-gray-50'
+                                    }`}
+                                    onClick={() => handleProfileSelect(profile)}
+                                >
+                                    <div className="flex items-center space-x-3">
+                                        <div className={`w-4 h-4 rounded-full border-2 ${
+                                            selectedProfile?.id === profile.id
+                                                ? 'bg-blue-500 border-blue-500'
+                                                : 'border-gray-300'
+                                        }`}>
+                                            {selectedProfile?.id === profile.id && (
+                                                <div className="w-2 h-2 bg-white rounded-full m-0.5"></div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-medium text-gray-900">
+                                                {profile.firstName} {profile.lastName}
+                                            </h3>
+                                            <p className="text-sm text-gray-600">
+                                                {profile.school || 'No School'} • {profile.division || 'No Division'} • {profile.bowType || 'No Bow'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {getFilteredProfiles().length === 0 && searchTerm && (
+                            <div className="text-center py-8 text-gray-500">
+                                <p>No profiles found matching "{searchTerm}"</p>
+                                <p className="text-sm mt-2">Try a different search term or create a new profile</p>
+                            </div>
+                        )}
+                        
+                        {!searchTerm && (
+                            <div className="text-center py-8 text-gray-500">
+                                <p>Enter a name to search for existing profiles</p>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div>

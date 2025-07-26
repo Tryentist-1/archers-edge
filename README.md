@@ -124,15 +124,23 @@ The application is optimized for mobile devices and works seamlessly on phones a
 4. Update `src/config/firebase.js` with your project credentials
 
 ### Environment Variables
-Create a `.env` file in the root directory:
-```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-```
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Update the `.env` file with your Firebase project credentials:
+   ```env
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
+   ```
+
+**⚠️ Security Note:** The `.env` file is already in `.gitignore` to prevent accidentally committing sensitive credentials. Never commit API keys or other secrets to version control.
 
 ## 🧪 **Testing**
 

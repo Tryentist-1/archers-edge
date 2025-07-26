@@ -8,7 +8,11 @@
 const STORAGE_KEYS = {
     CURRENT_BALE: 'archers_edge_current_bale',
     USER_SESSION: 'archers_edge_user_session',
-    APP_STATE: 'archers_edge_app_state'
+    APP_STATE: 'archers_edge_app_state',
+    ARCHER_PROFILES: 'archerProfiles',
+    OAS_COMPETITIONS: 'oasCompetitions',
+    COMPLETED_ROUNDS: 'completedRounds',
+    SYNC_STATUS: 'archers_edge_sync_status'
 };
 
 export const LocalStorage = {
@@ -63,9 +67,9 @@ export const LocalStorage = {
     },
 
     // Save app state
-    saveAppState: (state) => {
+    saveAppState: (appState) => {
         try {
-            localStorage.setItem(STORAGE_KEYS.APP_STATE, JSON.stringify(state));
+            localStorage.setItem(STORAGE_KEYS.APP_STATE, JSON.stringify(appState));
             return true;
         } catch (error) {
             console.error('Error saving app state:', error);
@@ -84,6 +88,109 @@ export const LocalStorage = {
         }
     },
 
+    // Save sync status
+    saveSyncStatus: (syncData) => {
+        try {
+            const statusData = {
+                ...syncData,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem(STORAGE_KEYS.SYNC_STATUS, JSON.stringify(statusData));
+            return true;
+        } catch (error) {
+            console.error('Error saving sync status:', error);
+            return false;
+        }
+    },
+
+    // Load sync status
+    loadSyncStatus: () => {
+        try {
+            const data = localStorage.getItem(STORAGE_KEYS.SYNC_STATUS);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('Error loading sync status:', error);
+            return null;
+        }
+    },
+
+    // Clear bale data only
+    clearBaleData: () => {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.CURRENT_BALE);
+            console.log('Cleared bale data from local storage');
+            return true;
+        } catch (error) {
+            console.error('Error clearing bale data:', error);
+            return false;
+        }
+    },
+
+    // Clear profiles only
+    clearProfiles: () => {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.ARCHER_PROFILES);
+            console.log('Cleared profiles from local storage');
+            return true;
+        } catch (error) {
+            console.error('Error clearing profiles:', error);
+            return false;
+        }
+    },
+
+    // Clear competitions only
+    clearCompetitions: () => {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.OAS_COMPETITIONS);
+            console.log('Cleared competitions from local storage');
+            return true;
+        } catch (error) {
+            console.error('Error clearing competitions:', error);
+            return false;
+        }
+    },
+
+    // Clear completed rounds only
+    clearCompletedRounds: () => {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.COMPLETED_ROUNDS);
+            console.log('Cleared completed rounds from local storage');
+            return true;
+        } catch (error) {
+            console.error('Error clearing completed rounds:', error);
+            return false;
+        }
+    },
+
+    // Clear sync status
+    clearSyncStatus: () => {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.SYNC_STATUS);
+            console.log('Cleared sync status from local storage');
+            return true;
+        } catch (error) {
+            console.error('Error clearing sync status:', error);
+            return false;
+        }
+    },
+
+    // Purge all user data (but keep session)
+    purgeUserData: () => {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.CURRENT_BALE);
+            localStorage.removeItem(STORAGE_KEYS.ARCHER_PROFILES);
+            localStorage.removeItem(STORAGE_KEYS.OAS_COMPETITIONS);
+            localStorage.removeItem(STORAGE_KEYS.COMPLETED_ROUNDS);
+            localStorage.removeItem(STORAGE_KEYS.APP_STATE);
+            localStorage.removeItem(STORAGE_KEYS.SYNC_STATUS);
+            console.log('Purged all user data from local storage');
+            return true;
+        } catch (error) {
+            console.error('Error purging user data:', error);
+            return false;
+        }
+    },
+
     // Clear all local storage
     clearAll: () => {
         try {
@@ -93,6 +200,25 @@ export const LocalStorage = {
             console.log('Cleared all local storage');
         } catch (error) {
             console.error('Error clearing local storage:', error);
+        }
+    },
+
+    // Get storage info for debugging
+    getStorageInfo: () => {
+        try {
+            const info = {};
+            Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
+                const data = localStorage.getItem(key);
+                info[name] = {
+                    exists: !!data,
+                    size: data ? data.length : 0,
+                    data: data ? JSON.parse(data) : null
+                };
+            });
+            return info;
+        } catch (error) {
+            console.error('Error getting storage info:', error);
+            return {};
         }
     },
 

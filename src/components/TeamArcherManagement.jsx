@@ -4,6 +4,7 @@ import {
   loadProfilesFromFirebase,
   saveProfileToFirebase,
   deleteProfileFromFirebase,
+  loadArcherProfileWithScores,
   shouldUseFirebase,
   isOnline
 } from '../services/firebaseService';
@@ -144,7 +145,29 @@ const TeamArcherManagement = ({ onNavigate }) => {
       });
       
       console.log('Sorted profiles for team management:', sortedProfiles);
-      setAllArchers(sortedProfiles);
+      
+      // Load stats for each archer
+      const archersWithStats = await Promise.all(
+        sortedProfiles.map(async (archer) => {
+          try {
+            if (shouldUseFirebase(currentUser?.uid)) {
+              const detailedProfile = await loadArcherProfileWithScores(archer.id);
+              if (detailedProfile && detailedProfile.performanceStats) {
+                return {
+                  ...archer,
+                  performanceStats: detailedProfile.performanceStats
+                };
+              }
+            }
+            return archer;
+          } catch (error) {
+            console.error(`Error loading stats for archer ${archer.id}:`, error);
+            return archer;
+          }
+        })
+      );
+      
+      setAllArchers(archersWithStats);
       
       if (loadedProfiles.length === 0) {
         showMessage('No archer profiles found. Create profiles in Profile Management first.', 'info');
@@ -523,45 +546,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
           </div>
         )}
 
-        {/* Bulk Actions Bar */}
-        {selectedArchers.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-blue-800">
-                  {selectedArchers.length} archer{selectedArchers.length !== 1 ? 's' : ''} selected
-                </span>
-                <button
-                  onClick={handleDeselectAll}
-                  className="text-sm text-blue-600 hover:text-blue-800 underline"
-                >
-                  Deselect All
-                </button>
-              </div>
-              <div className="flex space-x-2">
-                {(userRole === 'Coach' || userRole === 'Team Captain' || userRole === 'Event Manager' || userRole === 'System Admin') && (
-                  <>
-                    <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
-                      Bulk Edit Division
-                    </button>
-                    <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
-                      Bulk Edit School
-                    </button>
-                    <button className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors">
-                      Bulk Delete
-                    </button>
-                  </>
-                )}
-                <button 
-                  onClick={() => onNavigate('multi-scoring', { selectedArchers: selectedArchers })}
-                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
-                >
-                  Score Selected ({selectedArchers.length})
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Filters and Search - Compact One Line */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
@@ -606,154 +591,126 @@ const TeamArcherManagement = ({ onNavigate }) => {
                 />
                 Show Inactive
               </label>
-              <div className="flex space-x-1">
-                <button
-                  onClick={handleSelectAll}
-                  className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  All
-                </button>
-                <button
-                  onClick={handleDeselectAll}
-                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                >
-                  Clear
-                </button>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Archer List */}
+        {/* Archer List - Mobile-Friendly Cards */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Team Archers ({filteredArchers.length})
-            </h2>
-            {selectedArchers.length > 0 && (
-              <p className="text-sm text-gray-600 mt-1">
-                {selectedArchers.length} archer(s) selected
-              </p>
-            )}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Team Archers ({filteredArchers.length})
+              </h2>
+              {selectedArchers.length > 0 && (
+                <span className="text-sm text-blue-600 font-medium">
+                  {selectedArchers.length} selected
+                </span>
+              )}
+            </div>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <input
-                      type="checkbox"
-                      checked={selectedArchers.length === filteredArchers.length && filteredArchers.length > 0}
-                      onChange={() => selectedArchers.length === filteredArchers.length ? handleDeselectAll() : handleSelectAll()}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Archer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Division
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    School
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Equipment
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stats
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredArchers.map((archer) => (
-                  <tr key={archer.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={selectedArchers.includes(archer.id)}
-                        onChange={() => handleArcherSelection(archer.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {`${archer.firstName || ''} ${archer.lastName || ''}`.trim() || 'Unnamed Archer'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {archer.school || 'No School'} • {archer.grade || 'No Grade'} • {archer.role || 'Archer'}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {archer.division || 'No Division'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {archer.school || 'No School'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>
-                        <div>{archer.equipment?.bowType || 'No Bow'}</div>
-                        <div className="text-xs text-gray-500">
-                          {archer.equipment?.drawWeight || '0'}# • {archer.equipment?.drawLength || '0'}"
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="space-y-1">
-                        <div className="text-xs">
-                          <span className="font-medium">Avg:</span> {archer.stats?.averageScore || 'N/A'}
-                        </div>
-                        <div className="text-xs">
-                          <span className="font-medium">Rounds:</span> {archer.stats?.roundsCompleted || '0'}
-                        </div>
-                        <div className="text-xs">
-                          <span className="font-medium">Best:</span> {archer.stats?.bestScore || 'N/A'}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        {/* Show Edit button only if user can edit this archer */}
-                        {(userRole === 'Coach' || userRole === 'Team Captain' || userRole === 'Event Manager' || userRole === 'System Admin' || (myProfile && archer.id === myProfile.id)) && (
-                          <button
-                            onClick={() => handleEditArcher(archer)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </button>
-                        )}
+          <div className="divide-y divide-gray-200">
+            {filteredArchers.map((archer) => (
+              <div key={archer.id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-start space-x-3">
+                  {/* Main Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Header Row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => onNavigate('profile', { archerId: archer.id })}
-                          className="text-green-600 hover:text-green-900"
+                          onClick={() => handleEditArcher(archer)}
+                          className="text-left hover:text-blue-600 transition-colors"
                         >
-                          Profile
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {`${archer.firstName || ''} ${archer.lastName || ''}`.trim() || 'Unnamed Archer'}
+                          </h3>
                         </button>
+                        {/* Tags */}
+                        <div className="flex items-center space-x-1">
+                          {archer.isMe && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Me
+                            </span>
+                          )}
+                          {myProfile && archer.id === myProfile.id && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Me
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {archer.division || 'No Division'}
+                        </span>
+                        {/* Favorite Toggle */}
+                        <button
+                          onClick={() => toggleTag(archer.id, 'isFavorite')}
+                          className="text-lg hover:scale-110 transition-transform"
+                        >
+                          {archer.isFavorite ? '⭐' : '☆'}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Info Row */}
+                    <div className="text-xs text-gray-500 mb-2">
+                      <span>{archer.school || 'No School'}</span>
+                      {archer.grade && <span> • Grade {archer.grade}</span>}
+                      {archer.role && <span> • {archer.role}</span>}
+                    </div>
+                    
+                    {/* Equipment & Stats Row */}
+                    <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+                      <div>
+                        <span className="font-medium text-gray-700">Equipment:</span>
+                        <div className="text-gray-600">
+                          {archer.equipment?.bowType || 'No Bow'}
+                          {(archer.equipment?.drawWeight || archer.equipment?.drawLength) && (
+                            <div className="text-gray-500">
+                              {archer.equipment?.drawWeight || '0'}# • {archer.equipment?.drawLength || '0'}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <button
+                          onClick={() => onNavigate('scores', { archerId: archer.id })}
+                          className="text-left hover:text-blue-600 transition-colors"
+                        >
+                          <span className="font-medium text-gray-700">Stats:</span>
+                          <div className="text-gray-600">
+                            <div>Avg: {archer.performanceStats?.averageScore || archer.stats?.averageScore || 'N/A'}</div>
+                            <div>Rounds: {archer.performanceStats?.totalRounds || archer.stats?.roundsCompleted || '0'}</div>
+                            <div>Best: {archer.performanceStats?.bestScore || archer.stats?.bestScore || 'N/A'}</div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      <div className="flex space-x-1">
                         <button
                           onClick={() => onNavigate('multi-scoring', { selectedArchers: [archer.id] })}
-                          className="text-purple-600 hover:text-purple-900"
+                          className="px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
                         >
                           Score
                         </button>
                         <button
                           onClick={() => handleViewStats(archer.id)}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
                         >
                           Stats
                         </button>
-                        {/* Profile management actions for coaches */}
+                        {/* Coach Actions */}
                         {(userRole === 'Coach' || userRole === 'Team Captain' || userRole === 'Event Manager' || userRole === 'System Admin') && (
                           <>
                             <button
                               onClick={() => toggleTag(archer.id, 'isMe')}
-                              className={`px-2 py-1 rounded text-xs ${
+                              className={`px-2 py-1 text-xs rounded ${
                                 archer.isMe 
                                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
                                   : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
@@ -762,35 +719,19 @@ const TeamArcherManagement = ({ onNavigate }) => {
                               {archer.isMe ? 'Me' : 'Tag Me'}
                             </button>
                             <button
-                              onClick={() => toggleTag(archer.id, 'isFavorite')}
-                              className={`px-2 py-1 rounded text-xs ${
-                                archer.isFavorite 
-                                  ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
-                                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                              }`}
-                            >
-                              {archer.isFavorite ? '⭐' : '⭐'}
-                            </button>
-                            <button
                               onClick={() => deleteProfile(archer.id)}
-                              className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+                              className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                             >
                               Delete
                             </button>
                           </>
                         )}
-                        {/* Show "Me" indicator for own profile */}
-                        {myProfile && archer.id === myProfile.id && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                            Me
-                          </span>
-                        )}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
           
           {filteredArchers.length === 0 && (
