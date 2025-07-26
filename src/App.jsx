@@ -49,6 +49,17 @@ function AppContent() {
           () => setIsOnline(false)
         );
 
+        // Clear any conflicting state on mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          // Clear potentially conflicting state on mobile
+          console.log('Mobile device detected - clearing potential state conflicts');
+          setCurrentView('home');
+          setBaleData(null);
+          setSelectedArcherId(null);
+          setSelectedProfile(null);
+        }
+
         // Load app state from local storage first
         const savedAppState = LocalStorage.loadAppState();
         const savedBaleData = LocalStorage.loadBaleData();
@@ -60,11 +71,11 @@ function AppContent() {
         // Load user's "Me" profile
         loadMyProfile();
         
-        if (savedAppState) {
+        if (savedAppState && !isMobile) {
           setCurrentView(savedAppState.currentView || 'home');
           setBaleData(savedAppState.baleData || savedBaleData || null);
           setSelectedArcherId(savedAppState.selectedArcherId || null);
-        } else if (savedBaleData) {
+        } else if (savedBaleData && !isMobile) {
           setBaleData(savedBaleData);
           setCurrentView('scoring');
         } else {
@@ -81,7 +92,7 @@ function AppContent() {
           syncWithFirebase();
           // Also try to load app state from Firebase
           loadAppStateFromFirebase(currentUser.uid).then(firebaseAppState => {
-            if (firebaseAppState && firebaseAppState.baleData && !baleData) {
+            if (firebaseAppState && firebaseAppState.baleData && !baleData && !isMobile) {
               setBaleData(firebaseAppState.baleData);
               setCurrentView(firebaseAppState.currentView || 'scoring');
             }
@@ -367,113 +378,131 @@ function AppContent() {
           </div>
         )}
 
-        {/* Login Screen */}
+        {/* Login Screen - Only show when not authenticated */}
         {!loading && (!currentUser || currentUser.isAnonymous) && (
           <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
             <Login />
           </div>
         )}
 
-        {/* First Login Prompt */}
-        {!loading && currentUser && !currentUser.isAnonymous && !hasCompletedFirstLogin && currentView === 'first-login-prompt' && (
-          <FirstLoginPrompt 
-            onComplete={handleFirstLoginComplete}
-            onSkip={handleFirstLoginSkip}
-          />
-        )}
+        {/* Authenticated User Content - Only show when authenticated */}
+        {!loading && currentUser && !currentUser.isAnonymous && (
+          <>
+            {/* First Login Prompt */}
+            {!hasCompletedFirstLogin && currentView === 'first-login-prompt' && (
+              <FirstLoginPrompt 
+                onComplete={handleFirstLoginComplete}
+                onSkip={handleFirstLoginSkip}
+              />
+            )}
 
-        {/* New Archer Startup */}
-        {!loading && currentUser && !currentUser.isAnonymous && !hasCompletedFirstLogin && currentView === 'new-archer-startup' && (
-          <NewArcherStartup 
-            onComplete={handleNewArcherStartupComplete}
-            onSkip={handleNewArcherStartupSkip}
-          />
-        )}
-        
-        {currentView === 'home' && (
-          <HomePage 
-            currentUser={currentUser}
-            onNavigate={handleNavigation}
-            baleData={baleData}
-          />
-        )}
-        
-        {currentView === 'new-round' && (
-          <ProfileRoundSetup 
-            onSetupComplete={handleSetupComplete}
-            onNavigate={handleNavigation}
-          />
-        )}
-        
-        {currentView === 'setup' && (
-          <ArcherSetup onSetupComplete={handleSetupComplete} />
-        )}
-        
-        {currentView === 'scoring' && baleData && (
-          <MultiArcherScoring 
-            baleData={baleData} 
-            onViewCard={handleViewCard}
-            onBaleDataUpdate={handleBaleDataUpdate}
-            onNavigate={handleNavigation}
-          />
-        )}
-        
-        {currentView === 'scoring' && !baleData && (
-          <div className="min-h-screen bg-gray-50 p-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <div className="text-center">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">No Round Data Available</h2>
-                  <p className="text-gray-600 mb-4">Please set up a new round to begin scoring.</p>
-                  <button
-                    onClick={() => setCurrentView('new-round')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Start New Round
-                  </button>
+            {/* New Archer Startup */}
+            {!hasCompletedFirstLogin && currentView === 'new-archer-startup' && (
+              <NewArcherStartup 
+                onComplete={handleNewArcherStartupComplete}
+                onSkip={handleNewArcherStartupSkip}
+              />
+            )}
+            
+            {/* Home Page */}
+            {currentView === 'home' && (
+              <HomePage 
+                currentUser={currentUser}
+                onNavigate={handleNavigation}
+                baleData={baleData}
+              />
+            )}
+            
+            {/* New Round Setup */}
+            {currentView === 'new-round' && (
+              <ProfileRoundSetup 
+                onSetupComplete={handleSetupComplete}
+                onNavigate={handleNavigation}
+              />
+            )}
+            
+            {/* Archer Setup */}
+            {currentView === 'setup' && (
+              <ArcherSetup onSetupComplete={handleSetupComplete} />
+            )}
+            
+            {/* Scoring Interface */}
+            {currentView === 'scoring' && baleData && (
+              <MultiArcherScoring 
+                baleData={baleData} 
+                onViewCard={handleViewCard}
+                onBaleDataUpdate={handleBaleDataUpdate}
+                onNavigate={handleNavigation}
+              />
+            )}
+            
+            {/* No Round Data */}
+            {currentView === 'scoring' && !baleData && (
+              <div className="min-h-screen bg-gray-50 p-4">
+                <div className="max-w-4xl mx-auto">
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <div className="text-center">
+                      <h2 className="text-xl font-bold text-gray-800 mb-4">No Round Data Available</h2>
+                      <p className="text-gray-600 mb-4">Please set up a new round to begin scoring.</p>
+                      <button
+                        onClick={() => setCurrentView('new-round')}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        Start New Round
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-        
-        {currentView === 'card' && baleData && selectedArcherId && (
-          <OASScorecard 
-            baleData={baleData} 
-            archerId={selectedArcherId}
-            onBackToScoring={handleBackToScoring}
-            onRoundCompleted={handleRoundCompleted}
-          />
-        )}
-        
-        {currentView === 'profile' && (
-          <ProfileManagement 
-            onNavigate={handleNavigation}
-            onProfileSelect={setSelectedProfile}
-            selectedProfile={selectedProfile}
-          />
-        )}
-        
-        {currentView === 'competitions' && (
-          <CompetitionManagement onNavigate={handleNavigation} />
-        )}
-        {currentView === 'team-archers' && (
-          <TeamArcherManagement onNavigate={handleNavigation} />
-        )}
-        
-        {currentView === 'scores' && (
-          <ScoreHistory onNavigate={handleNavigation} />
-        )}
-        
-        {currentView === 'data-sync' && (
-          <DataSyncPanel onNavigate={handleNavigation} />
-        )}
-        
-        {currentView === 'archer-stats' && archerStatsData && (
-          <ArcherProfileWithStats 
-            archerId={archerStatsData.archerId}
-            onNavigate={handleNavigation}
-          />
+            )}
+            
+            {/* Scorecard */}
+            {currentView === 'card' && baleData && selectedArcherId && (
+              <OASScorecard 
+                baleData={baleData} 
+                archerId={selectedArcherId}
+                onBackToScoring={handleBackToScoring}
+                onRoundCompleted={handleRoundCompleted}
+              />
+            )}
+            
+            {/* Profile Management */}
+            {currentView === 'profile' && (
+              <ProfileManagement 
+                onNavigate={handleNavigation}
+                onProfileSelect={setSelectedProfile}
+                selectedProfile={selectedProfile}
+              />
+            )}
+            
+            {/* Competition Management */}
+            {currentView === 'competitions' && (
+              <CompetitionManagement onNavigate={handleNavigation} />
+            )}
+            
+            {/* Team Archer Management */}
+            {currentView === 'team-archers' && (
+              <TeamArcherManagement onNavigate={handleNavigation} />
+            )}
+            
+            {/* Score History */}
+            {currentView === 'scores' && (
+              <ScoreHistory onNavigate={handleNavigation} />
+            )}
+            
+            {/* Data Sync */}
+            {currentView === 'data-sync' && (
+              <DataSyncPanel onNavigate={handleNavigation} />
+            )}
+            
+            {/* Archer Stats */}
+            {currentView === 'archer-stats' && archerStatsData && (
+              <ArcherProfileWithStats 
+                archerId={archerStatsData.archerId}
+                onNavigate={handleNavigation}
+              />
+            )}
+          </>
         )}
       </main>
     </div>
