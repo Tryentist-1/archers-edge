@@ -279,6 +279,8 @@ function ProfileSelectionView({ onBack }) {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showTeamCodeInput, setShowTeamCodeInput] = useState(false);
   const { login, getMyProfileId, getFavoriteProfileIds, toggleFavorite } = useAuth();
 
   // Load profiles from localStorage
@@ -342,6 +344,94 @@ function ProfileSelectionView({ onBack }) {
 
     loadProfiles();
   }, []);
+
+  // Handle team data loading from URL parameters
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const teamCode = urlParams.get('team');
+    const teamData = urlParams.get('data');
+    
+    if (teamCode || teamData) {
+      handleLoadTeamData(teamCode, teamData);
+    }
+  }, []);
+
+  const handleLoadTeamData = async (teamCode, teamData) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      let profiles = [];
+      
+      if (teamData) {
+        // Decode team data from URL parameter
+        const decodedData = decodeURIComponent(teamData);
+        profiles = JSON.parse(decodedData);
+      } else if (teamCode) {
+        // Load from server using team code
+        profiles = await loadTeamFromServer(teamCode);
+      }
+
+      if (profiles && profiles.length > 0) {
+        localStorage.setItem('archerProfiles', JSON.stringify(profiles));
+        setProfiles(profiles);
+        setError('');
+      } else {
+        setError('No team data found for the provided code');
+      }
+    } catch (error) {
+      console.error('Error loading team data:', error);
+      setError('Failed to load team data: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTeamFromServer = async (teamCode) => {
+    // This would connect to your Firebase server
+    // For now, return sample data based on team code
+    const teamData = {
+      'CENTRAL-VARSITY': [
+        {
+          id: 'team-1',
+          firstName: 'John',
+          lastName: 'Smith',
+          school: 'Central High',
+          email: 'john.smith@central.edu',
+          phone: '+1234567890',
+          team: 'Varsity',
+          level: 'Advanced',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 'team-2',
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          school: 'Central High',
+          email: 'sarah.johnson@central.edu',
+          phone: '+1234567891',
+          team: 'Varsity',
+          level: 'Intermediate',
+          createdAt: new Date().toISOString()
+        }
+      ],
+      'CENTRAL-JV': [
+        {
+          id: 'team-3',
+          firstName: 'Mike',
+          lastName: 'Davis',
+          school: 'Central High',
+          email: 'mike.davis@central.edu',
+          phone: '+1234567892',
+          team: 'JV',
+          level: 'Beginner',
+          createdAt: new Date().toISOString()
+        }
+      ]
+    };
+
+    return teamData[teamCode] || [];
+  };
 
   const handleProfileSelect = (profileId) => {
     setLoading(true);
@@ -501,6 +591,30 @@ function ProfileSelectionView({ onBack }) {
           </div>
         )}
 
+        {/* Load Team Data Section */}
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <h3 className="text-lg font-medium text-blue-900 mb-2">Load Team Data</h3>
+          <p className="text-sm text-blue-700 mb-3">
+            Scan a QR code or enter a team code to load archer profiles from the server
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => setShowQRScanner(true)}
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              📱 Scan QR Code
+            </button>
+            <button
+              onClick={() => setShowTeamCodeInput(true)}
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              🔢 Enter Team Code
+            </button>
+          </div>
+        </div>
+
         {/* Back to Authentication */}
         <div className="text-center">
           <button
@@ -511,6 +625,145 @@ function ProfileSelectionView({ onBack }) {
             ← Back to Sign In
           </button>
         </div>
+      </div>
+
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <QRScannerModal 
+          onScan={(data) => {
+            setShowQRScanner(false);
+            handleLoadTeamData(null, data);
+          }}
+          onClose={() => setShowQRScanner(false)}
+        />
+      )}
+
+      {/* Team Code Input Modal */}
+      {showTeamCodeInput && (
+        <TeamCodeModal 
+          onSubmit={(teamCode) => {
+            setShowTeamCodeInput(false);
+            handleLoadTeamData(teamCode, null);
+          }}
+          onClose={() => setShowTeamCodeInput(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// QR Scanner Modal Component
+function QRScannerModal({ onScan, onClose }) {
+  const [scanning, setScanning] = useState(true);
+  const [error, setError] = useState('');
+
+  const handleScan = (data) => {
+    if (data) {
+      setScanning(false);
+      onScan(data);
+    }
+  };
+
+  const handleError = (err) => {
+    console.error('QR Scan error:', err);
+    setError('Failed to scan QR code. Please try again.');
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Scan QR Code</h3>
+        
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        <div className="bg-gray-100 rounded-lg p-4 mb-4 text-center">
+          <p className="text-sm text-gray-600">
+            {scanning ? 'Point camera at QR code...' : 'Processing...'}
+          </p>
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => setScanning(!scanning)}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+          >
+            {scanning ? 'Stop' : 'Start'} Scanning
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Team Code Input Modal Component
+function TeamCodeModal({ onSubmit, onClose }) {
+  const [teamCode, setTeamCode] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (teamCode.trim()) {
+      setLoading(true);
+      onSubmit(teamCode.trim());
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Enter Team Code</h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="teamCode" className="block text-sm font-medium text-gray-700 mb-2">
+              Team Code
+            </label>
+            <input
+              id="teamCode"
+              type="text"
+              value={teamCode}
+              onChange={(e) => setTeamCode(e.target.value)}
+              placeholder="e.g., CENTRAL-VARSITY"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div className="text-sm text-gray-500">
+            <p>💡 <strong>Available codes:</strong></p>
+            <ul className="mt-1 space-y-1">
+              <li>• <code>CENTRAL-VARSITY</code> - Central High Varsity Team</li>
+              <li>• <code>CENTRAL-JV</code> - Central High JV Team</li>
+            </ul>
+          </div>
+
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !teamCode.trim()}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Loading...' : 'Load Team'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

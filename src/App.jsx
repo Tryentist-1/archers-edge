@@ -16,6 +16,7 @@ import DataSyncPanel from './components/DataSyncPanel';
 import ArcherProfileWithStats from './components/ArcherProfileWithStats';
 import FirstLoginPrompt from './components/FirstLoginPrompt';
 import NewArcherStartup from './components/NewArcherStartup';
+import CoachQRGenerator from './components/CoachQRGenerator.jsx';
 import { LocalStorage } from './utils/localStorage';
 import { 
     syncLocalDataToFirebase, 
@@ -501,6 +502,11 @@ function AppContent() {
                 archerId={archerStatsData.archerId}
                 onNavigate={handleNavigation}
               />
+            )}
+
+            {/* Coach QR Generator */}
+            {currentView === 'coach-qr' && (
+              <CoachQRGenerator />
             )}
           </>
         )}
