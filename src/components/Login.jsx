@@ -289,6 +289,51 @@ function ProfileSelectionView({ onBack }) {
         if (storedProfiles) {
           const parsedProfiles = JSON.parse(storedProfiles);
           setProfiles(parsedProfiles);
+        } else {
+          // For development/testing - create sample profiles if none exist
+          if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('172.16')) {
+            const sampleProfiles = [
+              {
+                id: 'sample-1',
+                firstName: 'John',
+                lastName: 'Smith',
+                school: 'Central High',
+                email: 'john.smith@email.com',
+                phone: '+1234567890',
+                team: 'Varsity',
+                level: 'Advanced',
+                createdAt: new Date().toISOString()
+              },
+              {
+                id: 'sample-2',
+                firstName: 'Sarah',
+                lastName: 'Johnson',
+                school: 'Central High',
+                email: 'sarah.johnson@email.com',
+                phone: '+1234567891',
+                team: 'JV',
+                level: 'Intermediate',
+                createdAt: new Date().toISOString()
+              },
+              {
+                id: 'sample-3',
+                firstName: 'Mike',
+                lastName: 'Davis',
+                school: 'Central High',
+                email: 'mike.davis@email.com',
+                phone: '+1234567892',
+                team: 'Varsity',
+                level: 'Beginner',
+                createdAt: new Date().toISOString()
+              }
+            ];
+            
+            // Only create samples if user explicitly wants them
+            if (window.location.search.includes('samples=true')) {
+              localStorage.setItem('archerProfiles', JSON.stringify(sampleProfiles));
+              setProfiles(sampleProfiles);
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading profiles:', error);
@@ -440,9 +485,19 @@ function ProfileSelectionView({ onBack }) {
         {profiles.length === 0 && (
           <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
             <p className="text-gray-600 mb-2">No profiles found</p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 mb-4">
               Create your first profile to get started with scoring
             </p>
+            <div className="space-y-2">
+              <p className="text-xs text-gray-400">
+                💡 <strong>Tip:</strong> Use Google Sign-in or Phone authentication above to create your first profile
+              </p>
+              {process.env.NODE_ENV === 'development' && (
+                <p className="text-xs text-blue-500">
+                  🧪 <strong>Dev:</strong> Add <code>?samples=true</code> to URL for test profiles
+                </p>
+              )}
+            </div>
           </div>
         )}
 
