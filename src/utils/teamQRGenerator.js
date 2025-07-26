@@ -79,7 +79,7 @@ const sampleTeams = {
  * @param {string} baseUrl - The base URL of the app
  * @returns {string} - URL that can be converted to QR code
  */
-export function generateTeamQRUrl(teamCode, baseUrl = 'http://172.16.0.97:3000') {
+export function generateTeamQRUrl(teamCode, baseUrl = 'https://archers-edge.web.app') {
   const teamData = sampleTeams[teamCode];
   if (!teamData) {
     throw new Error(`Team code '${teamCode}' not found`);
@@ -100,7 +100,7 @@ export function generateTeamQRUrl(teamCode, baseUrl = 'http://172.16.0.97:3000')
  * @param {string} baseUrl - The base URL of the app
  * @returns {string} - URL with team code
  */
-export function generateTeamCodeUrl(teamCode, baseUrl = 'http://172.16.0.97:3000') {
+export function generateTeamCodeUrl(teamCode, baseUrl = 'https://archers-edge.web.app') {
   return `${baseUrl}?team=${encodeURIComponent(teamCode)}`;
 }
 
@@ -127,7 +127,7 @@ export function getTeamInfo(teamCode) {
  * @param {string} baseUrl - The base URL of the app
  * @returns {Promise<string>} - Data URL for QR code image
  */
-export async function generateQRCodeDataUrl(teamCode, baseUrl = 'http://172.16.0.97:3000') {
+export async function generateQRCodeDataUrl(teamCode, baseUrl = 'https://archers-edge.web.app') {
   const qrUrl = generateTeamQRUrl(teamCode, baseUrl);
   
   // For now, return a placeholder
