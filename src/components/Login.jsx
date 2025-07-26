@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { loadTeamFromFirebase } from '../services/firebaseService.js';
 
 function Login() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -369,7 +370,7 @@ function ProfileSelectionView({ onBack }) {
         profiles = JSON.parse(decodedData);
       } else if (teamCode) {
         // Load from server using team code
-        profiles = await loadTeamFromServer(teamCode);
+        profiles = await loadTeamFromFirebase(teamCode);
       }
 
       if (profiles && profiles.length > 0) {
@@ -385,52 +386,6 @@ function ProfileSelectionView({ onBack }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadTeamFromServer = async (teamCode) => {
-    // This would connect to your Firebase server
-    // For now, return sample data based on team code
-    const teamData = {
-      'CENTRAL-VARSITY': [
-        {
-          id: 'team-1',
-          firstName: 'John',
-          lastName: 'Smith',
-          school: 'Central High',
-          email: 'john.smith@central.edu',
-          phone: '+1234567890',
-          team: 'Varsity',
-          level: 'Advanced',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'team-2',
-          firstName: 'Sarah',
-          lastName: 'Johnson',
-          school: 'Central High',
-          email: 'sarah.johnson@central.edu',
-          phone: '+1234567891',
-          team: 'Varsity',
-          level: 'Intermediate',
-          createdAt: new Date().toISOString()
-        }
-      ],
-      'CENTRAL-JV': [
-        {
-          id: 'team-3',
-          firstName: 'Mike',
-          lastName: 'Davis',
-          school: 'Central High',
-          email: 'mike.davis@central.edu',
-          phone: '+1234567892',
-          team: 'JV',
-          level: 'Beginner',
-          createdAt: new Date().toISOString()
-        }
-      ]
-    };
-
-    return teamData[teamCode] || [];
   };
 
   const handleProfileSelect = (profileId) => {
@@ -709,6 +664,26 @@ function QRScannerModal({ onScan, onClose }) {
 function TeamCodeModal({ onSubmit, onClose }) {
   const [teamCode, setTeamCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [availableTeams, setAvailableTeams] = useState([]);
+
+  // Load available teams
+  React.useEffect(() => {
+    const loadTeams = async () => {
+      try {
+        const { getAvailableTeamsFromFirebase } = await import('../services/firebaseService.js');
+        const teams = await getAvailableTeamsFromFirebase();
+        setAvailableTeams(teams);
+      } catch (error) {
+        console.error('Error loading teams:', error);
+        // Fallback to hardcoded teams
+        const { getAvailableTeamCodes } = await import('../utils/teamQRGenerator.js');
+        const teamCodes = getAvailableTeamCodes();
+        setAvailableTeams(teamCodes.map(code => ({ teamCode: code, name: code.replace('-', ' ') })));
+      }
+    };
+
+    loadTeams();
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -740,10 +715,11 @@ function TeamCodeModal({ onSubmit, onClose }) {
           </div>
 
           <div className="text-sm text-gray-500">
-            <p>💡 <strong>Available codes:</strong></p>
+            <p>💡 <strong>Available teams:</strong></p>
             <ul className="mt-1 space-y-1">
-              <li>• <code>CENTRAL-VARSITY</code> - Central High Varsity Team</li>
-              <li>• <code>CENTRAL-JV</code> - Central High JV Team</li>
+              {availableTeams.map(team => (
+                <li key={team.teamCode}>• <code>{team.teamCode}</code> - {team.name}</li>
+              ))}
             </ul>
           </div>
 

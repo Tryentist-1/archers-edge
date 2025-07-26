@@ -1,12 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { generateTeamQRCode, getAvailableTeamCodes } from '../utils/teamQRGenerator.js';
+import { getAvailableTeamsFromFirebase } from '../services/firebaseService.js';
 
 function CoachQRGenerator() {
   const [selectedTeam, setSelectedTeam] = useState('');
   const [qrInfo, setQrInfo] = useState(null);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const availableTeams = getAvailableTeamCodes();
+  // Load teams from Firebase
+  useEffect(() => {
+    const loadTeams = async () => {
+      try {
+        setLoading(true);
+        const firebaseTeams = await getAvailableTeamsFromFirebase();
+        setTeams(firebaseTeams);
+      } catch (error) {
+        console.error('Error loading teams:', error);
+        // Fallback to hardcoded teams
+        const hardcodedTeams = getAvailableTeamCodes().map(teamCode => {
+          const teamInfo = generateTeamQRCode(teamCode);
+          return {
+            teamCode,
+            name: teamInfo.teamName,
+            school: teamInfo.school,
+            team: teamInfo.team,
+            archerCount: teamInfo.archerCount
+          };
+        });
+        setTeams(hardcodedTeams);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTeams();
+  }, []);
 
   const handleGenerateQR = () => {
     if (!selectedTeam) return;
@@ -43,18 +73,24 @@ function CoachQRGenerator() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Choose a team...</option>
-                {availableTeams.map(teamCode => (
-                  <option key={teamCode} value={teamCode}>
-                    {teamCode.replace('-', ' ')}
-                  </option>
-                ))}
+                {loading ? (
+                  <option value="">Loading teams...</option>
+                ) : teams.length === 0 ? (
+                  <option value="">No teams available.</option>
+                ) : (
+                  teams.map(team => (
+                    <option key={team.teamCode} value={team.teamCode}>
+                      {team.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
             {/* Generate Button */}
             <button
               onClick={handleGenerateQR}
-              disabled={!selectedTeam}
+              disabled={!selectedTeam || loading}
               className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Generate QR Code

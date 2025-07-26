@@ -716,17 +716,160 @@ export const findMyArcherProfile = async (userId, userEmail = null) => {
 
 export const loadMyScores = async (userId, userEmail = null) => {
     try {
+        console.log('Loading my scores from Firebase for user:', userId);
+        
+        // First, find my profile
         const myProfile = await findMyArcherProfile(userId, userEmail);
         if (!myProfile) {
-            console.log('No archer profile found for user');
+            console.log('No profile found for user');
             return [];
         }
-
-        // Load scores for this specific archer
-        const scores = await loadArcherCompetitionScores(myProfile.id);
+        
+        // Load all scores for this profile
+        const scores = await loadArcherRoundsFromFirebase(myProfile.id);
+        console.log(`Loaded ${scores.length} scores for profile ${myProfile.id}`);
         return scores;
     } catch (error) {
-        console.error('Error loading my scores:', error);
-        return [];
+        console.error('Error loading my scores from Firebase:', error);
+        throw error;
+    }
+};
+
+// Team Management Functions
+export const loadTeamFromFirebase = async (teamCode) => {
+    try {
+        console.log('Loading team from Firebase for team code:', teamCode);
+        
+        // Parse team code (e.g., "CENTRAL-VARSITY" -> school: "CENTRAL", team: "VARSITY")
+        const [school, team] = teamCode.split('-');
+        
+        if (!school || !team) {
+            throw new Error(`Invalid team code format: ${teamCode}. Expected format: SCHOOL-TEAM`);
+        }
+        
+        // Query profiles by school and team
+        const profilesRef = collection(db, 'profiles');
+        const schoolQuery = query(
+            profilesRef, 
+            where('school', '==', school.toUpperCase()),
+            where('team', '==', team.toUpperCase())
+        );
+        
+        const querySnapshot = await getDocs(schoolQuery);
+        
+        const teamProfiles = [];
+        querySnapshot.forEach((doc) => {
+            teamProfiles.push({ id: doc.id, ...doc.data() });
+        });
+        
+        console.log(`Found ${teamProfiles.length} profiles for team ${teamCode}`);
+        
+        if (teamProfiles.length === 0) {
+            // Fallback to hardcoded data if no Firebase data found
+            console.log('No Firebase data found, using fallback data');
+            return loadTeamFromFallback(teamCode);
+        }
+        
+        return teamProfiles;
+    } catch (error) {
+        console.error('Error loading team from Firebase:', error);
+        // Fallback to hardcoded data
+        return loadTeamFromFallback(teamCode);
+    }
+};
+
+export const loadTeamFromFallback = (teamCode) => {
+    // Import the fallback data from teamQRGenerator
+    const { getTeamInfo } = require('../utils/teamQRGenerator.js');
+    const teamInfo = getTeamInfo(teamCode);
+    
+    if (!teamInfo) {
+        throw new Error(`Team code '${teamCode}' not found in fallback data`);
+    }
+    
+    return teamInfo.archers;
+};
+
+export const getAvailableTeamsFromFirebase = async () => {
+    try {
+        console.log('Loading available teams from Firebase');
+        
+        const profilesRef = collection(db, 'profiles');
+        const querySnapshot = await getDocs(profilesRef);
+        
+        const teams = new Map();
+        
+        querySnapshot.forEach((doc) => {
+            const profile = doc.data();
+            if (profile.school && profile.team) {
+                const teamCode = `${profile.school.toUpperCase()}-${profile.team.toUpperCase()}`;
+                
+                if (!teams.has(teamCode)) {
+                    teams.set(teamCode, {
+                        teamCode,
+                        name: `${profile.school} ${profile.team}`,
+                        school: profile.school,
+                        team: profile.team,
+                        archerCount: 0,
+                        archers: []
+                    });
+                }
+                
+                const team = teams.get(teamCode);
+                team.archerCount++;
+                team.archers.push({ id: doc.id, ...profile });
+            }
+        });
+        
+        console.log(`Found ${teams.size} teams in Firebase`);
+        return Array.from(teams.values());
+    } catch (error) {
+        console.error('Error loading teams from Firebase:', error);
+        // Return fallback teams
+        const { getAvailableTeamCodes, getTeamInfo } = require('../utils/teamQRGenerator.js');
+        const teamCodes = getAvailableTeamCodes();
+        
+        return teamCodes.map(teamCode => {
+            const teamInfo = getTeamInfo(teamCode);
+            return {
+                teamCode,
+                name: teamInfo.name,
+                school: teamInfo.school,
+                team: teamInfo.team,
+                archerCount: teamInfo.archers.length,
+                archers: teamInfo.archers
+            };
+        });
+    }
+};
+
+export const saveTeamToFirebase = async (teamData, userId) => {
+    try {
+        console.log('Saving team data to Firebase:', teamData);
+        
+        // Save each archer profile to Firebase
+        const savedProfiles = [];
+        
+        for (const archer of teamData.archers) {
+            const profileData = {
+                ...archer,
+                createdBy: userId,
+                updatedBy: userId,
+                updatedAt: serverTimestamp(),
+                isShared: true,
+                school: teamData.school,
+                team: teamData.team
+            };
+            
+            const profileRef = doc(db, 'profiles', archer.id);
+            await setDoc(profileRef, profileData);
+            savedProfiles.push({ id: archer.id, ...profileData });
+        }
+        
+        console.log(`Saved ${savedProfiles.length} profiles for team ${teamData.teamCode}`);
+        return savedProfiles;
+    } catch (error) {
+        console.error('Error saving team to Firebase:', error);
+        throw error;
     }
 }; 
