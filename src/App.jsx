@@ -181,6 +181,7 @@ function AppContent() {
   };
 
   const handleNavigation = (destination, data = null) => {
+    console.log('App: handleNavigation called with:', destination, data);
     switch (destination) {
       case 'home':
         setCurrentView('home');
@@ -199,6 +200,12 @@ function AppContent() {
         break;
       case 'data-sync':
         setCurrentView('data-sync');
+        break;
+      case 'coach-management':
+        setCurrentView('coach-management');
+        break;
+      case 'coach-qr':
+        setCurrentView('coach-qr');
         break;
       case 'new-round':
         setCurrentView('new-round');

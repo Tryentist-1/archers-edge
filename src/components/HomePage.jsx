@@ -78,6 +78,7 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
     };
 
     const handleNavigation = (destination) => {
+        console.log('HomePage: Navigating to:', destination);
         onNavigate(destination);
     };
 
