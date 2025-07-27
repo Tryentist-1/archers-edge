@@ -289,49 +289,69 @@ function ProfileSelectionView({ onBack }) {
           const parsedProfiles = JSON.parse(storedProfiles);
           setProfiles(parsedProfiles);
         } else {
-          // For development/testing - create sample profiles if none exist
-          if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('172.16')) {
-            const sampleProfiles = [
-              {
-                id: 'sample-1',
-                firstName: 'John',
-                lastName: 'Smith',
-                school: 'Central High',
-                email: 'john.smith@email.com',
-                phone: '+1234567890',
-                team: 'Varsity',
-                level: 'Advanced',
-                createdAt: new Date().toISOString()
-              },
-              {
-                id: 'sample-2',
-                firstName: 'Sarah',
-                lastName: 'Johnson',
-                school: 'Central High',
-                email: 'sarah.johnson@email.com',
-                phone: '+1234567891',
-                team: 'JV',
-                level: 'Intermediate',
-                createdAt: new Date().toISOString()
-              },
-              {
-                id: 'sample-3',
-                firstName: 'Mike',
-                lastName: 'Davis',
-                school: 'Central High',
-                email: 'mike.davis@email.com',
-                phone: '+1234567892',
-                team: 'Varsity',
-                level: 'Beginner',
-                createdAt: new Date().toISOString()
-              }
-            ];
-            
-            // Only create samples if user explicitly wants them
-            if (window.location.search.includes('samples=true')) {
-              localStorage.setItem('archerProfiles', JSON.stringify(sampleProfiles));
-              setProfiles(sampleProfiles);
+          // Create sample profiles for testing - available in production
+          const sampleProfiles = [
+            {
+              id: 'sample-1',
+              firstName: 'John',
+              lastName: 'Smith',
+              school: 'Central High',
+              email: 'john.smith@email.com',
+              phone: '+1234567890',
+              team: 'Varsity',
+              level: 'Advanced',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-2',
+              firstName: 'Sarah',
+              lastName: 'Johnson',
+              school: 'Central High',
+              email: 'sarah.johnson@email.com',
+              phone: '+1234567891',
+              team: 'JV',
+              level: 'Intermediate',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-3',
+              firstName: 'Mike',
+              lastName: 'Davis',
+              school: 'Central High',
+              email: 'mike.davis@email.com',
+              phone: '+1234567892',
+              team: 'Varsity',
+              level: 'Beginner',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-4',
+              firstName: 'Robin',
+              lastName: 'Hood',
+              school: 'Camp',
+              email: 'robin.hood@test.edu',
+              phone: '+1234567890',
+              team: 'TEST',
+              level: 'Advanced',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-5',
+              firstName: 'Green',
+              lastName: 'Arrow',
+              school: 'Camp',
+              email: 'green.arrow@test.edu',
+              phone: '+1234567891',
+              team: 'TEST',
+              level: 'Advanced',
+              createdAt: new Date().toISOString()
             }
+          ];
+          
+          // Create samples if user explicitly wants them OR if no profiles exist
+          if (window.location.search.includes('samples=true') || profiles.length === 0) {
+            localStorage.setItem('archerProfiles', JSON.stringify(sampleProfiles));
+            setProfiles(sampleProfiles);
           }
         }
       } catch (error) {
@@ -556,11 +576,72 @@ function ProfileSelectionView({ onBack }) {
               <p className="text-xs text-gray-400">
                 💡 <strong>Tip:</strong> Use QR code or team code to load profiles from your coach
               </p>
-              {process.env.NODE_ENV === 'development' && (
-                <p className="text-xs text-blue-500">
-                  🧪 <strong>Dev:</strong> Add <code>?samples=true</code> to URL for test profiles
-                </p>
-              )}
+              <button
+                onClick={() => {
+                  const sampleProfiles = [
+                    {
+                      id: 'sample-1',
+                      firstName: 'John',
+                      lastName: 'Smith',
+                      school: 'Central High',
+                      email: 'john.smith@email.com',
+                      phone: '+1234567890',
+                      team: 'Varsity',
+                      level: 'Advanced',
+                      createdAt: new Date().toISOString()
+                    },
+                    {
+                      id: 'sample-2',
+                      firstName: 'Sarah',
+                      lastName: 'Johnson',
+                      school: 'Central High',
+                      email: 'sarah.johnson@email.com',
+                      phone: '+1234567891',
+                      team: 'JV',
+                      level: 'Intermediate',
+                      createdAt: new Date().toISOString()
+                    },
+                    {
+                      id: 'sample-3',
+                      firstName: 'Mike',
+                      lastName: 'Davis',
+                      school: 'Central High',
+                      email: 'mike.davis@email.com',
+                      phone: '+1234567892',
+                      team: 'Varsity',
+                      level: 'Beginner',
+                      createdAt: new Date().toISOString()
+                    },
+                    {
+                      id: 'sample-4',
+                      firstName: 'Robin',
+                      lastName: 'Hood',
+                      school: 'Camp',
+                      email: 'robin.hood@test.edu',
+                      phone: '+1234567890',
+                      team: 'TEST',
+                      level: 'Advanced',
+                      createdAt: new Date().toISOString()
+                    },
+                    {
+                      id: 'sample-5',
+                      firstName: 'Green',
+                      lastName: 'Arrow',
+                      school: 'Camp',
+                      email: 'green.arrow@test.edu',
+                      phone: '+1234567891',
+                      team: 'TEST',
+                      level: 'Advanced',
+                      createdAt: new Date().toISOString()
+                    }
+                  ];
+                  localStorage.setItem('archerProfiles', JSON.stringify(sampleProfiles));
+                  setProfiles(sampleProfiles);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+              >
+                📋 Load Sample Profiles
+              </button>
             </div>
           </div>
         )}
