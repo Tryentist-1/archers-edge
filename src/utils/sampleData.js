@@ -27,10 +27,10 @@ export const addCoachProfilesToExisting = () => {
     if (existingProfiles) {
       const profiles = JSON.parse(existingProfiles);
       
-      // Check if coach profiles already exist
-      const existingCoachIds = profiles.filter(p => p.role === 'Coach').map(p => p.id);
+      // Check if coach profiles already exist by name and role
+      const existingCoachNames = profiles.filter(p => p.role === 'Coach').map(p => `${p.firstName} ${p.lastName}`);
       const newCoachProfiles = sampleCoachProfiles.filter(coach => 
-        !existingCoachIds.includes(coach.id)
+        !existingCoachNames.includes(`${coach.firstName} ${coach.lastName}`)
       );
       
       if (newCoachProfiles.length > 0) {
@@ -124,5 +124,42 @@ export const createSampleTeams = async () => {
   } catch (error) {
     console.error('Error creating sample teams:', error);
     return [];
+  }
+};
+
+// Function to clean up duplicate profiles
+export const cleanupDuplicateProfiles = () => {
+  try {
+    const existingProfiles = localStorage.getItem('archerProfiles');
+    if (existingProfiles) {
+      const profiles = JSON.parse(existingProfiles);
+      
+      // Remove duplicates based on name and role
+      const uniqueProfiles = [];
+      const seen = new Set();
+      
+      profiles.forEach(profile => {
+        const key = `${profile.firstName} ${profile.lastName} ${profile.role}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueProfiles.push(profile);
+        } else {
+          console.log('Removing duplicate profile:', profile);
+        }
+      });
+      
+      if (uniqueProfiles.length < profiles.length) {
+        localStorage.setItem('archerProfiles', JSON.stringify(uniqueProfiles));
+        console.log(`Removed ${profiles.length - uniqueProfiles.length} duplicate profiles`);
+        return profiles.length - uniqueProfiles.length;
+      } else {
+        console.log('No duplicate profiles found');
+        return 0;
+      }
+    }
+    return 0;
+  } catch (error) {
+    console.error('Error cleaning up duplicate profiles:', error);
+    return 0;
   }
 }; 

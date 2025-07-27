@@ -444,12 +444,19 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     };
 
     const deleteProfile = async (profileId) => {
+        console.log('=== DELETE PROFILE DEBUG ===');
+        console.log('Deleting profile ID:', profileId);
+        console.log('Current profiles count:', profiles.length);
+        
         if (!window.confirm('Are you sure you want to delete this profile? This will also remove any associated score records.')) {
+            console.log('Delete cancelled by user');
             return;
         }
         
         try {
             const updatedProfiles = profiles.filter(p => p.id !== profileId);
+            console.log('Profiles after filtering:', updatedProfiles.length);
+            
             localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
             setProfiles(updatedProfiles);
             
@@ -472,6 +479,8 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             } else {
                 console.log('Skipping Firebase delete - offline or mock user');
             }
+            
+            console.log('Profile deletion completed successfully');
         } catch (error) {
             console.error('Error deleting profile:', error);
         }
