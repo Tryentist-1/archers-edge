@@ -93,14 +93,16 @@ function AppContent() {
         if (shouldUseFirebase(currentUser?.uid) && isSetup()) {
           syncWithFirebase();
           // Also try to load app state from Firebase
-          loadAppStateFromFirebase(currentUser.uid).then(firebaseAppState => {
-            if (firebaseAppState && firebaseAppState.baleData && !baleData && !isMobile) {
-              setBaleData(firebaseAppState.baleData);
-              setCurrentView(firebaseAppState.currentView || 'scoring');
-            }
-          }).catch(error => {
-            console.error('Error loading app state from Firebase:', error);
-          });
+          if (currentUser?.uid) {
+            loadAppStateFromFirebase(currentUser.uid).then(firebaseAppState => {
+              if (firebaseAppState && firebaseAppState.baleData && !baleData && !isMobile) {
+                setBaleData(firebaseAppState.baleData);
+                setCurrentView(firebaseAppState.currentView || 'scoring');
+              }
+            }).catch(error => {
+              console.error('Error loading app state from Firebase:', error);
+            });
+          }
         } else {
           console.log('Skipping Firebase sync - offline, mock user, or no profile setup');
         }
@@ -353,10 +355,10 @@ function AppContent() {
             </div>
             
             <div className="flex items-center space-x-4">
-              {currentUser && !currentUser.isAnonymous && (
+              {(currentUser && !currentUser.isAnonymous) || isSetup() ? (
                 <>
                   <span className="text-sm text-gray-600">
-                    {currentUser.displayName}
+                    {currentUser?.displayName || 'Profile User'}
                   </span>
                   <button
                     onClick={handleLogout}
@@ -365,7 +367,7 @@ function AppContent() {
                     Logout
                   </button>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -388,14 +390,14 @@ function AppContent() {
         )}
 
         {/* Login Screen - Only show when not authenticated */}
-        {!loading && (!currentUser || currentUser.isAnonymous) && (
+        {!loading && (!currentUser || currentUser.isAnonymous) && !isSetup() && (
           <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
             <Login />
           </div>
         )}
 
-        {/* Authenticated User Content - Only show when authenticated */}
-        {!loading && currentUser && !currentUser.isAnonymous && (
+        {/* Authenticated User Content - Show when Firebase authenticated OR profile-based authenticated */}
+        {!loading && ((currentUser && !currentUser.isAnonymous) || isSetup()) && (
           <>
             {/* First Login Prompt */}
             {!hasCompletedFirstLogin && currentView === 'first-login-prompt' && (
