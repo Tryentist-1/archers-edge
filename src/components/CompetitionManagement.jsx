@@ -77,7 +77,7 @@ const CompetitionManagement = ({ onNavigate }) => {
       if (shouldUseFirebase(currentUser?.uid)) {
         try {
           console.log('Attempting to load from Firebase...');
-          const firebaseCompetitions = await loadCompetitionsFromFirebase(currentUser.uid);
+          const firebaseCompetitions = await loadCompetitionsFromFirebase(currentUser?.uid);
           console.log('Competitions loaded from Firebase:', firebaseCompetitions);
           if (firebaseCompetitions && firebaseCompetitions.length > 0) {
             loadedCompetitions = firebaseCompetitions;
@@ -355,7 +355,7 @@ const CompetitionManagement = ({ onNavigate }) => {
         // Create new competition
         competitionToSave = {
           id: `comp_${Date.now()}`,
-          userId: currentUser.uid,
+          userId: currentUser?.uid || 'profile-user',
           ...formData,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -374,7 +374,7 @@ const CompetitionManagement = ({ onNavigate }) => {
       if (shouldUseFirebase(currentUser?.uid)) {
         try {
           console.log('Attempting to sync to Firebase...');
-          await saveCompetitionToFirebase(competitionToSave, currentUser.uid);
+          await saveCompetitionToFirebase(competitionToSave, currentUser?.uid);
           console.log('Competition synced to Firebase successfully');
         } catch (error) {
           console.error('Error syncing to Firebase:', error);
@@ -414,7 +414,7 @@ const CompetitionManagement = ({ onNavigate }) => {
       // Delete from Firebase if possible
       if (shouldUseFirebase(currentUser?.uid)) {
         try {
-          await deleteCompetitionFromFirebase(competitionId, currentUser.uid);
+          await deleteCompetitionFromFirebase(competitionId, currentUser?.uid);
           console.log('Competition deleted from Firebase');
         } catch (error) {
           console.error('Error deleting from Firebase:', error);

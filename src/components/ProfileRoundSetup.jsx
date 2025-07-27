@@ -173,7 +173,7 @@ const ProfileRoundSetup = ({ onSetupComplete, onNavigate }) => {
             archers: archersWithTargets,
             currentEnd: 1,
             totalEnds: 12,
-            createdBy: currentUser.uid,
+            createdBy: currentUser?.uid || 'profile-user',
             createdAt: new Date(),
             status: 'active',
             myProfileId: myProfile.id // Track which profile is "mine"
