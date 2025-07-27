@@ -337,6 +337,21 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                         </div>
                     </div>
 
+                    {/* System Admin Management Section */}
+                    {userRole === 'System Admin' && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-4">
+                            <h3 className="text-lg font-semibold text-purple-800 mb-3">System Admin Tools</h3>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => handleNavigation('system-admin')}
+                                    className="w-full bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 text-sm"
+                                >
+                                    System Admin Management
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Debug Section - Only show for System Admin users */}
                     {userRole === 'System Admin' && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">

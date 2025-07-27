@@ -84,6 +84,18 @@ export function AuthProvider({ children }) {
     // For now, we'll use a simple mapping based on email domain or user properties
     const email = user.email || '';
     
+    // Manual admin email list - add specific admin emails here
+    const adminEmails = [
+      'trrydms@gmail.com',  // Add your email here
+      'admin@archers-edge.com',
+      'system@archers-edge.com'
+    ];
+    
+    // Check if email is in admin list
+    if (adminEmails.includes(email.toLowerCase())) {
+      return 'System Admin';
+    }
+    
     // Example role determination logic
     if (email.includes('admin') || email.includes('system')) {
       return 'System Admin';

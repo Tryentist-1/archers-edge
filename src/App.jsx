@@ -18,6 +18,7 @@ import FirstLoginPrompt from './components/FirstLoginPrompt';
 import NewArcherStartup from './components/NewArcherStartup';
 import CoachQRGenerator from './components/CoachQRGenerator.jsx';
 import CoachManagement from './components/CoachManagement.jsx';
+import SystemAdminManagement from './components/SystemAdminManagement.jsx';
 import { LocalStorage } from './utils/localStorage';
 import { 
     syncLocalDataToFirebase, 
@@ -208,6 +209,9 @@ function AppContent() {
         break;
       case 'coach-qr':
         setCurrentView('coach-qr');
+        break;
+      case 'system-admin':
+        setCurrentView('system-admin');
         break;
       case 'new-round':
         setCurrentView('new-round');
@@ -522,6 +526,11 @@ function AppContent() {
             {/* Coach Management */}
             {currentView === 'coach-management' && (
               <CoachManagement />
+            )}
+            
+            {/* System Admin Management */}
+            {currentView === 'system-admin' && (
+              <SystemAdminManagement />
             )}
           </>
         )}
