@@ -442,12 +442,19 @@ const TeamArcherManagement = ({ onNavigate }) => {
   };
 
   const deleteProfile = async (profileId) => {
+    console.log('=== TEAM ARCHER DELETE PROFILE DEBUG ===');
+    console.log('Deleting profile ID:', profileId);
+    console.log('Current archers count:', allArchers.length);
+    
     if (!window.confirm('Are you sure you want to delete this profile? This will also remove any associated score records.')) {
+      console.log('Delete cancelled by user');
       return;
     }
     
     try {
       const updatedProfiles = allArchers.filter(p => p.id !== profileId);
+      console.log('Archers after filtering:', updatedProfiles.length);
+      
       localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
       setAllArchers(updatedProfiles);
       
@@ -462,6 +469,13 @@ const TeamArcherManagement = ({ onNavigate }) => {
       } else {
         console.log('Skipping Firebase delete - offline or mock user');
       }
+      
+      console.log('Team Archer profile deletion completed successfully');
+      
+      // Reload data to ensure sync with other components
+      setTimeout(() => {
+        loadAllArchers();
+      }, 100);
     } catch (error) {
       console.error('Error deleting profile:', error);
     }
@@ -499,6 +513,9 @@ const TeamArcherManagement = ({ onNavigate }) => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Coaches</h1>
+              <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1">
+                📋 Team Archer Management (Same data as Profile Management)
+              </div>
               <p className="text-gray-600 mt-1">
                 {userRole === 'Coach' || userRole === 'Team Captain' || userRole === 'Event Manager' || userRole === 'System Admin' 
                   ? 'Manage all team archers and profiles for OAS qualification rounds'

@@ -481,6 +481,11 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             }
             
             console.log('Profile deletion completed successfully');
+            
+            // Reload data to ensure sync with other components
+            setTimeout(() => {
+                loadProfiles();
+            }, 100);
         } catch (error) {
             console.error('Error deleting profile:', error);
         }
@@ -888,9 +893,14 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         <div className="max-w-4xl mx-auto p-4">
             <div className="bg-white rounded-lg shadow-lg p-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800">
-                        {isCreating ? 'Create New Profile' : 'Edit Profile'}
-                    </h2>
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800">
+                            {isCreating ? 'Create New Profile' : 'Edit Profile'}
+                        </h2>
+                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1">
+                            👤 Individual Profile Management (Same data as Team Archers)
+                        </div>
+                    </div>
                     <div className="flex items-center space-x-2">
                         {/* Navigation buttons - only show when editing existing profile */}
                         {!isCreating && selectedProfile && profiles.length > 1 && (
