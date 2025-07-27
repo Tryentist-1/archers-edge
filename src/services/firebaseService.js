@@ -1070,14 +1070,12 @@ export const getCoachEvents = async (coachId = null, status = 'active') => {
             q = query(
                 eventsRef, 
                 where('coachId', '==', coachId),
-                where('status', '==', status),
-                orderBy('createdAt', 'desc')
+                where('status', '==', status)
             );
         } else {
             q = query(
                 eventsRef, 
-                where('status', '==', status),
-                orderBy('createdAt', 'desc')
+                where('status', '==', status)
             );
         }
         
@@ -1086,6 +1084,13 @@ export const getCoachEvents = async (coachId = null, status = 'active') => {
         
         querySnapshot.forEach((doc) => {
             events.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Sort by createdAt in JavaScript instead of in the query
+        events.sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+            return dateB - dateA; // Descending order
         });
         
         console.log(`Found ${events.length} coach events`);

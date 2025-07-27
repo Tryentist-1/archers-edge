@@ -277,6 +277,50 @@ const ProfileRoundSetup = ({ onSetupComplete, onNavigate }) => {
                             </div>
                         </div>
 
+                        {/* My Favorites Section */}
+                        {(() => {
+                            const favoriteProfiles = availableProfiles.filter(p => p.isFavorite && p.id !== myProfile?.id);
+                            return favoriteProfiles.length > 0 ? (
+                                <div className="mb-6">
+                                    <h4 className="font-medium text-gray-700 mb-3 flex items-center">
+                                        <span className="text-yellow-500 mr-2">⭐</span>
+                                        My Favorites
+                                    </h4>
+                                    <div className="grid gap-3">
+                                        {favoriteProfiles.map(profile => {
+                                            const isSelected = selectedTeammates.find(p => p.id === profile.id);
+                                            return (
+                                                <div
+                                                    key={profile.id}
+                                                    className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                                                        isSelected 
+                                                            ? 'border-green-500 bg-green-50' 
+                                                            : 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100'
+                                                    }`}
+                                                    onClick={() => handleTeammateToggle(profile)}
+                                                >
+                                                    <div className="flex justify-between items-center">
+                                                        <div>
+                                                            <h5 className="font-medium text-gray-900 flex items-center">
+                                                                {profile.firstName} {profile.lastName}
+                                                                <span className="text-yellow-500 ml-2">⭐</span>
+                                                            </h5>
+                                                            <p className="text-sm text-gray-600">
+                                                                {profile.role} • {profile.profileType} • {profile.defaultClassification}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-blue-600">
+                                                            {isSelected ? '✓' : '→'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ) : null;
+                        })()}
+
                         {/* Teammate Selection */}
                         <div className="mb-6">
                             <h4 className="font-medium text-gray-700 mb-3">

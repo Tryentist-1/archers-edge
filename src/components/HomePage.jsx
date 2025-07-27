@@ -116,7 +116,7 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
             {/* Main Content */}
             <main className="p-4">
 
-                {/* My Profile Card - Auto-detected */}
+                {/* My Profile Card */}
                 {myProfile && (
                     <div className="mb-6">
                         <div 
@@ -130,13 +130,15 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                                     </svg>
                                 </div>
                                 <div className="flex-1">
-                                    <div className="flex items-center space-x-2">
-                                        <h3 className="text-lg font-semibold text-blue-800">My Profile</h3>
-                                        <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">Me</span>
-                                    </div>
+                                    <h3 className="text-lg font-semibold text-blue-800">My Profile</h3>
                                     <p className="text-sm text-blue-700">
                                         {myProfile.firstName} {myProfile.lastName} • {myProfile.division} • {myProfile.bowType}
                                     </p>
+                                    {myStats && (
+                                        <p className="text-xs text-blue-600 mt-1">
+                                            Avg: {myStats.averageScore || 'N/A'} • Best: {myStats.bestScore || 'N/A'} • Rounds: {myStats.totalRounds || 0}
+                                        </p>
+                                    )}
                                 </div>
                                 <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -145,39 +147,6 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                         </div>
                     </div>
                 )}
-
-                {/* Favorites Section */}
-                {(() => {
-                    const favoriteProfiles = profiles?.filter(p => p.isFavorite && p.id !== myProfile?.id) || [];
-                    return favoriteProfiles.length > 0 ? (
-                        <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">My Favorites</h3>
-                            <div className="space-y-2">
-                                {favoriteProfiles.map(profile => (
-                                    <div 
-                                        key={profile.id}
-                                        className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 cursor-pointer hover:bg-yellow-100 transition-colors"
-                                        onClick={() => handleNavigation('profile')}
-                                    >
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                                                <span className="text-yellow-600 text-sm">⭐</span>
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-medium text-yellow-800">
-                                                    {profile.firstName} {profile.lastName}
-                                                </p>
-                                                <p className="text-xs text-yellow-700">
-                                                    {profile.division} • {profile.bowType}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : null;
-                })()}
 
                 {/* Round in Progress Card */}
                 {baleData && baleData.archers && baleData.archers.length > 0 && (
