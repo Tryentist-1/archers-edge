@@ -354,7 +354,67 @@ function ProfileSelectionView({ onBack }) {
               createdAt: new Date().toISOString()
             },
             {
-              id: 'system-admin-1',
+              id: 'sample-6',
+              firstName: 'Robin',
+              lastName: 'Hood',
+              school: 'The Champs',
+              email: 'robin.hood@champs.edu',
+              phone: '+1234567890',
+              team: 'THE CHAMPS',
+              level: 'Advanced',
+              role: 'Archer',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-7',
+              firstName: 'Green',
+              lastName: 'Arrow',
+              school: 'The Champs',
+              email: 'green.arrow@champs.edu',
+              phone: '+1234567891',
+              team: 'THE CHAMPS',
+              level: 'Advanced',
+              role: 'Archer',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-8',
+              firstName: 'Merida',
+              lastName: 'Brave',
+              school: 'The Champs',
+              email: 'merida.brave@champs.edu',
+              phone: '+1234567892',
+              team: 'THE CHAMPS',
+              level: 'Advanced',
+              role: 'Archer',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-9',
+              firstName: 'Katniss',
+              lastName: 'Everdeen',
+              school: 'The Champs',
+              email: 'katniss.everdeen@champs.edu',
+              phone: '+1234567893',
+              team: 'THE CHAMPS',
+              level: 'Advanced',
+              role: 'Archer',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-10',
+              firstName: 'Hawkeye',
+              lastName: 'Barton',
+              school: 'The Champs',
+              email: 'hawkeye.barton@champs.edu',
+              phone: '+1234567894',
+              team: 'THE CHAMPS',
+              level: 'Advanced',
+              role: 'Coach',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'sample-11',
               firstName: 'System',
               lastName: 'Admin',
               email: 'admin@archers-edge.com',
@@ -363,7 +423,7 @@ function ProfileSelectionView({ onBack }) {
               createdAt: new Date().toISOString()
             },
             {
-              id: 'coach-1',
+              id: 'sample-12',
               firstName: 'Coach',
               lastName: 'Adams',
               email: 'coach.adams@school.edu',
@@ -412,18 +472,39 @@ function ProfileSelectionView({ onBack }) {
         profiles = JSON.parse(decodedData);
       } else if (teamCode) {
         // Load from server using team code
-        profiles = await loadTeamFromFirebase(teamCode);
+        try {
+          const { loadTeamFromFirebase } = await import('../services/firebaseService.js');
+          profiles = await loadTeamFromFirebase(teamCode);
+        } catch (firebaseError) {
+          console.warn('⚠️ Firebase team load failed, trying fallback:', firebaseError.message);
+          
+          // Fallback to hardcoded team data
+          try {
+            const { getTeamInfo } = await import('../utils/teamQRGenerator.js');
+            const teamInfo = getTeamInfo(teamCode);
+            if (teamInfo) {
+              profiles = teamInfo.archers;
+              console.log('✅ Team loaded from fallback:', teamCode);
+            } else {
+              throw new Error(`Team code '${teamCode}' not found in fallback data`);
+            }
+          } catch (fallbackError) {
+            console.error('❌ Fallback team load failed:', fallbackError.message);
+            throw new Error(`No team data found for code: ${teamCode}`);
+          }
+        }
       }
 
       if (profiles && profiles.length > 0) {
         localStorage.setItem('archerProfiles', JSON.stringify(profiles));
         setProfiles(profiles);
         setError('');
+        console.log('✅ Team data loaded successfully:', profiles.length, 'profiles');
       } else {
         setError('No team data found for the provided code');
       }
     } catch (error) {
-      console.error('Error loading team data:', error);
+      console.error('❌ Error loading team data:', error);
       setError('Failed to load team data: ' + error.message);
     } finally {
       setLoading(false);
@@ -767,20 +848,56 @@ function TeamCodeModal({ onSubmit, onClose }) {
   const [teamCode, setTeamCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [availableTeams, setAvailableTeams] = useState([]);
+  const [error, setError] = useState('');
 
   // Load available teams
   React.useEffect(() => {
     const loadTeams = async () => {
       try {
-        const { getAvailableTeamsFromFirebase } = await import('../services/firebaseService.js');
-        const teams = await getAvailableTeamsFromFirebase();
-        setAvailableTeams(teams);
-      } catch (error) {
-        console.error('Error loading teams:', error);
+        setLoading(true);
+        setError('');
+        
+        // Try Firebase first
+        try {
+          const { getAvailableTeamsFromFirebase } = await import('../services/firebaseService.js');
+          const teams = await getAvailableTeamsFromFirebase();
+          if (teams && teams.length > 0) {
+            setAvailableTeams(teams);
+            console.log('✅ Teams loaded from Firebase:', teams.length);
+            return;
+          }
+        } catch (firebaseError) {
+          console.warn('⚠️ Firebase teams failed, using fallback:', firebaseError.message);
+        }
+        
         // Fallback to hardcoded teams
-        const { getAvailableTeamCodes } = await import('../utils/teamQRGenerator.js');
+        const { getAvailableTeamCodes, getTeamInfo } = await import('../utils/teamQRGenerator.js');
         const teamCodes = getAvailableTeamCodes();
-        setAvailableTeams(teamCodes.map(code => ({ teamCode: code, name: code.replace('-', ' ') })));
+        const hardcodedTeams = teamCodes.map(code => {
+          const teamInfo = getTeamInfo(code);
+          return {
+            teamCode: code,
+            name: teamInfo ? teamInfo.name : code.replace('-', ' '),
+            school: teamInfo ? teamInfo.school : code,
+            archerCount: teamInfo ? teamInfo.archers.length : 0
+          };
+        });
+        
+        setAvailableTeams(hardcodedTeams);
+        console.log('✅ Teams loaded from fallback:', hardcodedTeams.length);
+        
+      } catch (error) {
+        console.error('❌ Error loading teams:', error);
+        setError('Failed to load teams. Please try entering a team code manually.');
+        
+        // Last resort - basic team codes
+        setAvailableTeams([
+          { teamCode: 'TEST', name: 'TEST Team', school: 'TEST', archerCount: 4 },
+          { teamCode: 'THE CHAMPS', name: 'The Champs Team', school: 'The Champs', archerCount: 4 },
+          { teamCode: 'CAMP', name: 'Camp Team', school: 'CAMP', archerCount: 3 }
+        ]);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -797,8 +914,14 @@ function TeamCodeModal({ onSubmit, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Enter Team Code</h3>
+        
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -806,25 +929,37 @@ function TeamCodeModal({ onSubmit, onClose }) {
               Team Code
             </label>
             <input
-              id="teamCode"
               type="text"
+              id="teamCode"
               value={teamCode}
-              onChange={(e) => setTeamCode(e.target.value)}
+              onChange={(e) => setTeamCode(e.target.value.toUpperCase())}
               placeholder="e.g., CENTRAL-VARSITY"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
-
-          <div className="text-sm text-gray-500">
-            <p>💡 <strong>Available teams:</strong></p>
-            <ul className="mt-1 space-y-1">
-              {availableTeams.map(team => (
-                <li key={team.teamCode}>• <code>{team.teamCode}</code> - {team.name}</li>
-              ))}
-            </ul>
-          </div>
-
+          
+          {availableTeams.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                💡 Available teams:
+              </label>
+              <div className="bg-gray-50 rounded-md p-3 max-h-40 overflow-y-auto">
+                {loading ? (
+                  <p className="text-sm text-gray-600">Loading teams...</p>
+                ) : (
+                  <div className="space-y-1">
+                    {availableTeams.map(team => (
+                      <div key={team.teamCode} className="text-sm text-gray-700">
+                        <strong>{team.teamCode}</strong> - {team.name} ({team.archerCount} archers)
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
           <div className="flex space-x-3">
             <button
               type="button"
@@ -836,7 +971,7 @@ function TeamCodeModal({ onSubmit, onClose }) {
             <button
               type="submit"
               disabled={loading || !teamCode.trim()}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Loading...' : 'Load Team'}
             </button>

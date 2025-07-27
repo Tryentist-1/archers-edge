@@ -1,17 +1,21 @@
 import { 
+    collection, 
     doc, 
-    setDoc, 
     getDoc, 
     getDocs, 
-    collection, 
+    setDoc, 
+    updateDoc, 
+    deleteDoc, 
     query, 
     where, 
-    deleteDoc,
-    updateDoc,
+    orderBy, 
+    limit, 
     serverTimestamp,
-    orderBy
+    addDoc,
+    onSnapshot
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { getAvailableTeamCodes, getTeamInfo } from '../utils/teamQRGenerator.js';
 
 // Profile Management
 export const saveProfileToFirebase = async (profile, userId) => {
@@ -793,7 +797,6 @@ export const loadTeamFromFirebase = async (teamCode) => {
 
 export const loadTeamFromFallback = (teamCode) => {
     // Import the fallback data from teamQRGenerator
-    const { getTeamInfo } = require('../utils/teamQRGenerator.js');
     const teamInfo = getTeamInfo(teamCode);
     
     if (!teamInfo) {
@@ -838,7 +841,6 @@ export const getAvailableTeamsFromFirebase = async () => {
     } catch (error) {
         console.error('Error loading teams from Firebase:', error);
         // Return fallback teams
-        const { getAvailableTeamCodes, getTeamInfo } = require('../utils/teamQRGenerator.js');
         const teamCodes = getAvailableTeamCodes();
         
         return teamCodes.map(teamCode => {

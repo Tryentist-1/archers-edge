@@ -6,7 +6,8 @@ import {
   deleteCompetitionFromFirebase,
   loadCompetitionScores,
   shouldUseFirebase,
-  isOnline 
+  isOnline,
+  loadProfilesFromFirebase
 } from '../services/firebaseService';
 
 const CompetitionManagement = ({ onNavigate }) => {
@@ -48,6 +49,16 @@ const CompetitionManagement = ({ onNavigate }) => {
     'MMS',   // Middle School Male
     'FMS'    // Middle School Female
   ];
+
+  // Gender-based division mapping
+  const genderDivisions = {
+    'MV': { gender: 'M', level: 'Varsity', display: 'Boys Varsity' },
+    'MJV': { gender: 'M', level: 'JV', display: 'Boys JV' },
+    'FV': { gender: 'F', level: 'Varsity', display: 'Girls Varsity' },
+    'FJV': { gender: 'F', level: 'JV', display: 'Girls JV' },
+    'MMS': { gender: 'M', level: 'Middle School', display: 'Boys Middle School' },
+    'FMS': { gender: 'F', level: 'Middle School', display: 'Girls Middle School' }
+  };
 
   // OAS Round types
   const roundTypes = [
@@ -137,7 +148,7 @@ const CompetitionManagement = ({ onNavigate }) => {
         try {
           const scores = await loadCompetitionScores(competition.id);
           stats[competition.id] = calculateCompetitionStats(scores);
-          results[competition.id] = calculateCompetitionResults(scores);
+          results[competition.id] = await calculateCompetitionResults(scores);
         } catch (error) {
           console.error(`Error loading stats for competition ${competition.id}:`, error);
           stats[competition.id] = getDefaultStats();
@@ -160,10 +171,10 @@ const CompetitionManagement = ({ onNavigate }) => {
     }
 
     const totalArchers = scores.length;
-    const totalScore = scores.reduce((sum, score) => sum + (score.totalScore || 0), 0);
+    const totalScore = scores.reduce((sum, score) => sum + (score.totals?.totalScore || 0), 0);
     const averageScore = totalScore / totalArchers;
-    const maxScore = Math.max(...scores.map(s => s.totalScore || 0));
-    const minScore = Math.min(...scores.map(s => s.totalScore || 0));
+    const maxScore = Math.max(...scores.map(s => s.totals?.totalScore || 0));
+    const minScore = Math.min(...scores.map(s => s.totals?.totalScore || 0));
 
     return {
       totalArchers,
@@ -175,9 +186,22 @@ const CompetitionManagement = ({ onNavigate }) => {
     };
   };
 
-  const calculateCompetitionResults = (scores) => {
+  const calculateCompetitionResults = async (scores) => {
     if (!scores || scores.length === 0) {
       return { rankings: [], divisions: {} };
+    }
+
+    // Load all profiles to link with scores
+    let allProfiles = [];
+    try {
+      allProfiles = await loadProfilesFromFirebase();
+    } catch (error) {
+      console.warn('Could not load profiles for linking, using score data only');
+      // Fallback to localStorage
+      const savedProfiles = localStorage.getItem('archerProfiles');
+      if (savedProfiles) {
+        allProfiles = JSON.parse(savedProfiles);
+      }
     }
 
     // Group by division
@@ -188,6 +212,12 @@ const CompetitionManagement = ({ onNavigate }) => {
         divisionGroups[division] = [];
       }
       
+      // Find archer profile to get full details
+      let archerProfile = null;
+      if (score.archerId) {
+        archerProfile = allProfiles.find(p => p.id === score.archerId);
+      }
+      
       // Calculate completion status
       let status = 'not_started';
       if (score.status === 'verified') {
@@ -196,9 +226,29 @@ const CompetitionManagement = ({ onNavigate }) => {
         status = 'in_progress';
       }
       
+      // Extract archer name from score or profile
+      let firstName = '';
+      let lastName = '';
+      let school = '';
+      
+      if (archerProfile) {
+        firstName = archerProfile.firstName || '';
+        lastName = archerProfile.lastName || '';
+        school = archerProfile.school || '';
+      } else if (score.archerName) {
+        // Parse archerName if it's in "FirstName LastName" format
+        const nameParts = score.archerName.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+        school = score.school || '';
+      }
+      
       // Add archer data to the score
       const archerData = {
         ...score,
+        firstName,
+        lastName,
+        school,
         status,
         completedEnds: score.totals ? Math.floor((score.totals.totalScore || 0) / 30) : 0, // Rough estimate
         totalScore: score.totals?.totalScore || 0,
@@ -628,108 +678,216 @@ const CompetitionManagement = ({ onNavigate }) => {
                   
                   {competitionStats[selectedCompetitionForResults.id]?.hasScores ? (
                     <>
-                      {/* Competition Overview Stats */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      {/* Summary Statistics */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                         <div className="bg-blue-50 p-3 rounded-lg">
-                          <div className="text-2xl font-bold text-blue-600">
+                          <div className="text-xl md:text-2xl font-bold text-blue-600">
                             {competitionStats[selectedCompetitionForResults.id].totalArchers}
                           </div>
-                          <div className="text-xs text-blue-600">Archers</div>
+                          <div className="text-xs md:text-sm text-blue-600">Archers</div>
                         </div>
                         <div className="bg-green-50 p-3 rounded-lg">
-                          <div className="text-2xl font-bold text-green-600">
+                          <div className="text-xl md:text-2xl font-bold text-green-600">
                             {competitionStats[selectedCompetitionForResults.id].averageScore}
                           </div>
-                          <div className="text-xs text-green-600">Avg Score</div>
+                          <div className="text-xs md:text-sm text-green-600">Avg Score</div>
                         </div>
                         <div className="bg-purple-50 p-3 rounded-lg">
-                          <div className="text-2xl font-bold text-purple-600">
+                          <div className="text-xl md:text-2xl font-bold text-purple-600">
                             {competitionStats[selectedCompetitionForResults.id].maxScore}
                           </div>
-                          <div className="text-xs text-purple-600">High Score</div>
+                          <div className="text-xs md:text-sm text-purple-600">High Score</div>
                         </div>
                         <div className="bg-orange-50 p-3 rounded-lg">
-                          <div className="text-2xl font-bold text-orange-600">
+                          <div className="text-xl md:text-2xl font-bold text-orange-600">
                             {competitionStats[selectedCompetitionForResults.id].minScore}
                           </div>
-                          <div className="text-xs text-orange-600">Low Score</div>
+                          <div className="text-xs md:text-sm text-orange-600">Low Score</div>
                         </div>
                       </div>
 
                       {/* Archer Results by Division */}
                       <div className="space-y-6">
-                        {Object.entries(competitionResults[selectedCompetitionForResults.id]?.divisions || {}).map(([division, archers]) => (
-                          <div key={division} className="bg-gray-50 rounded-lg p-4">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                              {division} Division
-                            </h3>
-                            
-                            {/* Top 5 Rankings */}
-                            <div className="space-y-2">
-                              {archers.slice(0, 5).map((archer, index) => (
-                                <div 
-                                  key={archer.id} 
-                                  className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                                  onClick={() => handleViewArcherScorecard(archer)}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                                        index === 0 ? 'bg-yellow-500' : 
-                                        index === 1 ? 'bg-gray-400' : 
-                                        index === 2 ? 'bg-orange-500' : 'bg-blue-500'
-                                      }`}>
-                                        {index + 1}
+                        {Object.entries(competitionResults[selectedCompetitionForResults.id]?.divisions || {}).map(([division, archers]) => {
+                          const divisionInfo = genderDivisions[division];
+                          return (
+                            <div key={division} className="bg-gray-50 rounded-lg p-4">
+                              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                                {divisionInfo?.display || division} Division
+                              </h3>
+                              
+                              {/* Compact Table View - Mobile Optimized */}
+                              <div className="space-y-2">
+                                {archers.map((archer, index) => (
+                                  <div 
+                                    key={archer.id} 
+                                    className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md transition-shadow cursor-pointer"
+                                    onClick={() => handleViewArcherScorecard(archer)}
+                                  >
+                                    {/* Mobile Layout */}
+                                    <div className="md:hidden">
+                                      {/* Rank and Name Row */}
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center space-x-2">
+                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                                            index === 0 ? 'bg-yellow-500' : 
+                                            index === 1 ? 'bg-gray-400' : 
+                                            index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                                          }`}>
+                                            {index + 1}
+                                          </div>
+                                          <div>
+                                            <div className="font-semibold text-gray-800 text-sm">
+                                              {archer.firstName} {archer.lastName}
+                                            </div>
+                                            <div className="text-xs text-gray-600">
+                                              {archer.gender || 'M'} • {archer.division || division}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="text-right">
+                                          <div className="text-lg font-bold text-gray-800">
+                                            {archer.totalScore || 0}
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            {archer.average || '0.0'} avg
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <div className="font-semibold text-gray-800">
-                                          {archer.firstName} {archer.lastName}
+                                      
+                                      {/* Score Details Row */}
+                                      <div className="flex justify-between text-xs text-gray-600 border-t border-gray-100 pt-2">
+                                        <span>10s: {archer.totalTens || 0}</span>
+                                        <span>Xs: {archer.totalXs || 0}</span>
+                                        <span className={`px-2 py-1 rounded ${
+                                          archer.status === 'verified' ? 'bg-green-100 text-green-800' : 
+                                          archer.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
+                                          'bg-gray-100 text-gray-800'
+                                        }`}>
+                                          {archer.status === 'verified' ? '✓ Verified' : 
+                                           archer.status === 'in_progress' ? 'In Progress' : 'Not Started'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Desktop Layout */}
+                                    <div className="hidden md:block">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                                            index === 0 ? 'bg-yellow-500' : 
+                                            index === 1 ? 'bg-gray-400' : 
+                                            index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                                          }`}>
+                                            {index + 1}
+                                          </div>
+                                          <div>
+                                            <div className="font-semibold text-gray-800">
+                                              {archer.firstName} {archer.lastName}
+                                            </div>
+                                            <div className="text-sm text-gray-600">
+                                              {archer.school || 'Unknown School'} • {archer.division || division}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="text-right">
+                                          <div className="text-2xl font-bold text-gray-800">
+                                            {archer.totalScore || 0}
+                                          </div>
+                                          <div className="text-sm text-gray-600">
+                                            {archer.completedEnds || 0}/12 ends
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Score Details */}
+                                      <div className="mt-2 pt-2 border-t border-gray-100">
+                                        <div className="flex justify-between text-xs text-gray-600">
+                                          <span>10s: {archer.totalTens || 0}</span>
+                                          <span>Xs: {archer.totalXs || 0}</span>
+                                          <span>Avg: {archer.average || '0.0'}</span>
+                                          <span className={`px-2 py-1 rounded ${
+                                            archer.status === 'verified' ? 'bg-green-100 text-green-800' : 
+                                            archer.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
+                                            'bg-gray-100 text-gray-800'
+                                          }`}>
+                                            {archer.status === 'verified' ? '✓ Verified' : 
+                                             archer.status === 'in_progress' ? 'In Progress' : 'Not Started'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {/* Legacy Card View (hidden by default) */}
+                              <div className="hidden space-y-2">
+                                {archers.slice(0, 5).map((archer, index) => (
+                                  <div 
+                                    key={archer.id} 
+                                    className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                                    onClick={() => handleViewArcherScorecard(archer)}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                                          index === 0 ? 'bg-yellow-500' : 
+                                          index === 1 ? 'bg-gray-400' : 
+                                          index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                                        }`}>
+                                          {index + 1}
+                                        </div>
+                                        <div>
+                                          <div className="font-semibold text-gray-800">
+                                            {archer.firstName} {archer.lastName}
+                                          </div>
+                                          <div className="text-sm text-gray-600">
+                                            {archer.school || 'Unknown School'} • {archer.division || division}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-2xl font-bold text-gray-800">
+                                          {archer.totalScore || 0}
                                         </div>
                                         <div className="text-sm text-gray-600">
-                                          {archer.school || 'Unknown School'} • {archer.division || division}
+                                          {archer.completedEnds || 0}/12 ends
                                         </div>
                                       </div>
                                     </div>
-                                    <div className="text-right">
-                                      <div className="text-2xl font-bold text-gray-800">
-                                        {archer.totalScore || 0}
-                                      </div>
-                                      <div className="text-sm text-gray-600">
-                                        {archer.completedEnds || 0}/12 ends
+                                    
+                                    {/* Score Details */}
+                                    <div className="mt-2 pt-2 border-t border-gray-100">
+                                      <div className="flex justify-between text-xs text-gray-600">
+                                        <span>10s: {archer.totalTens || 0}</span>
+                                        <span>Xs: {archer.totalXs || 0}</span>
+                                        <span>Avg: {archer.average || '0.0'}</span>
+                                        <span className={`px-2 py-1 rounded ${
+                                          archer.status === 'verified' ? 'bg-green-100 text-green-800' : 
+                                          archer.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
+                                          'bg-gray-100 text-gray-800'
+                                        }`}>
+                                          {archer.status === 'verified' ? '✓ Verified' : 
+                                           archer.status === 'in_progress' ? 'In Progress' : 'Not Started'}
+                                        </span>
                                       </div>
                                     </div>
                                   </div>
-                                  
-                                  {/* Score Details */}
-                                  <div className="mt-2 pt-2 border-t border-gray-100">
-                                    <div className="flex justify-between text-xs text-gray-600">
-                                      <span>10s: {archer.totalTens || 0}</span>
-                                      <span>Xs: {archer.totalXs || 0}</span>
-                                      <span>Avg: {archer.average || '0.0'}</span>
-                                      <span className={`px-2 py-1 rounded ${
-                                        archer.status === 'verified' ? 'bg-green-100 text-green-800' : 
-                                        archer.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
-                                        'bg-gray-100 text-gray-800'
-                                      }`}>
-                                        {archer.status === 'verified' ? '✓ Verified' : 
-                                         archer.status === 'in_progress' ? 'In Progress' : 'Not Started'}
-                                      </span>
-                                    </div>
+                                ))}
+                                
+                                {/* Show more archers if available */}
+                                {archers.length > 5 && (
+                                  <div className="text-center py-2">
+                                    <button className="text-blue-600 hover:text-blue-800 text-sm">
+                                      View all {archers.length} archers in {division}
+                                    </button>
                                   </div>
-                                </div>
-                              ))}
-                              
-                              {/* Show more archers if available */}
-                              {archers.length > 5 && (
-                                <div className="text-center py-2">
-                                  <button className="text-blue-600 hover:text-blue-800 text-sm">
-                                    View all {archers.length} archers in {division}
-                                  </button>
-                                </div>
-                              )}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </>
                   ) : (
@@ -745,40 +903,47 @@ const CompetitionManagement = ({ onNavigate }) => {
         
         {/* Archer Scorecard Modal */}
         {showArcherScorecard && selectedArcherForScorecard && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 md:p-4 z-50">
+            <div className="bg-white rounded-lg w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto relative">
+              {/* Fixed Close Button - Always Visible */}
+              <button
+                onClick={handleCloseArcherScorecard}
+                className="absolute top-2 right-2 z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md border border-gray-200 text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                style={{ position: 'sticky', top: '8px', right: '8px' }}
+              >
+                ✕
+              </button>
+              
+              <div className="p-4 md:p-6 pt-12 md:pt-6">
+                <div className="mb-4">
+                  <h2 className="text-lg md:text-xl font-semibold text-gray-900 pr-8">
                     Scorecard: {selectedArcherForScorecard.firstName} {selectedArcherForScorecard.lastName}
                   </h2>
-                  <button
-                    onClick={handleCloseArcherScorecard}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </button>
                 </div>
                 
                 <div className="space-y-4">
-                  {/* Archer Info */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Archer Info - Mobile Optimized */}
+                  <div className="bg-gray-50 rounded-lg p-3 md:p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
                       <div>
-                        <span className="text-gray-500 text-sm">Competition:</span>
-                        <div className="font-medium">{selectedArcherForScorecard.competitionName}</div>
+                        <span className="text-gray-500 text-xs md:text-sm">Competition:</span>
+                        <div className="font-medium text-sm md:text-base">{selectedArcherForScorecard.competitionName}</div>
                       </div>
                       <div>
-                        <span className="text-gray-500 text-sm">Division:</span>
-                        <div className="font-medium">{selectedArcherForScorecard.division}</div>
+                        <span className="text-gray-500 text-xs md:text-sm">Division:</span>
+                        <div className="font-medium text-sm md:text-base">{selectedArcherForScorecard.division}</div>
                       </div>
                       <div>
-                        <span className="text-gray-500 text-sm">Bale:</span>
-                        <div className="font-medium">{selectedArcherForScorecard.baleNumber} - Target {selectedArcherForScorecard.targetAssignment}</div>
+                        <span className="text-gray-500 text-xs md:text-sm">Gender:</span>
+                        <div className="font-medium text-sm md:text-base">{selectedArcherForScorecard.gender || 'M'}</div>
                       </div>
                       <div>
-                        <span className="text-gray-500 text-sm">Status:</span>
-                        <div className={`font-medium ${
+                        <span className="text-gray-500 text-xs md:text-sm">Bale:</span>
+                        <div className="font-medium text-sm md:text-base">{selectedArcherForScorecard.baleNumber} - Target {selectedArcherForScorecard.targetAssignment}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-xs md:text-sm">Status:</span>
+                        <div className={`font-medium text-sm md:text-base ${
                           selectedArcherForScorecard.status === 'verified' ? 'text-green-600' : 
                           selectedArcherForScorecard.status === 'in_progress' ? 'text-yellow-600' : 
                           'text-gray-600'
@@ -790,21 +955,21 @@ const CompetitionManagement = ({ onNavigate }) => {
                     </div>
                   </div>
                   
-                  {/* Scorecard Table */}
+                  {/* Scorecard Table - Mobile Optimized */}
                   {selectedArcherForScorecard.ends && (
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300">
+                      <table className="w-full border-collapse border border-gray-300 text-xs md:text-sm">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">E</th>
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">A1</th>
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">A2</th>
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">A3</th>
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">10s</th>
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Xs</th>
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">END</th>
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">RUN</th>
-                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">AVG</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">E</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">A1</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">A2</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">A3</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">10s</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">Xs</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">END</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">RUN</th>
+                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">AVG</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -816,15 +981,15 @@ const CompetitionManagement = ({ onNavigate }) => {
                             if (!endData) {
                               return (
                                 <tr key={endNumber}>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">{endNumber}</td>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0</td>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0</td>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0</td>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0</td>
-                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0.0</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">{endNumber}</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">-</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">-</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">-</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0</td>
+                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0.0</td>
                                 </tr>
                               );
                             }
@@ -866,33 +1031,33 @@ const CompetitionManagement = ({ onNavigate }) => {
                             
                             return (
                               <tr key={endNumber}>
-                                <td className="border border-gray-300 px-2 py-2 text-center text-sm font-medium">{endNumber}</td>
-                                <td className={`border border-gray-300 px-2 py-2 text-center text-sm font-bold ${
+                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">{endNumber}</td>
+                                <td className={`border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold ${
                                   scores[0] === 'X' || scores[0] === '10' ? 'bg-yellow-200' :
                                   scores[0] === '7' || scores[0] === '8' ? 'bg-red-200' :
                                   scores[0] === '6' ? 'bg-blue-200' : 'bg-white'
                                 }`}>
                                   {scores[0] || '-'}
                                 </td>
-                                <td className={`border border-gray-300 px-2 py-2 text-center text-sm font-bold ${
+                                <td className={`border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold ${
                                   scores[1] === 'X' || scores[1] === '10' ? 'bg-yellow-200' :
                                   scores[1] === '7' || scores[1] === '8' ? 'bg-red-200' :
                                   scores[1] === '6' ? 'bg-blue-200' : 'bg-white'
                                 }`}>
                                   {scores[1] || '-'}
                                 </td>
-                                <td className={`border border-gray-300 px-2 py-2 text-center text-sm font-bold ${
+                                <td className={`border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold ${
                                   scores[2] === 'X' || scores[2] === '10' ? 'bg-yellow-200' :
                                   scores[2] === '7' || scores[2] === '8' ? 'bg-red-200' :
                                   scores[2] === '6' ? 'bg-blue-200' : 'bg-white'
                                 }`}>
                                   {scores[2] || '-'}
                                 </td>
-                                <td className="border border-gray-300 px-2 py-2 text-center text-sm">{tens}</td>
-                                <td className="border border-gray-300 px-2 py-2 text-center text-sm">{xs}</td>
-                                <td className="border border-gray-300 px-2 py-2 text-center text-sm font-bold">{endTotal}</td>
-                                <td className="border border-gray-300 px-2 py-2 text-center text-sm font-bold">{runningTotal}</td>
-                                <td className="border border-gray-300 px-2 py-2 text-center text-sm">{average}</td>
+                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">{tens}</td>
+                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">{xs}</td>
+                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold">{endTotal}</td>
+                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold">{runningTotal}</td>
+                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">{average}</td>
                               </tr>
                             );
                           })}
@@ -901,27 +1066,30 @@ const CompetitionManagement = ({ onNavigate }) => {
                     </div>
                   )}
                   
-                  {/* Final Totals */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-blue-600">{selectedArcherForScorecard.totalScore || 0}</div>
-                        <div className="text-sm text-gray-600">Total Score</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-orange-600">{selectedArcherForScorecard.totalTens || 0}</div>
-                        <div className="text-sm text-gray-600">10s</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-brown-600">{selectedArcherForScorecard.totalXs || 0}</div>
-                        <div className="text-sm text-gray-600">Xs</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-green-600">{selectedArcherForScorecard.average || '0.0'}</div>
-                        <div className="text-sm text-gray-600">Average</div>
+                  {/* Final Totals - Positioned Close to Table */}
+                  {selectedArcherForScorecard.totals && (
+                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 mt-4">
+                      <h3 className="font-semibold text-gray-800 mb-3">Final Totals</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl md:text-3xl font-bold text-blue-600">{selectedArcherForScorecard.totals.totalScore}</div>
+                          <div className="text-xs md:text-sm text-gray-600">Total Score</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl md:text-3xl font-bold text-orange-600">{selectedArcherForScorecard.totals.totalTens}</div>
+                          <div className="text-xs md:text-sm text-gray-600">10s</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl md:text-3xl font-bold text-purple-600">{selectedArcherForScorecard.totals.totalXs}</div>
+                          <div className="text-xs md:text-sm text-gray-600">Xs</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl md:text-3xl font-bold text-green-600">{selectedArcherForScorecard.totals.average}</div>
+                          <div className="text-xs md:text-sm text-gray-600">Average</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1073,17 +1241,20 @@ const CompetitionManagement = ({ onNavigate }) => {
               Divisions
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {oasDivisions.map((division) => (
-                <label key={division} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.divisions.includes(division)}
-                    onChange={() => handleDivisionChange(division)}
-                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">{division}</span>
-                </label>
-              ))}
+              {oasDivisions.map((division) => {
+                const divisionInfo = genderDivisions[division];
+                return (
+                  <label key={division} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.divisions.includes(division)}
+                      onChange={() => handleDivisionChange(division)}
+                      className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{divisionInfo?.display || division}</span>
+                  </label>
+                );
+              })}
             </div>
           </div>
 

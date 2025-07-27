@@ -54,6 +54,53 @@ const sampleTeams = {
       }
     ]
   },
+  'THE CHAMPS': {
+    name: 'The Champs Team',
+    school: 'The Champs',
+    coach: 'Hawkeye Barton',
+    archers: [
+      {
+        id: 'champs-1',
+        firstName: 'Robin',
+        lastName: 'Hood',
+        email: 'robin.hood@champs.edu',
+        phone: '+1234567890',
+        division: 'V',
+        level: 'Advanced',
+        school: 'The Champs'
+      },
+      {
+        id: 'champs-2',
+        firstName: 'Green',
+        lastName: 'Arrow',
+        email: 'green.arrow@champs.edu',
+        phone: '+1234567891',
+        division: 'V',
+        level: 'Advanced',
+        school: 'The Champs'
+      },
+      {
+        id: 'champs-3',
+        firstName: 'Merida',
+        lastName: 'Brave',
+        email: 'merida.brave@champs.edu',
+        phone: '+1234567892',
+        division: 'V',
+        level: 'Advanced',
+        school: 'The Champs'
+      },
+      {
+        id: 'champs-4',
+        firstName: 'Katniss',
+        lastName: 'Everdeen',
+        email: 'katniss.everdeen@champs.edu',
+        phone: '+1234567893',
+        division: 'V',
+        level: 'Advanced',
+        school: 'The Champs'
+      }
+    ]
+  },
   'CAMP': {
     name: 'Camp Team',
     school: 'CAMP',
@@ -194,7 +241,7 @@ export function generateTeamCodeUrl(teamCode, baseUrl = 'https://archers-edge.we
  * @returns {string[]} - Array of available team codes
  */
 export function getAvailableTeamCodes() {
-  return ['TEST', 'CAMP', 'WDV', 'BHS', 'ORANCO', 'JOAD Beaumont'];
+  return ['TEST', 'THE CHAMPS', 'CAMP', 'WDV', 'BHS', 'ORANCO', 'JOAD Beaumont'];
 }
 
 /**
