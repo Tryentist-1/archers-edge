@@ -26,26 +26,26 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         lastName: '',
         email: '',
         phone: '',
-        gender: 'M', // M, F
+        gender: 'M',
         school: '',
         grade: '',
-        division: 'V', // V (Varsity), JV (Junior Varsity), MS (Middle School)
+        division: 'V',
         dominantHand: 'Right',
         dominantEye: 'Right',
         drawLength: '',
-        bowType: 'Recurve ILF', // Recurve ILF, Compound, Barebow, Traditional
-        bowLength: '66', // 62, 64, 66, 68, 70
+        bowType: 'Recurve ILF',
+        bowLength: '66',
         bowWeight: '',
         varsityPR: '',
         jvPR: '',
         avgArrow: '',
-        role: 'Archer', // Archer, Team Captain, Coach, Referee, Event Manager, System Admin
+        role: 'Archer',
         usArcheryNumber: '',
         nfaaNumber: '',
         sponsorships: '',
-        isMe: false, // Tag as "Me"
-        isFavorite: false, // Tag as "Favorite"
-        isActive: true // Active/Inactive status
+        isMe: false,
+        isFavorite: false,
+        isActive: true
     });
 
     useEffect(() => {
@@ -103,48 +103,32 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                     console.log('Profiles loaded from Firebase:', firebaseProfiles);
                     if (firebaseProfiles && firebaseProfiles.length > 0) {
                         loadedProfiles = firebaseProfiles;
-                        localStorage.setItem('archerProfiles', JSON.stringify(firebaseProfiles));
+                        // Save to localStorage for offline access
+                        localStorage.setItem('archerProfiles', JSON.stringify(loadedProfiles));
                     }
                 } catch (error) {
-                    console.error('Error loading from Firebase, falling back to local:', error);
+                    console.error('Error loading from Firebase:', error);
                 }
-            } else {
-                console.log('Skipping Firebase load - offline, no user, or mock user');
             }
             
-            // Fallback to local storage if no Firebase data
+            // Fallback to localStorage
             if (loadedProfiles.length === 0) {
+                console.log('Loading from localStorage...');
                 const savedProfiles = localStorage.getItem('archerProfiles');
-                console.log('Raw localStorage data:', savedProfiles);
                 if (savedProfiles) {
-                    const parsedProfiles = JSON.parse(savedProfiles);
-                    console.log('Profiles loaded from localStorage:', parsedProfiles);
-                    loadedProfiles = parsedProfiles;
-                } else {
-                    console.log('No profiles found in localStorage');
+                    loadedProfiles = JSON.parse(savedProfiles);
+                    console.log('Profiles loaded from localStorage:', loadedProfiles);
                 }
             }
             
             console.log('Final loaded profiles:', loadedProfiles);
+            setProfiles(loadedProfiles);
             
-            // Sort profiles by firstName, then lastName
-            const sortedProfiles = loadedProfiles.sort((a, b) => {
-                const firstNameA = (a.firstName || '').toLowerCase();
-                const firstNameB = (b.firstName || '').toLowerCase();
-                const lastNameA = (a.lastName || '').toLowerCase();
-                const lastNameB = (b.lastName || '').toLowerCase();
-                
-                // First sort by firstName
-                if (firstNameA !== firstNameB) {
-                    return firstNameA.localeCompare(firstNameB);
-                }
-                
-                // If firstName is the same, sort by lastName
-                return lastNameA.localeCompare(lastNameB);
-            });
+            // Auto-select first profile if none selected
+            if (loadedProfiles.length > 0 && !selectedProfile) {
+                autoSelectProfile(loadedProfiles);
+            }
             
-            console.log('Sorted profiles:', sortedProfiles);
-            setProfiles(sortedProfiles);
         } catch (error) {
             console.error('Error loading profiles:', error);
         } finally {
@@ -152,249 +136,136 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         }
     };
 
-    // Auto-select profile based on user info
-    const autoSelectProfile = () => {
-        if (!currentUser || profiles.length === 0) return;
-
-        // Try to match by email first
-        const emailMatch = profiles.find(profile => 
-            profile.email && profile.email.toLowerCase() === currentUser.email?.toLowerCase()
-        );
-        if (emailMatch) {
-            setSelectedProfile(emailMatch);
-            setShowProfileSelection(false);
-            return;
+    const autoSelectProfile = (loadedProfiles) => {
+        // First priority: find profile tagged as "Me"
+        let meProfile = loadedProfiles.find(profile => profile.isMe === true);
+        
+        // Second priority: try to match by email
+        if (!meProfile && currentUser?.email) {
+            meProfile = loadedProfiles.find(profile => 
+                profile.email && profile.email.toLowerCase() === currentUser.email.toLowerCase()
+            );
         }
-
-        // Try to match by display name
-        if (currentUser.displayName) {
-            const nameMatch = profiles.find(profile => {
-                const profileName = `${profile.firstName} ${profile.lastName}`.toLowerCase();
-                const userName = currentUser.displayName.toLowerCase();
-                return profileName.includes(userName) || userName.includes(profileName);
-            });
-            if (nameMatch) {
-                setSelectedProfile(nameMatch);
-                setShowProfileSelection(false);
-                return;
-            }
+        
+        // Third priority: use the first profile
+        if (!meProfile && loadedProfiles.length > 0) {
+            meProfile = loadedProfiles[0];
         }
-
-        // If no match found, show selection
-        setShowProfileSelection(true);
+        
+        if (meProfile) {
+            console.log('Auto-selected profile:', meProfile);
+            setSelectedProfile(meProfile);
+            setCurrentProfileIndex(loadedProfiles.findIndex(p => p.id === meProfile.id));
+        }
     };
-
-    useEffect(() => {
-        if (!loading && profiles.length > 0) {
-            autoSelectProfile();
-        }
-    }, [loading, profiles, currentUser]);
-
-    // Update form when selected profile changes (for both selection and editing)
-    useEffect(() => {
-        if (selectedProfile && !isCreating) {
-            console.log('=== POPULATE FORM DEBUG ===');
-            console.log('Selected profile:', selectedProfile);
-            console.log('isEditing:', isEditing);
-            console.log('isCreating:', isCreating);
-            
-            const formData = {
-                firstName: selectedProfile.firstName || '',
-                lastName: selectedProfile.lastName || '',
-                gender: selectedProfile.gender || 'M',
-                school: selectedProfile.school || '',
-                grade: selectedProfile.grade || '',
-                division: selectedProfile.division || selectedProfile.defaultClassification || 'V',
-                dominantHand: selectedProfile.dominantHand || 'Right',
-                dominantEye: selectedProfile.dominantEye || 'Right',
-                drawLength: selectedProfile.drawLength || '',
-                bowType: selectedProfile.bowType || selectedProfile.profileType || 'Recurve ILF',
-                bowLength: selectedProfile.bowLength || '66',
-                bowWeight: selectedProfile.bowWeight || '',
-                role: selectedProfile.role || 'Archer',
-                usArcheryNumber: selectedProfile.usArcheryNumber || '',
-                nfaaNumber: selectedProfile.nfaaNumber || '',
-                sponsorships: selectedProfile.sponsorships || '',
-                isMe: selectedProfile.isMe || false,
-                isFavorite: selectedProfile.isFavorite || false
-            };
-            console.log('Setting form data:', formData);
-            setProfileForm(formData);
-        }
-    }, [selectedProfile, isEditing, isCreating]);
-
-    // Debug profileForm state
-    useEffect(() => {
-        console.log('ProfileForm state changed:', profileForm);
-        console.log('Current selectedProfile:', selectedProfile);
-        console.log('isEditing:', isEditing);
-        console.log('isCreating:', isCreating);
-    }, [profileForm, selectedProfile, isEditing, isCreating]);
 
     const selectProfile = (profile) => {
         console.log('=== SELECT PROFILE DEBUG ===');
-        console.log('Selecting profile:', profile);
+        console.log('Profile selected:', profile);
+        console.log('Current user:', currentUser);
+        console.log('User preferences before:', localStorage.getItem('archer_edge_user_preferences'));
+        
         setSelectedProfile(profile);
+        setCurrentProfileIndex(profiles.findIndex(p => p.id === profile.id));
         setShowProfileSelection(false);
         setIsEditing(false);
         setIsCreating(false);
-        updateCurrentProfileIndex(profile.id);
         
-        // Populate form with selected profile data
-        const formData = {
-            firstName: profile.firstName || '',
-            lastName: profile.lastName || '',
-            gender: profile.gender || 'M',
-            school: profile.school || '',
-            grade: profile.grade || '',
-            division: profile.division || profile.defaultClassification || 'V',
-            dominantHand: profile.dominantHand || 'Right',
-            dominantEye: profile.dominantEye || 'Right',
-            drawLength: profile.drawLength || '',
-            bowType: profile.bowType || profile.profileType || 'Recurve ILF',
-            bowLength: profile.bowLength || '66',
-            bowWeight: profile.bowWeight || '',
-            role: profile.role || 'Archer',
-            usArcheryNumber: profile.usArcheryNumber || '',
-            nfaaNumber: profile.nfaaNumber || '',
-            sponsorships: profile.sponsorships || '',
-            isMe: profile.isMe || false,
-            isFavorite: profile.isFavorite || false
-        };
-        console.log('Setting form data for selected profile:', formData);
-        setProfileForm(formData);
+        // Update user preferences
+        const preferences = JSON.parse(localStorage.getItem('archer_edge_user_preferences') || '{}');
+        preferences.myProfileId = profile.id;
+        localStorage.setItem('archer_edge_user_preferences', JSON.stringify(preferences));
         
+        console.log('User preferences after:', localStorage.getItem('archer_edge_user_preferences'));
+        console.log('=== END SELECT PROFILE DEBUG ===');
+        
+        // Notify parent component
         if (onProfileSelect) {
             onProfileSelect(profile);
         }
     };
 
     const createNewProfile = () => {
-        console.log('=== CREATE NEW PROFILE DEBUG ===');
         setSelectedProfile(null);
-        setShowProfileSelection(false);
+        setIsEditing(true);
         setIsCreating(true);
-        setIsEditing(false);
+        setShowProfileSelection(false);
         resetForm();
-        console.log('Form reset, isCreating:', true, 'isEditing:', false);
     };
 
     const saveProfile = async (profileData) => {
-        // Prevent duplicate submissions
-        if (saving) {
-            console.log('Save already in progress, ignoring duplicate click');
-            return;
-        }
-
         try {
             setSaving(true);
             setSaveMessage('');
             
             console.log('=== SAVE PROFILE DEBUG ===');
-            console.log('Profile data to save:', profileData);
+            console.log('Saving profile data:', profileData);
             console.log('Current user:', currentUser);
-            console.log('Is online:', isOnline());
-            console.log('Is editing:', isEditing);
-            console.log('Is creating:', isCreating);
-            console.log('Selected profile:', selectedProfile);
             
-            // Validate required fields
-            if (!profileData.firstName?.trim() || !profileData.lastName?.trim()) {
-                setSaveMessage('❌ First name and last name are required.');
-                setSaving(false);
+            // Check for duplicates
+            const duplicateCheck = checkForDuplicateProfile(profileData);
+            if (duplicateCheck.isDuplicate) {
+                setSaveMessage(`Error: ${duplicateCheck.message}`);
                 return;
             }
             
-            // Check for duplicates (only when creating new profiles)
-            if (isCreating) {
-                const duplicateError = checkForDuplicateProfile(profileData);
-                if (duplicateError) {
-                    setSaveMessage(`❌ ${duplicateError}`);
-                    setSaving(false);
-                    return;
-                }
-            }
+            // Create profile object
+            const profileToSave = {
+                id: isCreating ? `profile_${Date.now()}` : selectedProfile.id,
+                ...profileData,
+                createdAt: isCreating ? new Date().toISOString() : selectedProfile.createdAt,
+                updatedAt: new Date().toISOString(),
+                createdBy: currentUser?.uid || 'profile-user',
+                isActive: true
+            };
             
+            console.log('Profile to save:', profileToSave);
+            
+            // Save to localStorage
+            const existingProfiles = JSON.parse(localStorage.getItem('archerProfiles') || '[]');
             let updatedProfiles;
-            let profileToSave;
             
-            if (isEditing && selectedProfile) {
-                // Update existing profile
-                profileToSave = { 
-                    ...selectedProfile, 
-                    ...profileData,
-                    updatedAt: new Date().toISOString()
-                };
-                updatedProfiles = profiles.map(p => 
+            if (isCreating) {
+                updatedProfiles = [...existingProfiles, profileToSave];
+            } else {
+                updatedProfiles = existingProfiles.map(p => 
                     p.id === selectedProfile.id ? profileToSave : p
                 );
-                console.log('=== UPDATE EXISTING PROFILE ===');
-                console.log('Selected profile ID:', selectedProfile.id);
-                console.log('Profile to save:', profileToSave);
-                console.log('Updated profiles count:', updatedProfiles.length);
-            } else {
-                // Create new profile
-                profileToSave = {
-                    id: Date.now().toString(),
-                    userId: currentUser?.uid || 'profile-user',
-                    email: currentUser.email,
-                    displayName: currentUser.displayName,
-                    ...profileData,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                };
-                updatedProfiles = [...profiles, profileToSave];
-                console.log('=== CREATE NEW PROFILE ===');
-                console.log('New profile:', profileToSave);
-                console.log('Updated profiles count:', updatedProfiles.length);
             }
             
-            // Save to local storage
             localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
             setProfiles(updatedProfiles);
             
-            // Save to Firebase if online and not mock user
+            // Save to Firebase if possible
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
-                    await saveProfileToFirebase(profileToSave, currentUser?.uid);
+                    await saveProfileToFirebase(profileToSave, currentUser.uid);
                     console.log('Profile saved to Firebase successfully');
                 } catch (error) {
                     console.error('Error saving to Firebase:', error);
+                    setSaveMessage('Saved locally, but failed to sync to cloud');
                 }
-            } else {
-                console.log('Skipping Firebase save - offline or mock user');
             }
             
-            // Set as selected profile
+            setSaveMessage('Profile saved successfully!');
+            setIsEditing(false);
+            setIsCreating(false);
             setSelectedProfile(profileToSave);
             
-            // Show success message with better feedback
-            if (isCreating) {
-                setSaveMessage(`✅ Profile created successfully for ${profileToSave.firstName} ${profileToSave.lastName}!`);
-                
-                // For new profiles, navigate back to profile list after short delay
-                setTimeout(() => {
-                    setIsCreating(false);
-                    setIsEditing(false);
-                    setShowProfileSelection(true);
-                    setSaveMessage('');
-                }, 2000);
-            } else {
-                setSaveMessage(`✅ Profile updated successfully for ${profileToSave.firstName} ${profileToSave.lastName}!`);
-                setIsEditing(false);
-                
-                // Clear message after delay
-                setTimeout(() => setSaveMessage(''), 4000);
-            }
+            // Update current profile index
+            const newIndex = updatedProfiles.findIndex(p => p.id === profileToSave.id);
+            setCurrentProfileIndex(newIndex);
             
-            // Notify parent component
-            if (onProfileSelect) {
-                onProfileSelect(profileToSave);
+            console.log('=== END SAVE PROFILE DEBUG ===');
+            
+            // Auto-select if this is the first profile
+            if (updatedProfiles.length === 1) {
+                selectProfile(profileToSave);
             }
             
         } catch (error) {
             console.error('Error saving profile:', error);
-            setSaveMessage(`❌ Error saving profile: ${error.message}. Please try again.`);
+            setSaveMessage('Error saving profile: ' + error.message);
         } finally {
             setSaving(false);
         }
@@ -402,41 +273,13 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
 
     const cleanupOrphanedScores = (deletedProfileId) => {
         try {
-            // Clean up bale data that references the deleted profile
-            const baleData = localStorage.getItem('baleData');
-            if (baleData) {
-                const parsedBaleData = JSON.parse(baleData);
-                if (parsedBaleData && parsedBaleData.archers) {
-                    // Remove the deleted profile from archers list
-                    const updatedArchers = parsedBaleData.archers.filter(
-                        archer => archer.id !== deletedProfileId
-                    );
-                    
-                    if (updatedArchers.length !== parsedBaleData.archers.length) {
-                        const updatedBaleData = {
-                            ...parsedBaleData,
-                            archers: updatedArchers
-                        };
-                        localStorage.setItem('baleData', JSON.stringify(updatedBaleData));
-                        console.log('Cleaned up bale data for deleted profile');
-                    }
-                }
-            }
-            
-            // Clean up app state that references the deleted profile
-            const appState = localStorage.getItem('appState');
-            if (appState) {
-                const parsedAppState = JSON.parse(appState);
-                if (parsedAppState && parsedAppState.selectedProfile && 
-                    parsedAppState.selectedProfile.id === deletedProfileId) {
-                    // Clear the selected profile if it was the deleted one
-                    const updatedAppState = {
-                        ...parsedAppState,
-                        selectedProfile: null
-                    };
-                    localStorage.setItem('appState', JSON.stringify(updatedAppState));
-                    console.log('Cleaned up app state for deleted profile');
-                }
+            // Clean up any scores associated with this profile
+            const savedScores = localStorage.getItem('archerScores');
+            if (savedScores) {
+                const scores = JSON.parse(savedScores);
+                const updatedScores = scores.filter(score => score.archerId !== deletedProfileId);
+                localStorage.setItem('archerScores', JSON.stringify(updatedScores));
+                console.log('Cleaned up orphaned scores for profile:', deletedProfileId);
             }
         } catch (error) {
             console.error('Error cleaning up orphaned scores:', error);
@@ -444,97 +287,73 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     };
 
     const deleteProfile = async (profileId) => {
-        console.log('=== DELETE PROFILE DEBUG ===');
-        console.log('Deleting profile ID:', profileId);
-        console.log('Current profiles count:', profiles.length);
-        
-        if (!window.confirm('Are you sure you want to delete this profile? This will also remove any associated score records.')) {
-            console.log('Delete cancelled by user');
+        if (!window.confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
             return;
         }
         
         try {
-            const updatedProfiles = profiles.filter(p => p.id !== profileId);
-            console.log('Profiles after filtering:', updatedProfiles.length);
+            console.log('=== DELETE PROFILE DEBUG ===');
+            console.log('Deleting profile ID:', profileId);
+            console.log('Current profiles count:', profiles.length);
             
+            // Remove from localStorage
+            const existingProfiles = JSON.parse(localStorage.getItem('archerProfiles') || '[]');
+            const updatedProfiles = existingProfiles.filter(p => p.id !== profileId);
             localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
             setProfiles(updatedProfiles);
             
-            // Clean up orphaned score records
-            cleanupOrphanedScores(profileId);
+            console.log('Profiles after filtering:', updatedProfiles);
+            console.log('=== END DELETE PROFILE DEBUG ===');
             
-            if (selectedProfile && selectedProfile.id === profileId) {
-                setSelectedProfile(null);
-                setShowProfileSelection(true);
-            }
-            
-            // Delete from Firebase if online and not mock user
+            // Remove from Firebase if possible
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
-                    await deleteProfileFromFirebase(profileId, currentUser?.uid);
+                    await deleteProfileFromFirebase(profileId, currentUser.uid);
                     console.log('Profile deleted from Firebase successfully');
                 } catch (error) {
                     console.error('Error deleting from Firebase:', error);
                 }
-            } else {
-                console.log('Skipping Firebase delete - offline or mock user');
             }
             
-            console.log('Profile deletion completed successfully');
+            // Clean up orphaned scores
+            cleanupOrphanedScores(profileId);
             
-            // Reload data to ensure sync with other components
+            // Update selected profile if the deleted one was selected
+            if (selectedProfile && selectedProfile.id === profileId) {
+                if (updatedProfiles.length > 0) {
+                    setSelectedProfile(updatedProfiles[0]);
+                    setCurrentProfileIndex(0);
+                } else {
+                    setSelectedProfile(null);
+                    setCurrentProfileIndex(0);
+                }
+            }
+            
+            // Reload profiles to ensure sync
             setTimeout(() => {
                 loadProfiles();
             }, 100);
+            
         } catch (error) {
             console.error('Error deleting profile:', error);
         }
     };
 
     const handleViewStats = (profileId) => {
-        // Navigate to archer stats view
-        if (onNavigate) {
-            onNavigate('archer-stats', { archerId: profileId });
-        }
+        onNavigate('archer-stats', { archerId: profileId });
     };
 
     const editProfile = (profile) => {
-        console.log('=== EDIT PROFILE DEBUG ===');
         console.log('Editing profile:', profile);
         setSelectedProfile(profile);
-        
-        // Reset form with profile data
-        const formData = {
-            firstName: profile.firstName || '',
-            lastName: profile.lastName || '',
-            gender: profile.gender || 'M',
-            school: profile.school || '',
-            grade: profile.grade || '',
-            division: profile.division || profile.defaultClassification || 'V',
-            dominantHand: profile.dominantHand || 'Right',
-            dominantEye: profile.dominantEye || 'Right',
-            drawLength: profile.drawLength || '',
-            bowType: profile.bowType || profile.profileType || 'Recurve ILF',
-            bowLength: profile.bowLength || '66',
-            bowWeight: profile.bowWeight || '',
-            role: profile.role || 'Archer',
-            usArcheryNumber: profile.usArcheryNumber || '',
-            nfaaNumber: profile.nfaaNumber || '',
-            sponsorships: profile.sponsorships || '',
-            isMe: profile.isMe || false,
-            isFavorite: profile.isFavorite || false
-        };
-        console.log('Setting form data for editing:', formData);
-        setProfileForm(formData);
-        
         setIsEditing(true);
         setIsCreating(false);
         setShowProfileSelection(false);
+        setCurrentProfileIndex(profiles.findIndex(p => p.id === profile.id));
     };
 
     const resetForm = () => {
-        console.log('=== RESET FORM DEBUG ===');
-        const resetData = {
+        setProfileForm({
             firstName: '',
             lastName: '',
             email: '',
@@ -559,134 +378,75 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             isMe: false,
             isFavorite: false,
             isActive: true
-        };
-        console.log('Resetting form to:', resetData);
-        setProfileForm(resetData);
+        });
     };
 
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        
-        // Prevent double submission
-        if (saving) {
-            console.log('Form submission blocked - save in progress');
-            return;
-        }
-        
-        console.log('=== FORM SUBMIT DEBUG ===');
-        console.log('Form data:', profileForm);
-        console.log('Form event:', e);
-        
-        // Show immediate feedback
-        setSaveMessage('⏳ Saving profile...');
-        
         saveProfile(profileForm);
     };
 
     const checkForDuplicateProfile = (profileData) => {
-        const { firstName, lastName, email } = profileData;
+        const existingProfiles = JSON.parse(localStorage.getItem('archerProfiles') || '[]');
         
-        console.log('=== DUPLICATE CHECK DEBUG ===');
-        console.log('Checking profile data:', profileData);
-        console.log('Current selected profile:', selectedProfile);
-        console.log('Is editing:', isEditing);
-        console.log('Is creating:', isCreating);
-        
-        // Check for exact name match (excluding current profile if editing)
-        const nameMatch = profiles.find(profile => {
-            const nameMatches = profile.firstName?.toLowerCase() === firstName?.toLowerCase() &&
-                               profile.lastName?.toLowerCase() === lastName?.toLowerCase();
-            const isCurrentProfile = profile.id === selectedProfile?.id;
-            
-            console.log(`Profile ${profile.id}: nameMatches=${nameMatches}, isCurrentProfile=${isCurrentProfile}`);
-            
-            return nameMatches && !isCurrentProfile;
-        });
+        // Check for exact name match
+        const nameMatch = existingProfiles.find(p => 
+            p.firstName?.toLowerCase() === profileData.firstName?.toLowerCase() &&
+            p.lastName?.toLowerCase() === profileData.lastName?.toLowerCase() &&
+            p.id !== selectedProfile?.id
+        );
         
         if (nameMatch) {
-            console.log('Name duplicate found:', nameMatch);
-            return `A profile for ${firstName} ${lastName} already exists.`;
+            return {
+                isDuplicate: true,
+                message: `A profile for ${profileData.firstName} ${profileData.lastName} already exists.`
+            };
         }
         
-        // Check for email match (if email is provided)
-        if (email) {
-            const emailMatch = profiles.find(profile => {
-                const emailMatches = profile.email?.toLowerCase() === email?.toLowerCase();
-                const isCurrentProfile = profile.id === selectedProfile?.id;
-                
-                console.log(`Profile ${profile.id}: emailMatches=${emailMatches}, isCurrentProfile=${isCurrentProfile}`);
-                
-                return emailMatches && !isCurrentProfile;
-            });
+        // Check for email match
+        if (profileData.email) {
+            const emailMatch = existingProfiles.find(p => 
+                p.email?.toLowerCase() === profileData.email?.toLowerCase() &&
+                p.id !== selectedProfile?.id
+            );
             
             if (emailMatch) {
-                console.log('Email duplicate found:', emailMatch);
-                return `A profile with email ${email} already exists.`;
+                return {
+                    isDuplicate: true,
+                    message: `A profile with email ${profileData.email} already exists.`
+                };
             }
         }
         
-        console.log('No duplicates found');
-        return null;
+        return { isDuplicate: false };
     };
 
     const handleInputChange = (field, value) => {
-        console.log('Input change:', field, value);
-        setProfileForm(prev => {
-            const newForm = { ...prev, [field]: value };
-            console.log('Updated form:', newForm);
-            return newForm;
-        });
+        setProfileForm(prev => ({ ...prev, [field]: value }));
     };
 
     const toggleTag = async (profileId, tagType) => {
         try {
-            const profile = profiles.find(p => p.id === profileId);
-            if (!profile) return;
-
-            // Toggle the tag
-            const updatedProfile = {
-                ...profile,
-                [tagType]: !profile[tagType],
-                updatedAt: new Date().toISOString()
-            };
-
-            // If setting "isMe" to true, unset it for all other profiles
-            if (tagType === 'isMe' && !profile[tagType]) {
-                const updatedProfiles = profiles.map(p => ({
-                    ...p,
-                    isMe: p.id === profileId ? true : false,
-                    updatedAt: new Date().toISOString()
-                }));
-                setProfiles(updatedProfiles);
-                localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
-                
-                // Save to Firebase
-                if (shouldUseFirebase(currentUser?.uid)) {
-                    for (const prof of updatedProfiles) {
-                        try {
-                            await saveProfileToFirebase(prof, currentUser?.uid);
-                        } catch (error) {
-                            console.error('Error saving profile to Firebase:', error);
-                        }
-                    }
+            const existingProfiles = JSON.parse(localStorage.getItem('archerProfiles') || '[]');
+            const updatedProfiles = existingProfiles.map(profile => {
+                if (profile.id === profileId) {
+                    return {
+                        ...profile,
+                        [tagType]: !profile[tagType]
+                    };
                 }
-            } else {
-                // Update single profile
-                const updatedProfiles = profiles.map(p => 
-                    p.id === profileId ? updatedProfile : p
-                );
-                setProfiles(updatedProfiles);
-                localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
-                
-                // Save to Firebase
-                if (shouldUseFirebase(currentUser?.uid)) {
-                    try {
-                        await saveProfileToFirebase(updatedProfile, currentUser?.uid);
-                    } catch (error) {
-                        console.error('Error saving profile to Firebase:', error);
-                    }
-                }
+                return profile;
+            });
+            
+            localStorage.setItem('archerProfiles', JSON.stringify(updatedProfiles));
+            setProfiles(updatedProfiles);
+            
+            // Update selected profile if it's the one being modified
+            if (selectedProfile && selectedProfile.id === profileId) {
+                const updatedProfile = updatedProfiles.find(p => p.id === profileId);
+                setSelectedProfile(updatedProfile);
             }
+            
         } catch (error) {
             console.error('Error toggling tag:', error);
         }
@@ -694,17 +454,15 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
 
     const navigateToNextProfile = () => {
         if (currentProfileIndex < profiles.length - 1) {
-            const nextIndex = currentProfileIndex + 1;
-            setCurrentProfileIndex(nextIndex);
-            selectProfile(profiles[nextIndex]);
+            const nextProfile = profiles[currentProfileIndex + 1];
+            selectProfile(nextProfile);
         }
     };
 
     const navigateToPrevProfile = () => {
         if (currentProfileIndex > 0) {
-            const prevIndex = currentProfileIndex - 1;
-            setCurrentProfileIndex(prevIndex);
-            selectProfile(profiles[prevIndex]);
+            const prevProfile = profiles[currentProfileIndex - 1];
+            selectProfile(prevProfile);
         }
     };
 
@@ -715,599 +473,441 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         }
     };
 
+    // Loading state
     if (loading) {
         return (
-            <div className="max-w-4xl mx-auto p-4">
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-2 text-gray-600">Loading profiles...</span>
-                    </div>
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading profiles...</p>
                 </div>
             </div>
         );
     }
 
-    // Profile Selection Screen
+    // Profile Selection View
     if (showProfileSelection) {
         return (
-            <div className="max-w-4xl mx-auto p-4">
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-800">Your Profile</h2>
-                            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1">
-                                👤 Individual Profile Management (Same data as Team Archers)
-                            </div>
-                        </div>
+            <div className="min-h-screen bg-gray-50">
+                {/* Header */}
+                <div className="bg-white border-b border-gray-200 px-4 py-3">
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-xl font-semibold text-gray-900">Profile Management</h1>
+                        <button
+                            onClick={() => onNavigate('home')}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                            ← Back to Home
+                        </button>
                     </div>
+                </div>
 
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">Select Your Profile</h3>
-                        <p className="text-gray-600 mb-4">
-                            Choose your existing profile or create a new one to get started.
-                        </p>
+                {/* Action Buttons - Always at Top */}
+                <div className="bg-white border-b border-gray-200 px-4 py-3">
+                    <div className="flex space-x-3">
+                        <button
+                            onClick={createNewProfile}
+                            className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                        >
+                            + New Profile
+                        </button>
+                        <button
+                            onClick={() => onNavigate('team-archers')}
+                            className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                        >
+                            Team View
+                        </button>
                     </div>
+                </div>
 
-                    {profiles.length > 0 && (
-                        <div className="mb-6">
-                            <h4 className="text-md font-medium text-gray-700 mb-3">Your Profiles:</h4>
-                            
-                            {/* Mobile-Friendly Cards - Matching TeamArcherManagement format */}
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                                <div className="p-4 border-b border-gray-200">
-                                    <div className="flex items-center justify-between">
-                                        <h2 className="text-lg font-semibold text-gray-800">
-                                            Profiles ({profiles.length})
-                                        </h2>
-                                    </div>
-                                </div>
-                                
-                                <div className="divide-y divide-gray-200">
-                                    {profiles.map(profile => (
-                                        <div key={profile.id} className="p-4 hover:bg-gray-50">
-                                            <div className="flex items-start space-x-3">
-                                                {/* Main Content */}
-                                                <div className="flex-1 min-w-0">
-                                                    {/* Header Row */}
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <div className="flex items-center space-x-2">
-                                                            <button
-                                                                onClick={() => editProfile(profile)}
-                                                                className="text-left hover:text-blue-600 transition-colors"
-                                                            >
-                                                                <h3 className="text-sm font-medium text-gray-900 truncate">
-                                                                    {`${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Unnamed Profile'}
-                                                                </h3>
-                                                            </button>
-                                                            {/* Tags */}
-                                                            <div className="flex items-center space-x-1">
-                                                                {profile.isMe && (
-                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                                        Me
-                                                                    </span>
-                                                                )}
-                                                                {appSelectedProfile?.id === profile.id && (
-                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                                        Active
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                                {profile.division || profile.defaultClassification || 'No Division'}
-                                                            </span>
-                                                            {/* Favorite Toggle */}
-                                                            <button
-                                                                onClick={() => toggleTag(profile.id, 'isFavorite')}
-                                                                className="text-lg hover:scale-110 transition-transform"
-                                                            >
-                                                                {profile.isFavorite ? '⭐' : '☆'}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {/* Info Row */}
-                                                    <div className="text-xs text-gray-500 mb-2">
-                                                        <span>{profile.school || 'No School'}</span>
-                                                        {profile.grade && <span> • Grade {profile.grade}</span>}
-                                                        {profile.role && <span> • {profile.role}</span>}
-                                                    </div>
-                                                    
-                                                    {/* Equipment & Stats Row */}
-                                                    <div className="grid grid-cols-2 gap-4 text-xs mb-3">
-                                                        <div>
-                                                            <span className="font-medium text-gray-700">Equipment:</span>
-                                                            <div className="text-gray-600">
-                                                                {profile.bowType || profile.profileType || 'No Bow'}
-                                                                {(profile.drawWeight || profile.drawLength) && (
-                                                                    <div className="text-gray-500">
-                                                                        {profile.drawWeight || '0'}# • {profile.drawLength || '0'}"
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <button
-                                                                onClick={() => handleViewStats(profile.id)}
-                                                                className="text-left hover:text-blue-600 transition-colors"
-                                                            >
-                                                                <span className="font-medium text-gray-700">Stats:</span>
-                                                                <div className="text-gray-600">
-                                                                    Avg: N/A • Rounds: 0 • Best: N/A
-                                                                </div>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {/* Action Buttons */}
-                                                    <div className="flex items-center space-x-2">
-                                                        <button
-                                                            onClick={() => handleViewStats(profile.id)}
-                                                            className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
-                                                        >
-                                                            Score
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleViewStats(profile.id)}
-                                                            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                                                        >
-                                                            Stats
-                                                        </button>
-                                                        <button
-                                                            onClick={() => toggleTag(profile.id, 'isMe')}
-                                                            className={`px-3 py-1 rounded text-sm ${
-                                                                profile.isMe 
-                                                                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                                                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                                                            }`}
-                                                        >
-                                                            Me
-                                                        </button>
-                                                        <button
-                                                            onClick={() => deleteProfile(profile.id)}
-                                                            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </div>
+                {/* Profile List */}
+                <div className="p-4 space-y-3">
+                    {profiles.map((profile, index) => (
+                        <div
+                            key={profile.id}
+                            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => selectProfile(profile)}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <span className="text-blue-600 font-medium text-lg">
+                                                {profile.firstName?.[0]}{profile.lastName?.[0]}
+                                            </span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-gray-900">
+                                                {profile.firstName} {profile.lastName}
+                                            </h3>
+                                            <p className="text-sm text-gray-600">
+                                                {profile.school || 'No School'} • {profile.role || 'Archer'}
+                                            </p>
+                                            <div className="flex items-center space-x-2 mt-1">
+                                                {profile.isMe && (
+                                                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                                        Me
+                                                    </span>
+                                                )}
+                                                {profile.isFavorite && (
+                                                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                                        ⭐
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            editProfile(profile);
+                                        }}
+                                        className="text-blue-600 hover:text-blue-800 text-sm"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteProfile(profile.id);
+                                        }}
+                                        className="text-red-600 hover:text-red-800 text-sm"
+                                    >
+                                        Delete
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    )}
-
-                    <div className="border-t pt-6">
-                        <div className="flex space-x-3">
+                    ))}
+                    
+                    {profiles.length === 0 && (
+                        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                            <p className="text-gray-600 mb-4">No profiles found</p>
                             <button
                                 onClick={createNewProfile}
-                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
                             >
-                                + Create New Profile
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (window.confirm('Refresh profiles from Firebase? This will reload all profiles from the server.')) {
-                                        localStorage.removeItem('archerProfiles');
-                                        window.location.reload();
-                                    }
-                                }}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                title="Force refresh profiles from Firebase"
-                            >
-                                🔄 Refresh
+                                Create Your First Profile
                             </button>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         );
     }
 
-    // Profile Form Screen
+    // Profile Edit/Create View
     return (
-        <div className="max-w-4xl mx-auto p-4">
-            <div className="bg-white rounded-lg shadow-lg p-6">
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-800">
-                            {isCreating ? 'Create New Profile' : 'Edit Profile'}
-                        </h2>
-                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1">
-                            👤 Individual Profile Management (Same data as Team Archers)
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        {/* Navigation buttons - only show when editing existing profile */}
-                        {!isCreating && selectedProfile && profiles.length > 1 && (
-                            <>
-                                <button
-                                    onClick={navigateToPrevProfile}
-                                    disabled={currentProfileIndex === 0}
-                                    className={`px-3 py-2 rounded-md transition-colors ${
-                                        currentProfileIndex === 0
-                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                                    }`}
-                                    title="Previous Profile"
-                                >
-                                    ← Prev
-                                </button>
-                                <span className="text-sm text-gray-500">
-                                    {currentProfileIndex + 1} of {profiles.length}
-                                </span>
-                                <button
-                                    onClick={navigateToNextProfile}
-                                    disabled={currentProfileIndex === profiles.length - 1}
-                                    className={`px-3 py-2 rounded-md transition-colors ${
-                                        currentProfileIndex === profiles.length - 1
-                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                                    }`}
-                                    title="Next Profile"
-                                >
-                                    Next →
-                                </button>
-                            </>
-                        )}
+        <div className="min-h-screen bg-gray-50">
+            {/* Header */}
+            <div className="bg-white border-b border-gray-200 px-4 py-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
                         <button
                             onClick={() => setShowProfileSelection(true)}
-                            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                         >
-                            Back to Profiles
+                            ← Back to Profiles
                         </button>
+                        <h1 className="text-xl font-semibold text-gray-900">
+                            {isCreating ? 'Create Profile' : 'Edit Profile'}
+                        </h1>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                        {profiles.length > 0 && `${currentProfileIndex + 1} of ${profiles.length}`}
                     </div>
                 </div>
+            </div>
 
-
-
-                <form 
-                    onSubmit={handleFormSubmit} 
-                    className="space-y-6"
-                >
-                    {/* Row 1: Name Information */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                            <input
-                                type="text"
-                                value={profileForm.firstName}
-                                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                                placeholder="Enter first name"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                            <input
-                                type="text"
-                                value={profileForm.lastName}
-                                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                                placeholder="Enter last name"
-                            />
-                        </div>
+            {/* Action Buttons - Always at Top */}
+            <div className="bg-white border-b border-gray-200 px-4 py-3">
+                <div className="flex space-x-3">
+                    <button
+                        onClick={handleFormSubmit}
+                        disabled={saving}
+                        className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+                    >
+                        {saving ? 'Saving...' : 'Save Profile'}
+                    </button>
+                    <button
+                        onClick={() => setShowProfileSelection(true)}
+                        className="flex-1 bg-gray-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+                {saveMessage && (
+                    <div className={`mt-3 p-3 rounded-lg text-sm ${
+                        saveMessage.includes('Error') ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                    }`}>
+                        {saveMessage}
                     </div>
+                )}
+            </div>
 
-                    {/* Row 1.5: Contact Information */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input
-                                type="email"
-                                value={profileForm.email}
-                                onChange={(e) => handleInputChange('email', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="email@example.com"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                            <input
-                                type="tel"
-                                value={profileForm.phone}
-                                onChange={(e) => handleInputChange('phone', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="(555) 123-4567"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Row 2: School Information */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-                            <select
-                                value={profileForm.gender}
-                                onChange={(e) => handleInputChange('gender', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="M">Male</option>
-                                <option value="F">Female</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">School</label>
-                            <input
-                                type="text"
-                                value={profileForm.school}
-                                onChange={(e) => handleInputChange('school', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="School name"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
-                            <input
-                                type="text"
-                                value={profileForm.grade}
-                                onChange={(e) => handleInputChange('grade', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="9, 10, 11, 12"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Division</label>
-                            <select
-                                value={profileForm.division}
-                                onChange={(e) => handleInputChange('division', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="V">Varsity</option>
-                                <option value="JV">Junior Varsity</option>
-                                <option value="MS">Middle School</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Row 3: Physical Characteristics */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dominant Hand</label>
-                            <select
-                                value={profileForm.dominantHand}
-                                onChange={(e) => handleInputChange('dominantHand', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="Right">Right</option>
-                                <option value="Left">Left</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dominant Eye</label>
-                            <select
-                                value={profileForm.dominantEye}
-                                onChange={(e) => handleInputChange('dominantEye', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="Right">Right</option>
-                                <option value="Left">Left</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Draw Length (inches)</label>
-                            <input
-                                type="number"
-                                step="0.5"
-                                value={profileForm.drawLength}
-                                onChange={(e) => handleInputChange('drawLength', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="28.5"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Row 4: Equipment Information */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Bow Type</label>
-                            <select
-                                value={profileForm.bowType}
-                                onChange={(e) => handleInputChange('bowType', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="Recurve ILF">Recurve ILF</option>
-                                <option value="Compound">Compound</option>
-                                <option value="Barebow">Barebow</option>
-                                <option value="Traditional">Traditional</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Bow Length (inches)</label>
-                            <select
-                                value={profileForm.bowLength}
-                                onChange={(e) => handleInputChange('bowLength', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="62">62"</option>
-                                <option value="64">64"</option>
-                                <option value="66">66"</option>
-                                <option value="68">68"</option>
-                                <option value="70">70"</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Bow Weight (lbs)</label>
-                            <input
-                                type="number"
-                                value={profileForm.bowWeight}
-                                onChange={(e) => handleInputChange('bowWeight', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="45"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Row 5: Performance Records */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Varsity PR</label>
-                            <input
-                                type="number"
-                                value={profileForm.varsityPR}
-                                onChange={(e) => handleInputChange('varsityPR', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="300"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">JV PR</label>
-                            <input
-                                type="number"
-                                value={profileForm.jvPR}
-                                onChange={(e) => handleInputChange('jvPR', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="300"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Avg Arrow</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                value={profileForm.avgArrow}
-                                onChange={(e) => handleInputChange('avgArrow', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="9.5"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Additional Information */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                            <select
-                                value={profileForm.role}
-                                onChange={(e) => handleInputChange('role', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="Archer">Archer</option>
-                                <option value="Team Captain">Team Captain</option>
-                                <option value="Coach">Coach</option>
-                                <option value="Referee">Referee</option>
-                                <option value="Event Manager">Event Manager</option>
-                                <option value="System Admin">System Admin</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">US Archery Number</label>
-                            <input
-                                type="text"
-                                value={profileForm.usArcheryNumber}
-                                onChange={(e) => handleInputChange('usArcheryNumber', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Optional"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">NFAA Number</label>
-                            <input
-                                type="text"
-                                value={profileForm.nfaaNumber}
-                                onChange={(e) => handleInputChange('nfaaNumber', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Optional"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Sponsorships */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Sponsorships</label>
-                        <input
-                            type="text"
-                            value={profileForm.sponsorships}
-                            onChange={(e) => handleInputChange('sponsorships', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Optional sponsorships"
-                        />
-                    </div>
-
-                    {/* Tags */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Is Me</label>
-                            <input
-                                type="checkbox"
-                                checked={profileForm.isMe}
-                                onChange={(e) => handleInputChange('isMe', e.target.checked)}
-                                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Is Favorite</label>
-                            <input
-                                type="checkbox"
-                                checked={profileForm.isFavorite}
-                                onChange={(e) => handleInputChange('isFavorite', e.target.checked)}
-                                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Active</label>
-                            <input
-                                type="checkbox"
-                                checked={profileForm.isActive}
-                                onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Save Message - More Prominent */}
-                    {saveMessage && (
-                        <div className={`mt-6 p-4 rounded-lg shadow-md border-2 font-medium text-center ${
-                            saveMessage.includes('❌') || saveMessage.includes('Error') || saveMessage.includes('required') || saveMessage.includes('already exists')
-                                ? 'bg-red-50 text-red-800 border-red-300 shadow-red-100'
-                                : 'bg-green-50 text-green-800 border-green-300 shadow-green-100'
-                        }`}>
-                            <div className="flex items-center justify-center">
-                                <div className="text-lg">{saveMessage}</div>
+            {/* Form Content */}
+            <div className="p-4 space-y-4">
+                <form onSubmit={handleFormSubmit}>
+                    {/* Contact Information Card */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-blue-600 text-sm">👤</span>
+                            </span>
+                            Contact Information
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    First Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={profileForm.firstName}
+                                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
                             </div>
-                            {saveMessage.includes('✅') && (
-                                <div className="text-sm text-green-600 mt-1">
-                                    {isCreating ? 'Returning to profile list...' : 'Changes saved to your account'}
-                                </div>
-                            )}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Last Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={profileForm.lastName}
+                                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={profileForm.email}
+                                    onChange={(e) => handleInputChange('email', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Phone
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={profileForm.phone}
+                                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
                         </div>
-                    )}
+                    </div>
 
-                    {/* Submit Button */}
-                    <div className="flex justify-end space-x-3 pt-6 border-t">
-                        <button
-                            type="button"
-                            onClick={() => setShowProfileSelection(true)}
-                            className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                            disabled={saving}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className={`px-6 py-2 rounded-md transition-colors ${
-                                saving 
-                                    ? 'bg-gray-400 cursor-not-allowed' 
-                                    : 'bg-blue-600 hover:bg-blue-700'
-                            } text-white`}
-                        >
-                            {saving ? (
-                                <span className="flex items-center">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                    Saving...
-                                </span>
-                            ) : (
-                                isCreating ? 'Create Profile' : 'Save Changes'
-                            )}
-                        </button>
+                    {/* Archer Details Card */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <span className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-green-600 text-sm">🏹</span>
+                            </span>
+                            Archer Details
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Gender
+                                </label>
+                                <select
+                                    value={profileForm.gender}
+                                    onChange={(e) => handleInputChange('gender', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    School
+                                </label>
+                                <input
+                                    type="text"
+                                    value={profileForm.school}
+                                    onChange={(e) => handleInputChange('school', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Grade
+                                </label>
+                                <input
+                                    type="text"
+                                    value={profileForm.grade}
+                                    onChange={(e) => handleInputChange('grade', e.target.value)}
+                                    placeholder="9, 10, 11, 12"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Division
+                                </label>
+                                <select
+                                    value={profileForm.division}
+                                    onChange={(e) => handleInputChange('division', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="V">Varsity</option>
+                                    <option value="JV">Junior Varsity</option>
+                                    <option value="MS">Middle School</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Dominant Hand
+                                </label>
+                                <select
+                                    value={profileForm.dominantHand}
+                                    onChange={(e) => handleInputChange('dominantHand', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="Right">Right</option>
+                                    <option value="Left">Left</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Dominant Eye
+                                </label>
+                                <select
+                                    value={profileForm.dominantEye}
+                                    onChange={(e) => handleInputChange('dominantEye', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="Right">Right</option>
+                                    <option value="Left">Left</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Equipment Card */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <span className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-purple-600 text-sm">🎯</span>
+                            </span>
+                            Equipment
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Bow Type
+                                </label>
+                                <select
+                                    value={profileForm.bowType}
+                                    onChange={(e) => handleInputChange('bowType', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="Recurve ILF">Recurve ILF</option>
+                                    <option value="Compound">Compound</option>
+                                    <option value="Barebow">Barebow</option>
+                                    <option value="Traditional">Traditional</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Bow Length (inches)
+                                </label>
+                                <select
+                                    value={profileForm.bowLength}
+                                    onChange={(e) => handleInputChange('bowLength', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="62">62"</option>
+                                    <option value="64">64"</option>
+                                    <option value="66">66"</option>
+                                    <option value="68">68"</option>
+                                    <option value="70">70"</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Draw Length (inches)
+                                </label>
+                                <input
+                                    type="number"
+                                    value={profileForm.drawLength}
+                                    onChange={(e) => handleInputChange('drawLength', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Bow Weight (lbs)
+                                </label>
+                                <input
+                                    type="number"
+                                    value={profileForm.bowWeight}
+                                    onChange={(e) => handleInputChange('bowWeight', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Role & Permissions Card */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-orange-600 text-sm">🔐</span>
+                            </span>
+                            Role & Permissions
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Role
+                                </label>
+                                <select
+                                    value={profileForm.role}
+                                    onChange={(e) => handleInputChange('role', e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="Archer">Archer</option>
+                                    <option value="Team Captain">Team Captain</option>
+                                    <option value="Coach">Coach</option>
+                                    <option value="Referee">Referee</option>
+                                    <option value="Event Manager">Event Manager</option>
+                                    <option value="System Admin">System Admin</option>
+                                </select>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={profileForm.isMe}
+                                        onChange={(e) => handleInputChange('isMe', e.target.checked)}
+                                        className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">Mark as "Me"</span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={profileForm.isFavorite}
+                                        onChange={(e) => handleInputChange('isFavorite', e.target.checked)}
+                                        className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">Favorite</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
