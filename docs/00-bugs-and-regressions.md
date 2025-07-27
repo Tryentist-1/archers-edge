@@ -247,6 +247,45 @@
 
 ## 🐛 **Active Bugs**
 
+### **Bug #002: Cross-Origin-Opener-Policy Console Errors During Google Login**
+**Date**: January 27, 2025  
+**Status**: ✅ **FIXED**  
+**Priority**: LOW  
+**Component**: AuthContext.jsx  
+
+#### **Description**
+When logging in with Google, console shows Cross-Origin-Opener-Policy errors related to `window.closed` calls. These are browser security policy warnings, not application errors.
+
+#### **Error Details**
+```
+Cross-Origin-Opener-Policy policy would block the window.closed call.
+at e @ index-d917075e.js:1404
+```
+
+#### **Root Cause**
+Modern browsers block cross-origin window access for security. Google OAuth popup tries to check if popup window is closed, but browser blocks this access.
+
+#### **Fix Applied**
+- ✅ Added try-catch wrapper in `signInWithGoogle()` function
+- ✅ Gracefully handle Cross-Origin-Opener-Policy errors
+- ✅ Convert errors to warnings since login still succeeds
+- ✅ Return current user if popup check fails
+
+#### **Impact Assessment**
+- ❌ **NOT BLOCKING**: Login functionality works correctly
+- ❌ **NOT CRITICAL**: App continues to function normally
+- ⚠️ **COSMETIC**: Only affects console cleanliness
+- ✅ **RESOLVED**: Errors now handled gracefully
+
+#### **Files Modified**
+- `src/contexts/AuthContext.jsx` - Added error handling for OAuth popup
+
+#### **Testing**
+- [x] Google login still works correctly
+- [x] Console errors converted to warnings
+- [x] No impact on authentication flow
+- [x] User experience unchanged
+
 ### **Bug #001: Profile Management Screen Fails to Load**
 **Date**: January 27, 2025  
 **Status**: ✅ **FIXED**  

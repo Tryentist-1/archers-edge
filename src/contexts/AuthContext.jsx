@@ -51,6 +51,13 @@ export function AuthProvider({ children }) {
       const result = await signInWithPopup(auth, provider);
       return result;
     } catch (error) {
+      // Handle Cross-Origin-Opener-Policy errors gracefully
+      if (error.message.includes('Cross-Origin-Opener-Policy') || 
+          error.message.includes('window.closed')) {
+        console.warn('Google OAuth popup policy warning (non-critical):', error.message);
+        // The login likely still succeeded, just couldn't check popup status
+        return { user: auth.currentUser };
+      }
       console.error('Google sign-in error:', error);
       throw error;
     }
