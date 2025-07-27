@@ -99,7 +99,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     console.log('Attempting to load from Firebase...');
-                    const firebaseProfiles = await loadProfilesFromFirebase(currentUser.uid);
+                    const firebaseProfiles = await loadProfilesFromFirebase(currentUser?.uid);
                     console.log('Profiles loaded from Firebase:', firebaseProfiles);
                     if (firebaseProfiles && firebaseProfiles.length > 0) {
                         loadedProfiles = firebaseProfiles;
@@ -336,7 +336,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 // Create new profile
                 profileToSave = {
                     id: Date.now().toString(),
-                    userId: currentUser.uid,
+                    userId: currentUser?.uid || 'profile-user',
                     email: currentUser.email,
                     displayName: currentUser.displayName,
                     ...profileData,
@@ -356,7 +356,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             // Save to Firebase if online and not mock user
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
-                    await saveProfileToFirebase(profileToSave, currentUser.uid);
+                    await saveProfileToFirebase(profileToSave, currentUser?.uid);
                     console.log('Profile saved to Firebase successfully');
                 } catch (error) {
                     console.error('Error saving to Firebase:', error);
@@ -471,7 +471,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             // Delete from Firebase if online and not mock user
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
-                    await deleteProfileFromFirebase(profileId, currentUser.uid);
+                    await deleteProfileFromFirebase(profileId, currentUser?.uid);
                     console.log('Profile deleted from Firebase successfully');
                 } catch (error) {
                     console.error('Error deleting from Firebase:', error);
@@ -664,7 +664,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 if (shouldUseFirebase(currentUser?.uid)) {
                     for (const prof of updatedProfiles) {
                         try {
-                            await saveProfileToFirebase(prof, currentUser.uid);
+                            await saveProfileToFirebase(prof, currentUser?.uid);
                         } catch (error) {
                             console.error('Error saving profile to Firebase:', error);
                         }
@@ -681,7 +681,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 // Save to Firebase
                 if (shouldUseFirebase(currentUser?.uid)) {
                     try {
-                        await saveProfileToFirebase(updatedProfile, currentUser.uid);
+                        await saveProfileToFirebase(updatedProfile, currentUser?.uid);
                     } catch (error) {
                         console.error('Error saving profile to Firebase:', error);
                     }

@@ -129,7 +129,7 @@ const OASScorecard = ({ baleData, archerId, onBackToScoring, onRoundCompleted })
                 ends: {},
                 totals: totals,
                 verifiedAt: new Date().toISOString(),
-                verifiedBy: currentUser.uid
+                verifiedBy: currentUser?.uid || 'profile-user'
             };
 
             // Add all end data
@@ -168,10 +168,10 @@ const OASScorecard = ({ baleData, archerId, onBackToScoring, onRoundCompleted })
             }
 
             // Save to Firebase as completed round
-            await saveCompletedRoundToFirebase(scorecardData, currentUser.uid);
+            await saveCompletedRoundToFirebase(scorecardData, currentUser?.uid);
             
             // Save to archer's profile history
-            await saveArcherRoundToProfile(archer.id, scorecardData, currentUser.uid);
+            await saveArcherRoundToProfile(archer.id, scorecardData, currentUser?.uid);
 
             setIsVerified(true);
             

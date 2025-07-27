@@ -100,7 +100,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
       if (shouldUseFirebase(currentUser?.uid)) {
         try {
           console.log('Attempting to load from Firebase...');
-          const firebaseProfiles = await loadProfilesFromFirebase(currentUser.uid);
+                              const firebaseProfiles = await loadProfilesFromFirebase(currentUser?.uid);
           console.log('Profiles loaded from Firebase:', firebaseProfiles);
           if (firebaseProfiles && firebaseProfiles.length > 0) {
             loadedProfiles = firebaseProfiles;
@@ -277,14 +277,14 @@ const TeamArcherManagement = ({ onNavigate }) => {
         id: editingArcher?.id || `archer_${Date.now()}`,
         createdAt: editingArcher?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        userId: currentUser.uid
+                        userId: currentUser?.uid || 'profile-user'
       };
 
       console.log('Final archer data to save:', archerData);
 
       // Save to Firebase if possible
       if (shouldUseFirebase(currentUser?.uid)) {
-        await saveProfileToFirebase(archerData, currentUser.uid);
+                        await saveProfileToFirebase(archerData, currentUser?.uid);
         console.log('Saved to Firebase successfully');
       }
 
@@ -413,7 +413,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
         if (shouldUseFirebase(currentUser?.uid)) {
           for (const prof of updatedProfiles) {
             try {
-              await saveProfileToFirebase(prof, currentUser.uid);
+                              await saveProfileToFirebase(prof, currentUser?.uid);
             } catch (error) {
               console.error('Error saving profile to Firebase:', error);
             }
@@ -430,7 +430,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
         // Save to Firebase
         if (shouldUseFirebase(currentUser?.uid)) {
           try {
-            await saveProfileToFirebase(updatedProfile, currentUser.uid);
+                            await saveProfileToFirebase(updatedProfile, currentUser?.uid);
           } catch (error) {
             console.error('Error saving profile to Firebase:', error);
           }
@@ -461,7 +461,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
       // Delete from Firebase if online and not mock user
       if (shouldUseFirebase(currentUser?.uid)) {
         try {
-          await deleteProfileFromFirebase(profileId, currentUser.uid);
+                          await deleteProfileFromFirebase(profileId, currentUser?.uid);
           console.log('Profile deleted from Firebase successfully');
         } catch (error) {
           console.error('Error deleting from Firebase:', error);

@@ -26,7 +26,7 @@ const ArcherSetup = ({ onSetupComplete }) => {
     useEffect(() => {
         console.log('ArcherSetup - Authentication status:', {
             currentUser: currentUser ? {
-                uid: currentUser.uid,
+                uid: currentUser?.uid || 'profile-user',
                 email: currentUser.email,
                 displayName: currentUser.displayName
             } : null,
@@ -46,8 +46,8 @@ const ArcherSetup = ({ onSetupComplete }) => {
             try {
                 setLoadingArchers(true);
                 const [profiles, competitionsData] = await Promise.all([
-                    loadProfilesFromFirebase(currentUser.uid),
-                    loadCompetitionsFromFirebase(currentUser.uid)
+                    loadProfilesFromFirebase(currentUser?.uid),
+                    loadCompetitionsFromFirebase(currentUser?.uid)
                 ]);
                 setTeamArchers(profiles || []);
                 setCompetitions(competitionsData || []);
@@ -171,15 +171,15 @@ const ArcherSetup = ({ onSetupComplete }) => {
                 archers,
                 currentEnd: 1,
                 totalEnds: 12,
-                createdBy: currentUser.uid,
+                createdBy: currentUser?.uid || 'profile-user',
                 createdAt: new Date(),
                 status: 'active'
             };
 
             console.log('Bale data to save:', baleData);
 
-            const userDoc = doc(db, 'users', currentUser.uid);
-            console.log('Saving to document:', `users/${currentUser.uid}`);
+                            const userDoc = doc(db, 'users', currentUser?.uid || 'profile-user');
+                            console.log('Saving to document:', `users/${currentUser?.uid || 'profile-user'}`);
             
             await setDoc(userDoc, {
                 currentBale: baleData,

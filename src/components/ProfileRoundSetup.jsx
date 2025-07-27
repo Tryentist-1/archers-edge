@@ -27,7 +27,7 @@ const ProfileRoundSetup = ({ onSetupComplete, onNavigate }) => {
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     console.log('Loading profiles from Firebase...');
-                    profiles = await loadProfilesFromFirebase(currentUser.uid);
+                    profiles = await loadProfilesFromFirebase(currentUser?.uid);
                     if (profiles && profiles.length > 0) {
                         localStorage.setItem('archerProfiles', JSON.stringify(profiles));
                     }
@@ -75,7 +75,7 @@ const ProfileRoundSetup = ({ onSetupComplete, onNavigate }) => {
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     console.log('Loading competitions from Firebase...');
-                    const firebaseCompetitions = await loadCompetitionsFromFirebase(currentUser.uid);
+                    const firebaseCompetitions = await loadCompetitionsFromFirebase(currentUser?.uid);
                     console.log('Competitions loaded from Firebase:', firebaseCompetitions);
                     if (firebaseCompetitions && firebaseCompetitions.length > 0) {
                         competitions = firebaseCompetitions;

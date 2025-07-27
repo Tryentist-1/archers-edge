@@ -107,7 +107,7 @@ const ScorecardVerificationFlow = ({ baleData, onVerificationComplete, onNavigat
                 ends: {},
                 totals: totals,
                 verifiedAt: new Date().toISOString(),
-                verifiedBy: currentUser.uid,
+                verifiedBy: currentUser?.uid || 'profile-user',
                 paperConfirmed: true // Mark as paper-confirmed
             };
 
@@ -147,7 +147,7 @@ const ScorecardVerificationFlow = ({ baleData, onVerificationComplete, onNavigat
             }
 
             // Save to Firebase as competition score (tied to archer profile and event)
-            await saveCompetitionScore(scorecardData, currentUser.uid);
+            await saveCompetitionScore(scorecardData, currentUser?.uid);
 
             // Mark this archer as verified
             setVerifiedArchers(prev => new Set([...prev, currentArcher.id]));
