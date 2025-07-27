@@ -152,23 +152,38 @@ function Login() {
 
   // Show authentication options
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-4">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
             Sign in to Archer's Edge
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-1 text-center text-sm text-gray-600">
             Choose your preferred sign-in method
           </p>
         </div>
 
+        {/* Quick Access for Students */}
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Quick Access</h3>
+          <p className="text-xs text-blue-700 mb-3">
+            For students without email or texting capabilities
+          </p>
+          <button
+            onClick={handleProfileSelection}
+            disabled={loading}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            📱 Select Profile or Load Team
+          </button>
+        </div>
+
         {/* Google Sign In */}
-        <div className="mt-8">
+        <div className="mt-4">
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign in with Google'}
           </button>
@@ -185,7 +200,7 @@ function Login() {
 
         {/* Phone Number Sign In */}
         {!confirmationResult ? (
-          <form className="mt-6 space-y-4" onSubmit={handlePhoneSubmit}>
+          <form className="mt-4 space-y-3" onSubmit={handlePhoneSubmit}>
             <div>
               <label htmlFor="phone" className="sr-only">
                 Phone Number
@@ -195,7 +210,7 @@ function Login() {
                 name="phone"
                 type="tel"
                 required
-                className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Phone number (e.g., +1234567890)"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
@@ -206,14 +221,14 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
               >
                 {loading ? 'Sending...' : 'Send Verification Code'}
               </button>
             </div>
           </form>
         ) : (
-          <form className="mt-6 space-y-4" onSubmit={handleCodeSubmit}>
+          <form className="mt-4 space-y-3" onSubmit={handleCodeSubmit}>
             <div>
               <label htmlFor="code" className="sr-only">
                 Verification Code
@@ -223,7 +238,7 @@ function Login() {
                 name="code"
                 type="text"
                 required
-                className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Enter 6-digit code"
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
@@ -234,7 +249,7 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
               >
                 {loading ? 'Verifying...' : 'Verify Code'}
               </button>
@@ -242,28 +257,8 @@ function Login() {
           </form>
         )}
 
-        {/* Profile-based authentication option */}
-        <div className="relative mt-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-100 text-gray-500">Or use profile selection</span>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <button
-            onClick={handleProfileSelection}
-            disabled={loading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            Select from Existing Profiles
-          </button>
-        </div>
-
         {error && (
-          <div className="mt-4 text-center text-sm text-red-600">
+          <div className="mt-3 text-center text-sm text-red-600">
             {error}
           </div>
         )}
@@ -410,149 +405,30 @@ function ProfileSelectionView({ onBack }) {
   const otherProfiles = profiles.filter(p => p.id !== myProfileId && !favoriteProfileIds.includes(p.id));
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-4">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
             Archer's Edge
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-1 text-center text-sm text-gray-600">
             Select your profile to get started
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="bg-red-50 border border-red-200 rounded-md p-3">
             <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
 
-        {/* My Profile Section */}
-        {myProfile && (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-            <h3 className="text-lg font-medium text-blue-900 mb-2">My Profile</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-blue-800">
-                  {myProfile.firstName} {myProfile.lastName}
-                </p>
-                <p className="text-sm text-blue-600">{myProfile.school || 'No school'}</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  Me
-                </span>
-                <button
-                  onClick={onBack}
-                  disabled={loading}
-                  className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
-                >
-                  Change
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Favorite Profiles */}
-        {favoriteProfiles.length > 0 && (
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Favorites</h3>
-            <div className="space-y-2">
-              {favoriteProfiles.map(profile => (
-                <div key={profile.id} className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-yellow-800">
-                        {profile.firstName} {profile.lastName}
-                      </p>
-                      <p className="text-sm text-yellow-600">{profile.school || 'No school'}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        ⭐
-                      </span>
-                      <button
-                        onClick={() => toggleFavorite(profile.id)}
-                        disabled={loading}
-                        className="text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All Profiles */}
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {myProfile ? 'Other Profiles' : 'Select Your Profile'}
-          </h3>
-          <div className="space-y-2">
-            {otherProfiles.map(profile => (
-              <div key={profile.id} className="bg-white border border-gray-200 rounded-md p-3 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {profile.firstName} {profile.lastName}
-                    </p>
-                    <p className="text-sm text-gray-600">{profile.school || 'No school'}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {!myProfile && (
-                      <button
-                        onClick={() => handleProfileSelect(profile.id)}
-                        disabled={loading}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        Select
-                      </button>
-                    )}
-                    <button
-                      onClick={() => toggleFavorite(profile.id)}
-                      disabled={loading}
-                      className="text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
-                    >
-                      {favoriteProfileIds.includes(profile.id) ? 'Remove' : '⭐'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* No Profiles Message */}
-        {profiles.length === 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
-            <p className="text-gray-600 mb-2">No profiles found</p>
-            <p className="text-sm text-gray-500 mb-4">
-              Create your first profile to get started with scoring
-            </p>
-            <div className="space-y-2">
-              <p className="text-xs text-gray-400">
-                💡 <strong>Tip:</strong> Use Google Sign-in or Phone authentication above to create your first profile
-              </p>
-              {process.env.NODE_ENV === 'development' && (
-                <p className="text-xs text-blue-500">
-                  🧪 <strong>Dev:</strong> Add <code>?samples=true</code> to URL for test profiles
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Load Team Data Section */}
+        {/* Load Team Data Section - Prominent for students without email/texting */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <h3 className="text-lg font-medium text-blue-900 mb-2">Load Team Data</h3>
           <p className="text-sm text-blue-700 mb-3">
             Scan a QR code or enter a team code to load archer profiles from the server
           </p>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <button
               onClick={() => setShowQRScanner(true)}
               disabled={loading}
@@ -569,6 +445,92 @@ function ProfileSelectionView({ onBack }) {
             </button>
           </div>
         </div>
+
+        {/* My Profile Section */}
+        {myProfile && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4">
+            <h3 className="text-lg font-medium text-green-900 mb-2">My Profile</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-green-800">
+                  {myProfile.firstName} {myProfile.lastName}
+                </p>
+                <p className="text-sm text-green-600">{myProfile.school || 'No school'}</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Me
+                </span>
+                <button
+                  onClick={() => handleProfileSelect(myProfile.id)}
+                  disabled={loading}
+                  className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* All Profiles */}
+        {profiles.length > 0 && (
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {myProfile ? 'Other Profiles' : 'Select Your Profile'}
+            </h3>
+            <div className="space-y-2">
+              {profiles.filter(p => p.id !== myProfileId).map(profile => (
+                <div key={profile.id} className="bg-white border border-gray-200 rounded-md p-3 hover:bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {profile.firstName} {profile.lastName}
+                      </p>
+                      <p className="text-sm text-gray-600">{profile.school || 'No school'}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleProfileSelect(profile.id)}
+                        disabled={loading}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Select
+                      </button>
+                      <button
+                        onClick={() => toggleFavorite(profile.id)}
+                        disabled={loading}
+                        className="text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                      >
+                        {favoriteProfileIds.includes(profile.id) ? '⭐' : '☆'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No Profiles Message */}
+        {profiles.length === 0 && (
+          <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
+            <p className="text-gray-600 mb-2">No profiles found</p>
+            <p className="text-sm text-gray-500 mb-3">
+              Load team data above or create your first profile
+            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-gray-400">
+                💡 <strong>Tip:</strong> Use QR code or team code to load profiles from your coach
+              </p>
+              {process.env.NODE_ENV === 'development' && (
+                <p className="text-xs text-blue-500">
+                  🧪 <strong>Dev:</strong> Add <code>?samples=true</code> to URL for test profiles
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Back to Authentication */}
         <div className="text-center">
