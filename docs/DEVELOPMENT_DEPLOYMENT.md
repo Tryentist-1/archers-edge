@@ -84,16 +84,16 @@ npm run dev -- --host
 
 ## 🔥 Production Deployment
 
-### Firebase Deployment
+### Firebase Deployment Workflow
 ```bash
-# Deploy to Firebase hosting
-firebase deploy
+# 1. Build for production
+npm run build
 
-# Deploy only hosting (faster)
+# 2. Deploy to Firebase hosting
 firebase deploy --only hosting
 
-# Deploy with specific project
-firebase deploy --project [project-id]
+# 3. Verify deployment
+# Check: https://archers-edge.web.app
 ```
 
 ### Pre-Deployment Checklist
@@ -102,17 +102,43 @@ firebase deploy --project [project-id]
 - [ ] **Test Authentication**: Google and Phone auth working
 - [ ] **Test Mobile**: App works on phone
 - [ ] **Test Offline**: Core functionality works without internet
+- [ ] **Build Success**: `npm run build` completes without errors
+- [ ] **Git Status**: All changes committed and pushed
 
 ### Deployment Commands
 ```bash
 # Build for production
 npm run build
 
-# Deploy to Firebase
+# Deploy to Firebase (full deployment)
 firebase deploy
+
+# Deploy only hosting (faster)
+firebase deploy --only hosting
 
 # Check deployment status
 firebase hosting:channel:list
+
+# Check Firebase project
+firebase projects:list
+firebase use
+```
+
+### Post-Deployment Verification
+```bash
+# 1. Check live site
+open https://archers-edge.web.app
+
+# 2. Test key functionality
+- Authentication (Google login)
+- Profile Management
+- Competition Results
+- Mobile responsiveness
+
+# 3. Check console for errors
+- Open browser dev tools
+- Look for any console errors
+- Test on mobile device
 ```
 
 ## 🔧 Environment Management
@@ -199,6 +225,25 @@ firebase deploy --only hosting
 4. **Test Environment**: Ensure `.env` variables are correct
 
 ## 📋 Session Management
+
+### Current Deployment Status (January 27, 2025)
+**Live URL**: https://archers-edge.web.app  
+**Status**: ✅ **Production Ready**  
+**Last Deployment**: January 27, 2025  
+
+#### **Recent Deployments**
+- ✅ **Bug Fix #001**: Profile Management screen loading error (isOnline import)
+- ✅ **Bug Fix #002**: Cross-Origin-Opener-Policy console errors (Google OAuth)
+- ✅ **Competition Results Sprint**: Enhanced results page and scorecard components
+- ✅ **Authentication**: Google login with graceful error handling
+
+#### **Verified Working Features**
+- ✅ Profile Management (no more console errors)
+- ✅ Google Authentication (clean console)
+- ✅ Competition Results with rankings
+- ✅ Detailed scorecard viewing
+- ✅ Mobile responsiveness
+- ✅ Offline functionality
 
 ### Starting a New Development Session
 ```bash
