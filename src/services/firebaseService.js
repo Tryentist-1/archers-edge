@@ -740,22 +740,17 @@ export const loadTeamFromFirebase = async (teamCode) => {
     try {
         console.log('Loading team from Firebase for team code:', teamCode);
         
-        // Parse team code (e.g., "CENTRAL-VARSITY" -> school: "CENTRAL", team: "VARSITY")
-        const [school, team] = teamCode.split('-');
+        // Team code is just the school/team name (e.g., "CAMP", "WDV", "BHS", "ORANCO")
+        const schoolTeamName = teamCode.toUpperCase();
         
-        if (!school || !team) {
-            throw new Error(`Invalid team code format: ${teamCode}. Expected format: SCHOOL-TEAM`);
-        }
-        
-        // Query profiles by school and team - try multiple variations
+        // Query profiles by school/team name only
         const profilesRef = collection(db, 'profiles');
         let teamProfiles = [];
         
         // Try exact match first
         const exactQuery = query(
             profilesRef, 
-            where('school', '==', school.toUpperCase()),
-            where('team', '==', team.toUpperCase())
+            where('school', '==', schoolTeamName)
         );
         
         let querySnapshot = await getDocs(exactQuery);
@@ -772,14 +767,10 @@ export const loadTeamFromFirebase = async (teamCode) => {
             querySnapshot.forEach((doc) => {
                 const profile = doc.data();
                 const profileSchool = (profile.school || '').toUpperCase();
-                const profileTeam = (profile.team || '').toUpperCase();
-                const searchSchool = school.toUpperCase();
-                const searchTeam = team.toUpperCase();
+                const searchSchool = schoolTeamName;
                 
                 if (profileSchool.includes(searchSchool) || searchSchool.includes(profileSchool)) {
-                    if (profileTeam.includes(searchTeam) || searchTeam.includes(profileTeam)) {
-                        teamProfiles.push({ id: doc.id, ...profile });
-                    }
+                    teamProfiles.push({ id: doc.id, ...profile });
                 }
             });
         }
@@ -823,15 +814,14 @@ export const getAvailableTeamsFromFirebase = async () => {
         
         querySnapshot.forEach((doc) => {
             const profile = doc.data();
-            if (profile.school && profile.team) {
-                const teamCode = `${profile.school.toUpperCase()}-${profile.team.toUpperCase()}`;
+            if (profile.school) {
+                const teamCode = profile.school.toUpperCase();
                 
                 if (!teams.has(teamCode)) {
                     teams.set(teamCode, {
                         teamCode,
-                        name: `${profile.school} ${profile.team}`,
+                        name: `${profile.school} Team`,
                         school: profile.school,
-                        team: profile.team,
                         archerCount: 0,
                         archers: []
                     });
@@ -857,7 +847,6 @@ export const getAvailableTeamsFromFirebase = async () => {
                 teamCode,
                 name: teamInfo.name,
                 school: teamInfo.school,
-                team: teamInfo.team,
                 archerCount: teamInfo.archers.length,
                 archers: teamInfo.archers
             };

@@ -7,9 +7,9 @@
 
 // Sample team data structure
 const sampleTeams = {
-  'TEST-TEST': {
+  'TEST': {
     name: 'TEST Team',
-    school: 'TEST School',
+    school: 'TEST',
     coach: 'Coach TEST',
     archers: [
       {
@@ -18,7 +18,7 @@ const sampleTeams = {
         lastName: 'Hood',
         email: 'robin.hood@test.edu',
         phone: '+1234567890',
-        team: 'TEST',
+        division: 'V',
         level: 'Advanced',
         school: 'TEST'
       },
@@ -28,7 +28,7 @@ const sampleTeams = {
         lastName: 'Arrow',
         email: 'green.arrow@test.edu',
         phone: '+1234567891',
-        team: 'TEST',
+        division: 'V',
         level: 'Advanced',
         school: 'TEST'
       },
@@ -38,7 +38,7 @@ const sampleTeams = {
         lastName: 'Aberdeen',
         email: 'katniss.aberdeen@test.edu',
         phone: '+1234567892',
-        team: 'TEST',
+        division: 'JV',
         level: 'Advanced',
         school: 'TEST'
       },
@@ -48,14 +48,14 @@ const sampleTeams = {
         lastName: 'DunBroch',
         email: 'merida.dunbroch@test.edu',
         phone: '+1234567893',
-        team: 'TEST',
+        division: 'V',
         level: 'Advanced',
         school: 'TEST'
       }
     ]
   },
-  'CAMP-VARSITY': {
-    name: 'Camp Varsity Team',
+  'CAMP': {
+    name: 'Camp Team',
     school: 'CAMP',
     coach: 'Coach Camp',
     archers: [
@@ -65,7 +65,7 @@ const sampleTeams = {
         lastName: 'Camp',
         email: 'brandon.camp@school.edu',
         phone: '+1234567890',
-        team: 'VARSITY',
+        division: 'V',
         level: 'Advanced',
         school: 'CAMP'
       },
@@ -75,26 +75,87 @@ const sampleTeams = {
         lastName: 'Johnson',
         email: 'sarah.johnson@school.edu',
         phone: '+1234567891',
-        team: 'VARSITY',
+        division: 'JV',
         level: 'Intermediate',
         school: 'CAMP'
-      }
-    ]
-  },
-  'CAMP-JV': {
-    name: 'Camp JV Team',
-    school: 'CAMP',
-    coach: 'Coach Camp',
-    archers: [
+      },
       {
-        id: 'camp-jv-1',
+        id: 'camp-3',
         firstName: 'Mike',
         lastName: 'Davis',
         email: 'mike.davis@school.edu',
         phone: '+1234567892',
-        team: 'JV',
+        division: 'V',
         level: 'Beginner',
         school: 'CAMP'
+      }
+    ]
+  },
+  'WDV': {
+    name: 'WDV Team',
+    school: 'WDV',
+    coach: 'Coach WDV',
+    archers: [
+      {
+        id: 'wdv-1',
+        firstName: 'John',
+        lastName: 'Smith',
+        email: 'john.smith@wdv.edu',
+        phone: '+1234567890',
+        division: 'V',
+        level: 'Advanced',
+        school: 'WDV'
+      }
+    ]
+  },
+  'BHS': {
+    name: 'BHS Team',
+    school: 'BHS',
+    coach: 'Coach BHS',
+    archers: [
+      {
+        id: 'bhs-1',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane.doe@bhs.edu',
+        phone: '+1234567890',
+        division: 'V',
+        level: 'Advanced',
+        school: 'BHS'
+      }
+    ]
+  },
+  'ORANCO': {
+    name: 'ORANCO Team',
+    school: 'ORANCO',
+    coach: 'Coach Oranco',
+    archers: [
+      {
+        id: 'oranco-1',
+        firstName: 'Alex',
+        lastName: 'Wilson',
+        email: 'alex.wilson@oranco.edu',
+        phone: '+1234567890',
+        division: 'V',
+        level: 'Advanced',
+        school: 'ORANCO'
+      }
+    ]
+  },
+  'JOAD Beaumont': {
+    name: 'JOAD Beaumont Team',
+    school: 'JOAD Beaumont',
+    coach: 'Coach JOAD',
+    archers: [
+      {
+        id: 'joad-1',
+        firstName: 'Sam',
+        lastName: 'Brown',
+        email: 'sam.brown@joad.edu',
+        phone: '+1234567890',
+        division: 'V',
+        level: 'Advanced',
+        school: 'JOAD Beaumont'
       }
     ]
   }
@@ -136,7 +197,7 @@ export function generateTeamCodeUrl(teamCode, baseUrl = 'https://archers-edge.we
  * @returns {string[]} - Array of available team codes
  */
 export function getAvailableTeamCodes() {
-  return ['TEST-TEST', 'CAMP-VARSITY', 'CAMP-JV'];
+  return ['TEST', 'CAMP', 'WDV', 'BHS', 'ORANCO', 'JOAD Beaumont'];
 }
 
 /**
