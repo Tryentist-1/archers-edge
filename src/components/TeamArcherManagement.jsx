@@ -512,7 +512,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Coaches</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Team Archers</h1>
               <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1">
                 📋 Team Archer Management (Same data as Profile Management)
               </div>

@@ -733,8 +733,14 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
         return (
             <div className="max-w-4xl mx-auto p-4">
                 <div className="bg-white rounded-lg shadow-lg p-6">
+                    {/* Header */}
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">Your Profile</h2>
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-800">Your Profile</h2>
+                            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1">
+                                👤 Individual Profile Management (Same data as Team Archers)
+                            </div>
+                        </div>
                     </div>
 
                     <div className="mb-6">
@@ -747,116 +753,131 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                     {profiles.length > 0 && (
                         <div className="mb-6">
                             <h4 className="text-md font-medium text-gray-700 mb-3">Your Profiles:</h4>
-                            <div className="grid gap-3">
-                                {profiles.map(profile => (
-                                    <div
-                                        key={profile.id}
-                                        className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                                            appSelectedProfile?.id === profile.id
-                                                ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200'
-                                                : 'border-gray-200 hover:bg-gray-50'
-                                        }`}
-                                        onClick={() => selectProfile(profile)}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex items-center space-x-2">
-                                                {appSelectedProfile?.id === profile.id && (
-                                                    <div className="w-3 h-3 bg-blue-600 rounded-full flex-shrink-0 animate-pulse"></div>
-                                                )}
-                                                <div>
-                                                    <div className="flex items-center space-x-2 mb-1">
-                                                        <h5 className={`font-medium ${
-                                                            appSelectedProfile?.id === profile.id 
-                                                                ? 'text-blue-900' 
-                                                                : 'text-gray-900'
-                                                        }`}>
-                                                            {profile.firstName} {profile.lastName}
-                                                            {appSelectedProfile?.id === profile.id && (
-                                                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                                                    Active
-                                                                </span>
-                                                            )}
-                                                        </h5>
-                                                        {/* Tags */}
-                                                        <div className="flex space-x-1">
-                                                            {profile.isMe && (
-                                                                <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                                                                    Me
-                                                                </span>
-                                                            )}
-                                                            {profile.isFavorite && (
-                                                                <span className="text-xs bg-yellow-500 text-white px-2 py-1 rounded-full">
-                                                                    ⭐
-                                                                </span>
-                                                            )}
+                            
+                            {/* Mobile-Friendly Cards - Matching TeamArcherManagement format */}
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                                <div className="p-4 border-b border-gray-200">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-semibold text-gray-800">
+                                            Profiles ({profiles.length})
+                                        </h2>
+                                    </div>
+                                </div>
+                                
+                                <div className="divide-y divide-gray-200">
+                                    {profiles.map(profile => (
+                                        <div key={profile.id} className="p-4 hover:bg-gray-50">
+                                            <div className="flex items-start space-x-3">
+                                                {/* Main Content */}
+                                                <div className="flex-1 min-w-0">
+                                                    {/* Header Row */}
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center space-x-2">
+                                                            <button
+                                                                onClick={() => editProfile(profile)}
+                                                                className="text-left hover:text-blue-600 transition-colors"
+                                                            >
+                                                                <h3 className="text-sm font-medium text-gray-900 truncate">
+                                                                    {`${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Unnamed Profile'}
+                                                                </h3>
+                                                            </button>
+                                                            {/* Tags */}
+                                                            <div className="flex items-center space-x-1">
+                                                                {profile.isMe && (
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                        Me
+                                                                    </span>
+                                                                )}
+                                                                {appSelectedProfile?.id === profile.id && (
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                        Active
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                                {profile.division || profile.defaultClassification || 'No Division'}
+                                                            </span>
+                                                            {/* Favorite Toggle */}
+                                                            <button
+                                                                onClick={() => toggleTag(profile.id, 'isFavorite')}
+                                                                className="text-lg hover:scale-110 transition-transform"
+                                                            >
+                                                                {profile.isFavorite ? '⭐' : '☆'}
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                    <p className="text-sm text-gray-600">
-                                                        {profile.gender || 'M'} • {profile.division || profile.defaultClassification || 'V'} • {profile.bowType || profile.profileType || 'Recurve ILF'}
-                                                    </p>
-                                                    {profile.school && (
-                                                        <p className="text-xs text-gray-500">{profile.school}</p>
-                                                    )}
+                                                    
+                                                    {/* Info Row */}
+                                                    <div className="text-xs text-gray-500 mb-2">
+                                                        <span>{profile.school || 'No School'}</span>
+                                                        {profile.grade && <span> • Grade {profile.grade}</span>}
+                                                        {profile.role && <span> • {profile.role}</span>}
+                                                    </div>
+                                                    
+                                                    {/* Equipment & Stats Row */}
+                                                    <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+                                                        <div>
+                                                            <span className="font-medium text-gray-700">Equipment:</span>
+                                                            <div className="text-gray-600">
+                                                                {profile.bowType || profile.profileType || 'No Bow'}
+                                                                {(profile.drawWeight || profile.drawLength) && (
+                                                                    <div className="text-gray-500">
+                                                                        {profile.drawWeight || '0'}# • {profile.drawLength || '0'}"
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <button
+                                                                onClick={() => handleViewStats(profile.id)}
+                                                                className="text-left hover:text-blue-600 transition-colors"
+                                                            >
+                                                                <span className="font-medium text-gray-700">Stats:</span>
+                                                                <div className="text-gray-600">
+                                                                    Avg: N/A • Rounds: 0 • Best: N/A
+                                                                </div>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Action Buttons */}
+                                                    <div className="flex items-center space-x-2">
+                                                        <button
+                                                            onClick={() => handleViewStats(profile.id)}
+                                                            className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                                                        >
+                                                            Score
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleViewStats(profile.id)}
+                                                            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                                                        >
+                                                            Stats
+                                                        </button>
+                                                        <button
+                                                            onClick={() => toggleTag(profile.id, 'isMe')}
+                                                            className={`px-3 py-1 rounded text-sm ${
+                                                                profile.isMe 
+                                                                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                                                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                                                            }`}
+                                                        >
+                                                            Me
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteProfile(profile.id)}
+                                                            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="flex space-x-2">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleViewStats(profile.id);
-                                                    }}
-                                                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                                                >
-                                                    Stats
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        editProfile(profile);
-                                                    }}
-                                                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        toggleTag(profile.id, 'isMe');
-                                                    }}
-                                                    className={`px-3 py-1 rounded text-sm ${
-                                                        profile.isMe 
-                                                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                                            : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                                                    }`}
-                                                >
-                                                    {profile.isMe ? 'Me' : 'Tag Me'}
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        toggleTag(profile.id, 'isFavorite');
-                                                    }}
-                                                    className={`px-3 py-1 rounded text-sm ${
-                                                        profile.isFavorite 
-                                                            ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
-                                                            : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                                                    }`}
-                                                >
-                                                    {profile.isFavorite ? '⭐' : '⭐'}
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        deleteProfile(profile.id);
-                                                    }}
-                                                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
