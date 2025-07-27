@@ -22,6 +22,8 @@ const CompetitionManagement = ({ onNavigate }) => {
   const [competitionResults, setCompetitionResults] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [selectedCompetitionForResults, setSelectedCompetitionForResults] = useState(null);
+  const [showArcherScorecard, setShowArcherScorecard] = useState(false);
+  const [selectedArcherForScorecard, setSelectedArcherForScorecard] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -129,19 +131,24 @@ const CompetitionManagement = ({ onNavigate }) => {
     try {
       console.log('Loading competition stats...');
       const stats = {};
+      const results = {};
       
       for (const competition of competitionsList) {
         try {
           const scores = await loadCompetitionScores(competition.id);
           stats[competition.id] = calculateCompetitionStats(scores);
+          results[competition.id] = calculateCompetitionResults(scores);
         } catch (error) {
           console.error(`Error loading stats for competition ${competition.id}:`, error);
           stats[competition.id] = getDefaultStats();
+          results[competition.id] = { rankings: [], divisions: {} };
         }
       }
       
       setCompetitionStats(stats);
+      setCompetitionResults(results);
       console.log('Competition stats loaded:', stats);
+      console.log('Competition results loaded:', results);
     } catch (error) {
       console.error('Error loading competition stats:', error);
     }
@@ -180,7 +187,27 @@ const CompetitionManagement = ({ onNavigate }) => {
       if (!divisionGroups[division]) {
         divisionGroups[division] = [];
       }
-      divisionGroups[division].push(score);
+      
+      // Calculate completion status
+      let status = 'not_started';
+      if (score.status === 'verified') {
+        status = 'verified';
+      } else if (score.totals && score.totals.totalScore > 0) {
+        status = 'in_progress';
+      }
+      
+      // Add archer data to the score
+      const archerData = {
+        ...score,
+        status,
+        completedEnds: score.totals ? Math.floor((score.totals.totalScore || 0) / 30) : 0, // Rough estimate
+        totalScore: score.totals?.totalScore || 0,
+        totalTens: score.totals?.totalTens || 0,
+        totalXs: score.totals?.totalXs || 0,
+        average: score.totals?.totalScore ? (score.totals.totalScore / 36).toFixed(1) : '0.0'
+      };
+      
+      divisionGroups[division].push(archerData);
     });
 
     // Sort each division by score
@@ -189,7 +216,7 @@ const CompetitionManagement = ({ onNavigate }) => {
     });
 
     // Create overall rankings
-    const allScores = [...scores].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+    const allScores = [...scores].sort((a, b) => (b.totals?.totalScore || 0) - (a.totals?.totalScore || 0));
 
     return {
       rankings: allScores,
@@ -214,6 +241,16 @@ const CompetitionManagement = ({ onNavigate }) => {
   const handleCloseResults = () => {
     setShowResults(false);
     setSelectedCompetitionForResults(null);
+  };
+
+  const handleViewArcherScorecard = (archer) => {
+    setSelectedArcherForScorecard(archer);
+    setShowArcherScorecard(true);
+  };
+
+  const handleCloseArcherScorecard = () => {
+    setShowArcherScorecard(false);
+    setSelectedArcherForScorecard(null);
   };
 
   const getScoreColor = (score) => {
@@ -570,7 +607,7 @@ const CompetitionManagement = ({ onNavigate }) => {
         {/* Results Modal */}
         {showResults && selectedCompetitionForResults && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-900">
@@ -590,37 +627,301 @@ const CompetitionManagement = ({ onNavigate }) => {
                   </p>
                   
                   {competitionStats[selectedCompetitionForResults.id]?.hasScores ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="bg-blue-50 p-3 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {competitionStats[selectedCompetitionForResults.id].totalArchers}
+                    <>
+                      {/* Competition Overview Stats */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {competitionStats[selectedCompetitionForResults.id].totalArchers}
+                          </div>
+                          <div className="text-xs text-blue-600">Archers</div>
                         </div>
-                        <div className="text-xs text-blue-600">Archers</div>
-                      </div>
-                      <div className="bg-green-50 p-3 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">
-                          {competitionStats[selectedCompetitionForResults.id].averageScore}
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">
+                            {competitionStats[selectedCompetitionForResults.id].averageScore}
+                          </div>
+                          <div className="text-xs text-green-600">Avg Score</div>
                         </div>
-                        <div className="text-xs text-green-600">Avg Score</div>
-                      </div>
-                      <div className="bg-purple-50 p-3 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">
-                          {competitionStats[selectedCompetitionForResults.id].maxScore}
+                        <div className="bg-purple-50 p-3 rounded-lg">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {competitionStats[selectedCompetitionForResults.id].maxScore}
+                          </div>
+                          <div className="text-xs text-purple-600">High Score</div>
                         </div>
-                        <div className="text-xs text-purple-600">High Score</div>
-                      </div>
-                      <div className="bg-orange-50 p-3 rounded-lg">
-                        <div className="text-2xl font-bold text-orange-600">
-                          {competitionStats[selectedCompetitionForResults.id].minScore}
+                        <div className="bg-orange-50 p-3 rounded-lg">
+                          <div className="text-2xl font-bold text-orange-600">
+                            {competitionStats[selectedCompetitionForResults.id].minScore}
+                          </div>
+                          <div className="text-xs text-orange-600">Low Score</div>
                         </div>
-                        <div className="text-xs text-orange-600">Low Score</div>
                       </div>
-                    </div>
+
+                      {/* Archer Results by Division */}
+                      <div className="space-y-6">
+                        {Object.entries(competitionResults[selectedCompetitionForResults.id]?.divisions || {}).map(([division, archers]) => (
+                          <div key={division} className="bg-gray-50 rounded-lg p-4">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                              {division} Division
+                            </h3>
+                            
+                            {/* Top 5 Rankings */}
+                            <div className="space-y-2">
+                              {archers.slice(0, 5).map((archer, index) => (
+                                <div 
+                                  key={archer.id} 
+                                  className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                                  onClick={() => handleViewArcherScorecard(archer)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                                        index === 0 ? 'bg-yellow-500' : 
+                                        index === 1 ? 'bg-gray-400' : 
+                                        index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                                      }`}>
+                                        {index + 1}
+                                      </div>
+                                      <div>
+                                        <div className="font-semibold text-gray-800">
+                                          {archer.firstName} {archer.lastName}
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          {archer.school || 'Unknown School'} • {archer.division || division}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-2xl font-bold text-gray-800">
+                                        {archer.totalScore || 0}
+                                      </div>
+                                      <div className="text-sm text-gray-600">
+                                        {archer.completedEnds || 0}/12 ends
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Score Details */}
+                                  <div className="mt-2 pt-2 border-t border-gray-100">
+                                    <div className="flex justify-between text-xs text-gray-600">
+                                      <span>10s: {archer.totalTens || 0}</span>
+                                      <span>Xs: {archer.totalXs || 0}</span>
+                                      <span>Avg: {archer.average || '0.0'}</span>
+                                      <span className={`px-2 py-1 rounded ${
+                                        archer.status === 'verified' ? 'bg-green-100 text-green-800' : 
+                                        archer.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
+                                        'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {archer.status === 'verified' ? '✓ Verified' : 
+                                         archer.status === 'in_progress' ? 'In Progress' : 'Not Started'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              
+                              {/* Show more archers if available */}
+                              {archers.length > 5 && (
+                                <div className="text-center py-2">
+                                  <button className="text-blue-600 hover:text-blue-800 text-sm">
+                                    View all {archers.length} archers in {division}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       No scores recorded yet for this competition.
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Archer Scorecard Modal */}
+        {showArcherScorecard && selectedArcherForScorecard && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Scorecard: {selectedArcherForScorecard.firstName} {selectedArcherForScorecard.lastName}
+                  </h2>
+                  <button
+                    onClick={handleCloseArcherScorecard}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  {/* Archer Info */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <span className="text-gray-500 text-sm">Competition:</span>
+                        <div className="font-medium">{selectedArcherForScorecard.competitionName}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-sm">Division:</span>
+                        <div className="font-medium">{selectedArcherForScorecard.division}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-sm">Bale:</span>
+                        <div className="font-medium">{selectedArcherForScorecard.baleNumber} - Target {selectedArcherForScorecard.targetAssignment}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-sm">Status:</span>
+                        <div className={`font-medium ${
+                          selectedArcherForScorecard.status === 'verified' ? 'text-green-600' : 
+                          selectedArcherForScorecard.status === 'in_progress' ? 'text-yellow-600' : 
+                          'text-gray-600'
+                        }`}>
+                          {selectedArcherForScorecard.status === 'verified' ? '✓ Verified' : 
+                           selectedArcherForScorecard.status === 'in_progress' ? 'In Progress' : 'Not Started'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Scorecard Table */}
+                  {selectedArcherForScorecard.ends && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-300">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">E</th>
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">A1</th>
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">A2</th>
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">A3</th>
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">10s</th>
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">Xs</th>
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">END</th>
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">RUN</th>
+                            <th className="border border-gray-300 px-2 py-2 text-center text-xs font-medium">AVG</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Array.from({ length: 12 }, (_, index) => {
+                            const endNumber = index + 1;
+                            const endKey = `end${endNumber}`;
+                            const endData = selectedArcherForScorecard.ends[endKey];
+                            
+                            if (!endData) {
+                              return (
+                                <tr key={endNumber}>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">{endNumber}</td>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">-</td>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0</td>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0</td>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0</td>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0</td>
+                                  <td className="border border-gray-300 px-2 py-2 text-center text-sm">0.0</td>
+                                </tr>
+                              );
+                            }
+                            
+                            const scores = [endData.arrow1, endData.arrow2, endData.arrow3];
+                            const endTotal = scores.reduce((sum, score) => {
+                              if (score === 'X' || score === '10') return sum + 10;
+                              if (score === 'M') return sum;
+                              return sum + (parseInt(score) || 0);
+                            }, 0);
+                            
+                            let tens = 0;
+                            let xs = 0;
+                            scores.forEach(score => {
+                              if (score === 'X') {
+                                tens++;
+                                xs++;
+                              } else if (score === '10') {
+                                tens++;
+                              }
+                            });
+                            
+                            // Calculate running total and average
+                            let runningTotal = 0;
+                            for (let i = 1; i <= endNumber; i++) {
+                              const prevEndKey = `end${i}`;
+                              const prevEndData = selectedArcherForScorecard.ends[prevEndKey];
+                              if (prevEndData) {
+                                const prevScores = [prevEndData.arrow1, prevEndData.arrow2, prevEndData.arrow3];
+                                runningTotal += prevScores.reduce((sum, score) => {
+                                  if (score === 'X' || score === '10') return sum + 10;
+                                  if (score === 'M') return sum;
+                                  return sum + (parseInt(score) || 0);
+                                }, 0);
+                              }
+                            }
+                            
+                            const average = runningTotal > 0 ? (runningTotal / (endNumber * 3)).toFixed(1) : '0.0';
+                            
+                            return (
+                              <tr key={endNumber}>
+                                <td className="border border-gray-300 px-2 py-2 text-center text-sm font-medium">{endNumber}</td>
+                                <td className={`border border-gray-300 px-2 py-2 text-center text-sm font-bold ${
+                                  scores[0] === 'X' || scores[0] === '10' ? 'bg-yellow-200' :
+                                  scores[0] === '7' || scores[0] === '8' ? 'bg-red-200' :
+                                  scores[0] === '6' ? 'bg-blue-200' : 'bg-white'
+                                }`}>
+                                  {scores[0] || '-'}
+                                </td>
+                                <td className={`border border-gray-300 px-2 py-2 text-center text-sm font-bold ${
+                                  scores[1] === 'X' || scores[1] === '10' ? 'bg-yellow-200' :
+                                  scores[1] === '7' || scores[1] === '8' ? 'bg-red-200' :
+                                  scores[1] === '6' ? 'bg-blue-200' : 'bg-white'
+                                }`}>
+                                  {scores[1] || '-'}
+                                </td>
+                                <td className={`border border-gray-300 px-2 py-2 text-center text-sm font-bold ${
+                                  scores[2] === 'X' || scores[2] === '10' ? 'bg-yellow-200' :
+                                  scores[2] === '7' || scores[2] === '8' ? 'bg-red-200' :
+                                  scores[2] === '6' ? 'bg-blue-200' : 'bg-white'
+                                }`}>
+                                  {scores[2] || '-'}
+                                </td>
+                                <td className="border border-gray-300 px-2 py-2 text-center text-sm">{tens}</td>
+                                <td className="border border-gray-300 px-2 py-2 text-center text-sm">{xs}</td>
+                                <td className="border border-gray-300 px-2 py-2 text-center text-sm font-bold">{endTotal}</td>
+                                <td className="border border-gray-300 px-2 py-2 text-center text-sm font-bold">{runningTotal}</td>
+                                <td className="border border-gray-300 px-2 py-2 text-center text-sm">{average}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  
+                  {/* Final Totals */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-blue-600">{selectedArcherForScorecard.totalScore || 0}</div>
+                        <div className="text-sm text-gray-600">Total Score</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-orange-600">{selectedArcherForScorecard.totalTens || 0}</div>
+                        <div className="text-sm text-gray-600">10s</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-brown-600">{selectedArcherForScorecard.totalXs || 0}</div>
+                        <div className="text-sm text-gray-600">Xs</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-green-600">{selectedArcherForScorecard.average || '0.0'}</div>
+                        <div className="text-sm text-gray-600">Average</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
