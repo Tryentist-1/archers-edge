@@ -181,7 +181,7 @@ function CoachManagement() {
         return () => clearTimeout(timer);
     }, [error, success]);
 
-    if (!currentUser || (userRole !== 'admin' && userRole !== 'coach')) {
+    if (!currentUser || (userRole !== 'admin' && userRole !== 'coach' && userRole !== 'System Admin')) {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center">
                 <div className="bg-white rounded-lg p-6 max-w-md w-full">

@@ -85,7 +85,9 @@ export function AuthProvider({ children }) {
     const email = user.email || '';
     
     // Example role determination logic
-    if (email.includes('coach') || email.includes('coaching')) {
+    if (email.includes('admin')) {
+      return 'admin';
+    } else if (email.includes('coach') || email.includes('coaching')) {
       return 'coach';
     } else if (email.includes('event') || email.includes('manager')) {
       return 'event_manager';
