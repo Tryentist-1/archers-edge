@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { loadProfilesFromFirebase, loadArcherProfileWithScores } from '../services/firebaseService';
+import { addCoachProfilesToExisting, createSampleTeams } from '../utils/sampleData.js';
 
 const HomePage = ({ currentUser, onNavigate, baleData }) => {
     const { currentUser: authUser } = useAuth();
@@ -328,6 +329,34 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                             </svg>
                         </div>
                     </div>
+
+                    {/* Debug Section - Only show for admin users */}
+                    {myProfile?.role === 'System Admin' && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                            <h3 className="text-lg font-semibold text-yellow-800 mb-3">Debug Tools</h3>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => {
+                                        const added = addCoachProfilesToExisting();
+                                        alert(`Added ${added.length} coach profiles`);
+                                        window.location.reload();
+                                    }}
+                                    className="w-full bg-yellow-600 text-white px-3 py-2 rounded-md hover:bg-yellow-700 text-sm"
+                                >
+                                    Add Sample Coach Profiles
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const teams = await createSampleTeams();
+                                        alert(`Created ${teams.length} sample teams`);
+                                    }}
+                                    className="w-full bg-yellow-600 text-white px-3 py-2 rounded-md hover:bg-yellow-700 text-sm"
+                                >
+                                    Create Sample Teams in Firebase
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

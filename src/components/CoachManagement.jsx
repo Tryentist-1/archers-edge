@@ -181,12 +181,23 @@ function CoachManagement() {
         return () => clearTimeout(timer);
     }, [error, success]);
 
+    // Debug logging
+    console.log('CoachManagement: currentUser:', currentUser);
+    console.log('CoachManagement: userRole:', userRole);
+    console.log('CoachManagement: availableCoaches:', availableCoaches);
+
     if (!currentUser || (userRole !== 'admin' && userRole !== 'coach' && userRole !== 'System Admin')) {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center">
                 <div className="bg-white rounded-lg p-6 max-w-md w-full">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">Access Denied</h2>
-                    <p className="text-gray-600">You don't have permission to access Coach Management.</p>
+                    <p className="text-gray-600">
+                        You don't have permission to access Coach Management. 
+                        <br />
+                        Current role: {userRole || 'none'}
+                        <br />
+                        Required: admin, coach, or System Admin
+                    </p>
                 </div>
             </div>
         );

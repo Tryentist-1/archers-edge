@@ -14,11 +14,14 @@ function CoachQRGenerator() {
     const loadTeams = async () => {
       try {
         setLoading(true);
+        console.log('CoachQRGenerator: Loading teams from Firebase...');
         const firebaseTeams = await getAvailableTeamsFromFirebase();
+        console.log('CoachQRGenerator: Firebase teams:', firebaseTeams);
         setTeams(firebaseTeams);
       } catch (error) {
         console.error('Error loading teams:', error);
         // Fallback to hardcoded teams
+        console.log('CoachQRGenerator: Falling back to hardcoded teams...');
         const hardcodedTeams = getAvailableTeamCodes().map(teamCode => {
           const teamInfo = generateTeamQRCode(teamCode);
           return {
@@ -29,6 +32,7 @@ function CoachQRGenerator() {
             archerCount: teamInfo.archerCount
           };
         });
+        console.log('CoachQRGenerator: Hardcoded teams:', hardcodedTeams);
         setTeams(hardcodedTeams);
       } finally {
         setLoading(false);
