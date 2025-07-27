@@ -162,10 +162,10 @@ const sampleTeams = {
 };
 
 /**
- * Generate a QR code URL for a team
- * @param {string} teamCode - The team code (e.g., 'CENTRAL-VARSITY')
+ * Generate a QR code URL for team data
+ * @param {string} teamCode - The team code
  * @param {string} baseUrl - The base URL of the app
- * @returns {string} - URL that can be converted to QR code
+ * @returns {string} - URL with team code
  */
 export function generateTeamQRUrl(teamCode, baseUrl = 'https://archers-edge.web.app') {
   const teamData = sampleTeams[teamCode];
@@ -173,11 +173,8 @@ export function generateTeamQRUrl(teamCode, baseUrl = 'https://archers-edge.web.
     throw new Error(`Team code '${teamCode}' not found`);
   }
 
-  // Encode team data as URL parameter
-  const encodedData = encodeURIComponent(JSON.stringify(teamData.archers));
-  
-  // Create URL with team data
-  const qrUrl = `${baseUrl}?data=${encodedData}`;
+  // Use simple team code URL - the app will load team data from Firebase or fallback
+  const qrUrl = `${baseUrl}?team=${encodeURIComponent(teamCode)}`;
   
   return qrUrl;
 }
@@ -254,10 +251,10 @@ export function generateTeamQRCode(teamCode) {
     teamCodeUrl,
     instructions: [
       '1. Open Archer\'s Edge app on your phone',
-      '2. Go to "Select from Existing Profiles"',
-      '3. Click "Scan QR Code"',
-      '4. Point camera at this QR code',
-      '5. Your team profiles will be loaded automatically'
+      '2. Scan this QR code with your phone camera',
+      '3. The app will open with your team pre-loaded',
+      '4. Select your profile from the team list',
+      '5. You\'re ready to start scoring!'
     ]
   };
 }

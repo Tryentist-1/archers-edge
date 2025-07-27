@@ -222,7 +222,7 @@ function CoachQRGenerator() {
                         <span className="text-xs text-gray-500">Generating...</span>
                       </div>
                     )}
-                    <p className="text-xs text-gray-500 mt-2">Scan with Archer's Edge app</p>
+                    <p className="text-xs text-gray-500 mt-2">Scan with phone camera</p>
                   </div>
                 </div>
 
@@ -304,9 +304,10 @@ function CoachQRGenerator() {
               <ol className="text-sm text-yellow-800 space-y-1">
                 <li>1. Select your team from the dropdown</li>
                 <li>2. Click "Generate QR Code"</li>
-                <li>3. Download the generated QR code or use the URL with external generators</li>
+                <li>3. Download the generated QR code</li>
                 <li>4. Print the QR code and give it to your archers</li>
-                <li>5. Archers scan the QR code with the Archer's Edge app</li>
+                <li>5. Archers scan the QR code with their phone camera</li>
+                <li>6. The app opens automatically with their team pre-loaded</li>
               </ol>
             </div>
 
