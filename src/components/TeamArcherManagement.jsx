@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-    loadAllArchers,
+    loadProfilesFromFirebase,
     shouldUseFirebase
 } from '../services/firebaseService';
 import ProfileEditor from './ProfileEditor';
@@ -29,7 +29,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
             if (shouldUseFirebase(currentUser?.uid)) {
                 try {
                     console.log('Attempting to load from Firebase...');
-                    const firebaseArchers = await loadAllArchers(currentUser?.uid);
+                    const firebaseArchers = await loadProfilesFromFirebase(currentUser?.uid);
                     console.log('Archers loaded from Firebase:', firebaseArchers);
                     if (firebaseArchers && firebaseArchers.length > 0) {
                         loadedArchers = firebaseArchers;
