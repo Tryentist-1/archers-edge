@@ -27,14 +27,14 @@ const CompetitionManagement = ({ onNavigate }) => {
     date: '',
     location: '',
     description: '',
-    type: 'qualification', // 'qualification', 'olympic', 'team', 'practice'
+    type: 'qualification',
     divisions: [],
     rounds: [],
     maxArchersPerBale: 8,
     distance: '18m',
     maxTeamSize: 4,
     teamScoringMethod: 'sum',
-    status: 'draft' // 'draft', 'active', 'completed', 'cancelled'
+    status: 'draft'
   });
 
   // OAS Division options for high school archery (M/F for Male/Female, V/JV for Varsity/JV)
@@ -104,17 +104,22 @@ const CompetitionManagement = ({ onNavigate }) => {
       }
       
       console.log('Final loaded competitions:', loadedCompetitions);
-      setCompetitions(loadedCompetitions);
       
-      // Load stats for each competition
-      await loadCompetitionStats(loadedCompetitions);
+      // Sort competitions by date (newest first)
+      const sortedCompetitions = loadedCompetitions.sort((a, b) => {
+        const dateA = new Date(a.date || 0);
+        const dateB = new Date(b.date || 0);
+        return dateB - dateA;
+      });
       
-      if (loadedCompetitions.length === 0) {
-        showMessage('No competitions found. Create your first competition below.', 'info');
-      }
+      console.log('Sorted competitions:', sortedCompetitions);
+      setCompetitions(sortedCompetitions);
+      
+      // Load stats for all competitions
+      await loadCompetitionStats(sortedCompetitions);
+      
     } catch (error) {
       console.error('Error loading competitions:', error);
-      showMessage(`Error loading competitions: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -122,41 +127,21 @@ const CompetitionManagement = ({ onNavigate }) => {
 
   const loadCompetitionStats = async (competitionsList) => {
     try {
+      console.log('Loading competition stats...');
       const stats = {};
-      const results = {};
-      
-      console.log('Loading stats for competitions:', competitionsList);
       
       for (const competition of competitionsList) {
-        console.log(`Loading stats for competition: ${competition.id} - ${competition.name}`);
-        
-        if (shouldUseFirebase(currentUser?.uid)) {
-          try {
-            const scores = await loadCompetitionScores(competition.id);
-            console.log(`Scores loaded for ${competition.id}:`, scores.length, scores);
-            
-            const competitionStats = calculateCompetitionStats(scores);
-            const competitionResults = calculateCompetitionResults(scores);
-            
-            console.log(`Stats calculated for ${competition.id}:`, competitionStats);
-            
-            stats[competition.id] = competitionStats;
-            results[competition.id] = competitionResults;
-          } catch (error) {
-            console.error(`Error loading stats for competition ${competition.id}:`, error);
-            stats[competition.id] = getDefaultStats();
-            results[competition.id] = [];
-          }
-        } else {
-          console.log(`Skipping Firebase load for ${competition.id} - offline or mock user`);
+        try {
+          const scores = await loadCompetitionScores(competition.id);
+          stats[competition.id] = calculateCompetitionStats(scores);
+        } catch (error) {
+          console.error(`Error loading stats for competition ${competition.id}:`, error);
           stats[competition.id] = getDefaultStats();
-          results[competition.id] = [];
         }
       }
       
-      console.log('Final competition stats:', stats);
       setCompetitionStats(stats);
-      setCompetitionResults(results);
+      console.log('Competition stats loaded:', stats);
     } catch (error) {
       console.error('Error loading competition stats:', error);
     }
@@ -167,77 +152,58 @@ const CompetitionManagement = ({ onNavigate }) => {
       return getDefaultStats();
     }
 
-    const uniqueArchers = new Set(scores.map(score => score.archerId));
-    const uniqueBales = new Set(scores.map(score => score.baleNumber));
-    const completedRounds = scores.length;
-    
-    // Calculate average scores by division
-    const divisionStats = {};
-    scores.forEach(score => {
-      const division = score.division || 'Unknown';
-      if (!divisionStats[division]) {
-        divisionStats[division] = { totalScore: 0, count: 0, scores: [] };
-      }
-      divisionStats[division].totalScore += score.totals?.totalScore || 0;
-      divisionStats[division].count += 1;
-      divisionStats[division].scores.push(score.totals?.totalScore || 0);
-    });
-
-    // Calculate averages and best scores per division
-    Object.keys(divisionStats).forEach(division => {
-      const stats = divisionStats[division];
-      stats.averageScore = stats.count > 0 ? Math.round((stats.totalScore / stats.count) * 10) / 10 : 0;
-      stats.bestScore = Math.max(...stats.scores);
-    });
+    const totalArchers = scores.length;
+    const totalScore = scores.reduce((sum, score) => sum + (score.totalScore || 0), 0);
+    const averageScore = totalScore / totalArchers;
+    const maxScore = Math.max(...scores.map(s => s.totalScore || 0));
+    const minScore = Math.min(...scores.map(s => s.totalScore || 0));
 
     return {
-      totalArchers: uniqueArchers.size,
-      totalBales: uniqueBales.size,
-      completedRounds,
-      divisionStats,
-      lastUpdated: new Date().toISOString()
+      totalArchers,
+      totalScore,
+      averageScore: Math.round(averageScore * 100) / 100,
+      maxScore,
+      minScore,
+      hasScores: true
     };
   };
 
   const calculateCompetitionResults = (scores) => {
     if (!scores || scores.length === 0) {
-      return [];
+      return { rankings: [], divisions: {} };
     }
 
-    // Group scores by division
-    const divisionResults = {};
+    // Group by division
+    const divisionGroups = {};
     scores.forEach(score => {
       const division = score.division || 'Unknown';
-      if (!divisionResults[division]) {
-        divisionResults[division] = [];
+      if (!divisionGroups[division]) {
+        divisionGroups[division] = [];
       }
-      divisionResults[division].push({
-        archerId: score.archerId,
-        archerName: score.archerName,
-        totalScore: score.totals?.totalScore || 0,
-        totalTens: score.totals?.totalTens || 0,
-        totalXs: score.totals?.totalXs || 0,
-        average: score.totals?.totalScore ? (score.totals.totalScore / (score.totalEnds * score.arrowsPerEnd)).toFixed(1) : '0.0',
-        baleNumber: score.baleNumber,
-        targetAssignment: score.targetAssignment,
-        completedAt: score.completedAt
-      });
+      divisionGroups[division].push(score);
     });
 
-    // Sort each division by score (highest first)
-    Object.keys(divisionResults).forEach(division => {
-      divisionResults[division].sort((a, b) => b.totalScore - a.totalScore);
+    // Sort each division by score
+    Object.keys(divisionGroups).forEach(division => {
+      divisionGroups[division].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
     });
 
-    return divisionResults;
+    // Create overall rankings
+    const allScores = [...scores].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+    return {
+      rankings: allScores,
+      divisions: divisionGroups
+    };
   };
 
   const getDefaultStats = () => ({
     totalArchers: 0,
-    totalBales: 0,
-    completedRounds: 0,
-    divisionStats: {},
-    lastUpdated: null
+    totalScore: 0,
+    averageScore: 0,
+    maxScore: 0,
+    minScore: 0,
+    hasScores: false
   });
 
   const handleViewResults = (competition) => {
@@ -251,16 +217,19 @@ const CompetitionManagement = ({ onNavigate }) => {
   };
 
   const getScoreColor = (score) => {
-    if (score >= 9.0) return 'text-yellow-600 font-bold';
-    if (score >= 7.0) return 'text-red-600 font-bold';
-    if (score >= 5.0) return 'text-blue-600 font-bold';
-    return 'text-gray-600';
+    if (score >= 300) return 'text-green-600';
+    if (score >= 250) return 'text-blue-600';
+    if (score >= 200) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+    if (!dateString) return 'No date';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      return dateString;
+    }
   };
 
   const resetForm = () => {
@@ -278,17 +247,11 @@ const CompetitionManagement = ({ onNavigate }) => {
       teamScoringMethod: 'sum',
       status: 'draft'
     });
-    setIsCreating(false);
-    setIsEditing(false);
-    setSelectedCompetition(null);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleDivisionChange = (division) => {
@@ -303,871 +266,623 @@ const CompetitionManagement = ({ onNavigate }) => {
   const handleRoundChange = (roundType) => {
     setFormData(prev => ({
       ...prev,
-      rounds: [roundType]
+      rounds: prev.rounds.includes(roundType)
+        ? prev.rounds.filter(r => r !== roundType)
+        : [...prev.rounds, roundType]
     }));
   };
 
   const handleCustomRoundChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      rounds: [{
-        ...prev.rounds[0],
-        [field]: parseInt(value) || 0
-      }]
+      customRound: {
+        ...prev.customRound,
+        [field]: value
+      }
     }));
   };
 
   const saveCompetition = async () => {
-    // Validate required fields
-    if (!formData.name.trim() || !formData.date || !formData.location.trim()) {
-      showMessage('Competition name, date, and location are required.', 'error');
-      return;
-    }
-
-    if (formData.divisions.length === 0) {
-      showMessage('Please select at least one OAS division.', 'error');
-      return;
-    }
-
-    setSaving(true);
-    showMessage('Saving competition...', 'info');
-
     try {
-      console.log('Saving competition:', formData);
+      setSaving(true);
+      setMessage('');
+
+      console.log('=== SAVE COMPETITION DEBUG ===');
+      console.log('Saving competition data:', formData);
       console.log('Current user:', currentUser);
-      console.log('Should use Firebase:', shouldUseFirebase(currentUser?.uid));
 
-      let updatedCompetitions;
-      let competitionToSave;
-
-      if (isEditing && selectedCompetition) {
-        // Update existing competition
-        competitionToSave = { 
-          ...selectedCompetition, 
-          ...formData,
-          updatedAt: new Date().toISOString()
-        };
-        updatedCompetitions = competitions.map(c =>
-          c.id === selectedCompetition.id ? competitionToSave : c
-        );
-        console.log('Updating existing competition:', competitionToSave);
-      } else {
-        // Create new competition
-        competitionToSave = {
-          id: `comp_${Date.now()}`,
-          userId: currentUser?.uid || 'profile-user',
-          ...formData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        updatedCompetitions = [...competitions, competitionToSave];
-        console.log('Creating new competition:', competitionToSave);
+      // Validate required fields
+      if (!formData.name?.trim()) {
+        setMessage('Error: Competition name is required.');
+        return;
       }
 
-      // Always update local storage (same as ProfileManagement)
+      if (!formData.date) {
+        setMessage('Error: Competition date is required.');
+        return;
+      }
+
+      // Create competition object
+      const competitionToSave = {
+        id: isEditing ? selectedCompetition.id : `competition_${Date.now()}`,
+        ...formData,
+        createdAt: isEditing ? selectedCompetition.createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: currentUser?.uid || 'profile-user',
+        isActive: true
+      };
+
+      console.log('Competition to save:', competitionToSave);
+
+      // Save to localStorage
+      const existingCompetitions = JSON.parse(localStorage.getItem('oasCompetitions') || '[]');
+      let updatedCompetitions;
+
+      if (isCreating) {
+        updatedCompetitions = [...existingCompetitions, competitionToSave];
+      } else {
+        updatedCompetitions = existingCompetitions.map(c => 
+          c.id === selectedCompetition.id ? competitionToSave : c
+        );
+      }
+
       localStorage.setItem('oasCompetitions', JSON.stringify(updatedCompetitions));
-      console.log('Updated localStorage with:', updatedCompetitions);
-      
       setCompetitions(updatedCompetitions);
 
       // Save to Firebase if possible
       if (shouldUseFirebase(currentUser?.uid)) {
         try {
-          console.log('Attempting to sync to Firebase...');
-          await saveCompetitionToFirebase(competitionToSave, currentUser?.uid);
-          console.log('Competition synced to Firebase successfully');
+          await saveCompetitionToFirebase(competitionToSave, currentUser.uid);
+          console.log('Competition saved to Firebase successfully');
         } catch (error) {
-          console.error('Error syncing to Firebase:', error);
+          console.error('Error saving to Firebase:', error);
+          setMessage('Saved locally, but failed to sync to cloud');
         }
-      } else {
-        console.log('Skipping Firebase sync - offline or mock user');
       }
 
-      showMessage(
-        isEditing 
-          ? 'Competition updated successfully!' 
-          : 'Competition created successfully!', 
-        'success'
-      );
+      setMessage('Competition saved successfully!');
+      setIsEditing(false);
+      setIsCreating(false);
+      setSelectedCompetition(competitionToSave);
 
-      resetForm();
+      console.log('=== END SAVE COMPETITION DEBUG ===');
+
     } catch (error) {
       console.error('Error saving competition:', error);
-      showMessage(`Error saving competition: ${error.message}`, 'error');
+      setMessage('Error saving competition: ' + error.message);
     } finally {
       setSaving(false);
     }
   };
 
   const deleteCompetition = async (competitionId) => {
-    if (!window.confirm('Are you sure you want to delete this competition?')) {
+    if (!window.confirm('Are you sure you want to delete this competition? This action cannot be undone.')) {
       return;
     }
 
     try {
-      const updatedCompetitions = competitions.filter(c => c.id !== competitionId);
-      
-      // Update localStorage
+      console.log('=== DELETE COMPETITION DEBUG ===');
+      console.log('Deleting competition ID:', competitionId);
+
+      // Remove from localStorage
+      const existingCompetitions = JSON.parse(localStorage.getItem('oasCompetitions') || '[]');
+      const updatedCompetitions = existingCompetitions.filter(c => c.id !== competitionId);
       localStorage.setItem('oasCompetitions', JSON.stringify(updatedCompetitions));
       setCompetitions(updatedCompetitions);
 
-      // Delete from Firebase if possible
+      console.log('Competitions after filtering:', updatedCompetitions);
+
+      // Remove from Firebase if possible
       if (shouldUseFirebase(currentUser?.uid)) {
         try {
-          await deleteCompetitionFromFirebase(competitionId, currentUser?.uid);
-          console.log('Competition deleted from Firebase');
+          await deleteCompetitionFromFirebase(competitionId, currentUser.uid);
+          console.log('Competition deleted from Firebase successfully');
         } catch (error) {
           console.error('Error deleting from Firebase:', error);
         }
       }
 
-      showMessage('Competition deleted successfully.', 'success');
+      console.log('=== END DELETE COMPETITION DEBUG ===');
+
     } catch (error) {
       console.error('Error deleting competition:', error);
-      showMessage(`Error deleting competition: ${error.message}`, 'error');
     }
   };
 
   const editCompetition = (competition) => {
+    console.log('Editing competition:', competition);
     setSelectedCompetition(competition);
+    setIsEditing(true);
+    setIsCreating(false);
     setFormData({
-      name: competition.name,
-      date: competition.date,
-      location: competition.location,
-      description: competition.description,
-      type: competition.type,
+      name: competition.name || '',
+      date: competition.date || '',
+      location: competition.location || '',
+      description: competition.description || '',
+      type: competition.type || 'qualification',
       divisions: competition.divisions || [],
       rounds: competition.rounds || [],
       maxArchersPerBale: competition.maxArchersPerBale || 8,
       distance: competition.distance || '18m',
       maxTeamSize: competition.maxTeamSize || 4,
       teamScoringMethod: competition.teamScoringMethod || 'sum',
-      status: competition.status
+      status: competition.status || 'draft'
     });
-    setIsEditing(true);
-    setIsCreating(false);
   };
 
+  const createNewCompetition = () => {
+    setSelectedCompetition(null);
+    setIsEditing(false);
+    setIsCreating(true);
+    resetForm();
+  };
+
+  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="p-4">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-gray-600">Loading competitions...</div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading competitions...</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="w-full px-4">
-          <div className="flex justify-between items-center h-14">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">OAS Competition Management</h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => onNavigate('home')}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
-              >
-                Home
-              </button>
-            </div>
+  // Competition List View
+  if (!isCreating && !isEditing) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-gray-900">Competition Management</h1>
+            <button
+              onClick={() => onNavigate('home')}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              ← Back to Home
+            </button>
           </div>
         </div>
-      </header>
 
-      <div className="p-4">
-        {/* Status Message */}
-        {message && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
-            message.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
-            'bg-blue-100 text-blue-800 border border-blue-200'
-          }`}>
-            {message.text}
+        {/* Action Buttons - Always at Top */}
+        <div className="bg-white border-b border-gray-200 px-4 py-3">
+          <div className="flex space-x-3">
+            <button
+              onClick={createNewCompetition}
+              className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              + New Competition
+            </button>
+            <button
+              onClick={() => onNavigate('profile-round-setup')}
+              className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Start Round
+            </button>
           </div>
-        )}
+        </div>
+
         {/* Competition List */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Your OAS Competitions ({competitions.length})</h2>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  if (window.confirm('Refresh competition data? This will reload all competitions from Firebase/localStorage.')) {
-                    loadCompetitions();
-                  }
-                }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-                title="Refresh competition data"
-              >
-                🔄 Refresh
-              </button>
-              <button
-                onClick={() => setIsCreating(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                + New Competition
-              </button>
-              <button
-                onClick={() => onNavigate('team-archers')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Manage Team
-              </button>
-            </div>
-          </div>
-
-          {competitions.length === 0 ? (
-            <div className="bg-white rounded-lg p-6 text-center">
-              <p className="text-gray-600 mb-4">No OAS competitions created yet.</p>
-              <button
-                onClick={() => setIsCreating(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                + New Competition
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Competition
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date & Location
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type & Divisions
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Stats
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {competitions.map((competition) => (
-                      <tr key={competition.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {competition.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {competition.description}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div>
-                            <div>{competition.date}</div>
-                            <div className="text-gray-500">{competition.location}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div className="text-sm font-medium text-gray-900">
-                              {competition.type === 'qualification' ? 'OAS Qualification' : 
-                               competition.type === 'olympic' ? 'OAS Olympic' :
-                               competition.type === 'team' ? 'OAS Team' : 'Custom'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {competition.divisions?.length || 0} divisions • {competition.rounds?.length || 0} rounds
-                            </div>
-                            {competition.type === 'qualification' && (
-                              <div className="text-xs text-gray-500">
-                                {competition.distance || '18m'} • {competition.maxArchersPerBale || 8} archers/bale
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            competition.status === 'active' ? 'bg-green-100 text-green-800' :
-                            competition.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                            competition.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {competition.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div className="space-y-1">
-                            <div className="text-xs">
-                              <span className="font-medium">Archers:</span> {competitionStats[competition.id]?.totalArchers || '0'}
-                            </div>
-                            <div className="text-xs">
-                              <span className="font-medium">Bales:</span> {competitionStats[competition.id]?.totalBales || '0'}
-                            </div>
-                            <div className="text-xs">
-                              <span className="font-medium">Completed:</span> {competitionStats[competition.id]?.completedRounds || '0'}
-                            </div>
-                            {competitionStats[competition.id]?.divisionStats && Object.keys(competitionStats[competition.id].divisionStats).length > 0 && (
-                              <div className="text-xs text-blue-600">
-                                <span className="font-medium">Divisions:</span> {Object.keys(competitionStats[competition.id].divisionStats).length}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => editCompetition(competition)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => onNavigate('scoring', { 
-                                competitionId: competition.id,
-                                competitionName: competition.name,
-                                competitionType: competition.type
-                              })}
-                              className="text-green-600 hover:text-green-900"
-                            >
-                              Score
-                            </button>
-                            {competitionStats[competition.id]?.completedRounds > 0 && (
-                              <button
-                                onClick={() => handleViewResults(competition)}
-                                className="text-purple-600 hover:text-purple-900"
-                              >
-                                Results
-                              </button>
-                            )}
-                            <button
-                              onClick={() => deleteCompetition(competition.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <div className="p-4 space-y-3">
+          {competitions.map((competition) => (
+            <div
+              key={competition.id}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                      <span className="text-purple-600 font-medium text-lg">
+                        🏆
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">
+                        {competition.name}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {formatDate(competition.date)} • {competition.location || 'No location'}
+                      </p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          competition.status === 'active' ? 'bg-green-100 text-green-800' :
+                          competition.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                          competition.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {competition.status}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {competition.divisions?.length || 0} divisions
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleViewResults(competition)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Results
+                  </button>
+                  <button
+                    onClick={() => editCompetition(competition)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteCompetition(competition.id)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
+              
+              {/* Stats Row */}
+              {competitionStats[competition.id] && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                    <div>
+                      <span className="text-gray-500">Archers:</span>
+                      <span className="ml-1 font-medium">{competitionStats[competition.id].totalArchers}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Avg Score:</span>
+                      <span className={`ml-1 font-medium ${getScoreColor(competitionStats[competition.id].averageScore)}`}>
+                        {competitionStats[competition.id].averageScore}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">High Score:</span>
+                      <span className={`ml-1 font-medium ${getScoreColor(competitionStats[competition.id].maxScore)}`}>
+                        {competitionStats[competition.id].maxScore}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Type:</span>
+                      <span className="ml-1 font-medium capitalize">{competition.type}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {competitions.length === 0 && (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+              <p className="text-gray-600 mb-4">No competitions found</p>
+              <button
+                onClick={createNewCompetition}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+              >
+                Create Your First Competition
+              </button>
             </div>
           )}
         </div>
 
-        {/* Create/Edit Form */}
-        {(isCreating || isEditing) && (
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              {isEditing ? 'Edit OAS Competition' : 'Create New OAS Competition'}
-            </h3>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Competition Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Spring OAS Qualification Round"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date *
-                  </label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Location *
-                  </label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Archery Club"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows="3"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Additional details about the competition..."
-                  />
-                </div>
-              </div>
-
-              {/* Competition Settings */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Competition Type *
-                  </label>
-                  <select
-                    name="type"
-                    value={formData.type}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="qualification">OAS Qualification Round</option>
-                    <option value="olympic">OAS Olympic Round</option>
-                    <option value="team">OAS Team Round</option>
-                    <option value="practice">Practice Session</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status *
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Max Archers Per Bale
-                  </label>
-                  <input
-                    type="number"
-                    name="maxArchersPerBale"
-                    value={formData.maxArchersPerBale}
-                    onChange={handleInputChange}
-                    min="1"
-                    max="8"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* OAS Divisions */}
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                OAS Divisions *
-              </label>
-              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                {oasDivisions.map((division) => (
-                  <label key={division} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.divisions.includes(division)}
-                      onChange={() => handleDivisionChange(division)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700">{division}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Round Configuration */}
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Round Configuration *
-              </label>
-              <div className="space-y-3">
-                {roundTypes.map((round) => (
-                  <label key={round.name} className="flex items-center">
-                    <input
-                      type="radio"
-                      name="roundType"
-                      checked={formData.rounds[0]?.name === round.name}
-                      onChange={() => handleRoundChange(round)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700">
-                      {round.name} ({round.ends} ends, {round.arrowsPerEnd} arrows/end, max {round.maxScore}, {round.timeLimit})
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Custom Round Configuration */}
-              {formData.rounds[0]?.name === 'Custom Round' && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Number of Ends
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.rounds[0]?.ends || 0}
-                        onChange={(e) => handleCustomRoundChange('ends', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        min="1"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Arrows Per End
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.rounds[0]?.arrowsPerEnd || 0}
-                        onChange={(e) => handleCustomRoundChange('arrowsPerEnd', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        min="1"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Total Arrows
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.rounds[0]?.totalArrows || 0}
-                        onChange={(e) => handleCustomRoundChange('totalArrows', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        min="1"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Qualification Round Configuration */}
-              {formData.type === 'qualification' && (
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Qualification Round Settings
-                  </label>
-                  <div className="p-4 bg-green-50 rounded-md">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Max Archers Per Bale
-                        </label>
-                        <input
-                          type="number"
-                          name="maxArchersPerBale"
-                          value={formData.maxArchersPerBale || 8}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          min="1"
-                          max="8"
-                        />
-                        <p className="text-xs text-gray-600 mt-1">OAS standard: up to 8 archers per bale</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Distance
-                        </label>
-                        <select
-                          name="distance"
-                          value={formData.distance || '18m'}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="18m">18 meters</option>
-                          <option value="9m">9 meters</option>
-                        </select>
-                        <p className="text-xs text-gray-600 mt-1">OAS Qualification Round distance</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 p-3 bg-blue-50 rounded-md">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Qualification Round Format:</h4>
-                      <ul className="text-xs text-gray-600 space-y-1">
-                        <li>• 36 arrows total (12 ends × 3 arrows)</li>
-                        <li>• 2 minutes per end</li>
-                        <li>• Maximum score: 360 points</li>
-                        <li>• Archers ranked by total score, then number of 10s</li>
-                        <li>• Tie-breaker: single arrow shoot-off (40 seconds)</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* School Team Configuration */}
-              {formData.type === 'team' && (
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    School Team Settings
-                  </label>
-                  <div className="p-4 bg-blue-50 rounded-md">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Max Team Size
-                        </label>
-                        <input
-                          type="number"
-                          name="maxTeamSize"
-                          value={formData.maxTeamSize || 4}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          min="1"
-                          max="8"
-                        />
-                        <p className="text-xs text-gray-600 mt-1">OAS teams typically have 4 archers</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Scoring Method
-                        </label>
-                        <select
-                          name="teamScoringMethod"
-                          value={formData.teamScoringMethod || 'sum'}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="sum">Sum of Top 3 Scores</option>
-                          <option value="average">Average of All Scores</option>
-                          <option value="best3">Best 3 Individual Scores</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={resetForm}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveCompetition}
-                disabled={saving || !formData.name || !formData.date || !formData.location || formData.divisions.length === 0 || formData.rounds.length === 0}
-                className={`px-4 py-2 text-white rounded-md transition-colors ${
-                  saving || !formData.name || !formData.date || !formData.location || formData.divisions.length === 0 || formData.rounds.length === 0
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {saving ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Saving...</span>
-                  </div>
-                ) : (
-                  isEditing ? 'Update Competition' : 'Create Competition'
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Competition Results Modal */}
+        {/* Results Modal */}
         {showResults && selectedCompetitionForResults && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
               <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800">
-                      {selectedCompetitionForResults.name} - Results
-                    </h2>
-                    <p className="text-gray-600 mt-1">
-                      {selectedCompetitionForResults.date} • {selectedCompetitionForResults.location}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Results: {selectedCompetitionForResults.name}
+                  </h2>
                   <button
                     onClick={handleCloseResults}
-                    className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    ×
+                    ✕
                   </button>
                 </div>
-
-                {/* Competition Stats Summary */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Competition Summary</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {competitionStats[selectedCompetitionForResults.id]?.totalArchers || 0}
-                      </div>
-                      <div className="text-sm text-gray-600">Total Archers</div>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
-                        {competitionStats[selectedCompetitionForResults.id]?.totalBales || 0}
-                      </div>
-                      <div className="text-sm text-gray-600">Total Bales</div>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {competitionStats[selectedCompetitionForResults.id]?.completedRounds || 0}
-                      </div>
-                      <div className="text-sm text-gray-600">Completed Rounds</div>
-                    </div>
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-yellow-600">
-                        {Object.keys(competitionStats[selectedCompetitionForResults.id]?.divisionStats || {}).length}
-                      </div>
-                      <div className="text-sm text-gray-600">Divisions</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Division Results */}
-                {competitionResults[selectedCompetitionForResults.id] && 
-                 Object.keys(competitionResults[selectedCompetitionForResults.id]).length > 0 ? (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Division Results</h3>
-                    {Object.entries(competitionResults[selectedCompetitionForResults.id]).map(([division, results]) => (
-                      <div key={division} className="mb-8">
-                        <h4 className="text-md font-semibold text-gray-700 mb-3 bg-gray-50 p-3 rounded-lg">
-                          {division} Division ({results.length} archers)
-                        </h4>
-                        
-                        {/* Division Stats */}
-                        {competitionStats[selectedCompetitionForResults.id]?.divisionStats[division] && (
-                          <div className="mb-4 grid grid-cols-3 gap-4">
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                              <div className="text-lg font-semibold text-gray-800">
-                                {competitionStats[selectedCompetitionForResults.id].divisionStats[division].averageScore}
-                              </div>
-                              <div className="text-sm text-gray-600">Average Score</div>
-                            </div>
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                              <div className="text-lg font-semibold text-gray-800">
-                                {competitionStats[selectedCompetitionForResults.id].divisionStats[division].bestScore}
-                              </div>
-                              <div className="text-sm text-gray-600">Best Score</div>
-                            </div>
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                              <div className="text-lg font-semibold text-gray-800">
-                                {competitionStats[selectedCompetitionForResults.id].divisionStats[division].count}
-                              </div>
-                              <div className="text-sm text-gray-600">Participants</div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Results Table */}
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
-                                <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Rank
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Archer
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total Score
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Average
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    10s / Xs
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Bale/Target
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {results.map((result, index) => (
-                                  <tr key={result.archerId} className={index < 3 ? 'bg-yellow-50' : ''}>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                      {index + 1}
-                                      {index === 0 && <span className="ml-1 text-yellow-600">🥇</span>}
-                                      {index === 1 && <span className="ml-1 text-gray-600">🥈</span>}
-                                      {index === 2 && <span className="ml-1 text-orange-600">🥉</span>}
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap">
-                                      <div className="text-sm font-medium text-gray-900">
-                                        {result.archerName}
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap">
-                                      <div className={`text-lg font-bold ${getScoreColor(parseFloat(result.average))}`}>
-                                        {result.totalScore}
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap">
-                                      <div className={`text-sm font-semibold ${getScoreColor(parseFloat(result.average))}`}>
-                                        {result.average}
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                      <div>
-                                        <span className="font-medium">{result.totalTens}</span> / <span className="font-medium">{result.totalXs}</span>
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                      <div>
-                                        Bale {result.baleNumber} • Target {result.targetAssignment}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    {formatDate(selectedCompetitionForResults.date)} • {selectedCompetitionForResults.location}
+                  </p>
+                  
+                  {competitionStats[selectedCompetitionForResults.id]?.hasScores ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {competitionStats[selectedCompetitionForResults.id].totalArchers}
                         </div>
+                        <div className="text-xs text-blue-600">Archers</div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="text-gray-500 text-lg mb-2">No results available</div>
-                    <div className="text-gray-400 text-sm">Complete scoring sessions to see results</div>
-                  </div>
-                )}
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">
+                          {competitionStats[selectedCompetitionForResults.id].averageScore}
+                        </div>
+                        <div className="text-xs text-green-600">Avg Score</div>
+                      </div>
+                      <div className="bg-purple-50 p-3 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {competitionStats[selectedCompetitionForResults.id].maxScore}
+                        </div>
+                        <div className="text-xs text-purple-600">High Score</div>
+                      </div>
+                      <div className="bg-orange-50 p-3 rounded-lg">
+                        <div className="text-2xl font-bold text-orange-600">
+                          {competitionStats[selectedCompetitionForResults.id].minScore}
+                        </div>
+                        <div className="text-xs text-orange-600">Low Score</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No scores recorded yet for this competition.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // Competition Edit/Create View
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => {
+                setIsCreating(false);
+                setIsEditing(false);
+              }}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              ← Back to Competitions
+            </button>
+            <h1 className="text-xl font-semibold text-gray-900">
+              {isCreating ? 'Create Competition' : 'Edit Competition'}
+            </h1>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons - Always at Top */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex space-x-3">
+          <button
+            onClick={saveCompetition}
+            disabled={saving}
+            className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {saving ? 'Saving...' : 'Save Competition'}
+          </button>
+          <button
+            onClick={() => {
+              setIsCreating(false);
+              setIsEditing(false);
+            }}
+            className="flex-1 bg-gray-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+        {message && (
+          <div className={`mt-3 p-3 rounded-lg text-sm ${
+            message.includes('Error') ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+          }`}>
+            {message}
+          </div>
+        )}
+      </div>
+
+      {/* Form Content */}
+      <div className="p-4 space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); saveCompetition(); }}>
+          {/* Basic Information Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                <span className="text-blue-600 text-sm">🏆</span>
+              </span>
+              Basic Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Competition Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date *
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  required
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Competition Type
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="qualification">Qualification</option>
+                  <option value="olympic">Olympic</option>
+                  <option value="team">Team</option>
+                  <option value="practice">Practice</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Divisions Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <span className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                <span className="text-green-600 text-sm">👥</span>
+              </span>
+              Divisions
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {oasDivisions.map((division) => (
+                <label key={division} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.divisions.includes(division)}
+                    onChange={() => handleDivisionChange(division)}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{division}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Configuration Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <span className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                <span className="text-purple-600 text-sm">⚙️</span>
+              </span>
+              Configuration
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Distance
+                </label>
+                <select
+                  name="distance"
+                  value={formData.distance}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="18m">18m</option>
+                  <option value="30m">30m</option>
+                  <option value="50m">50m</option>
+                  <option value="70m">70m</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Max Archers Per Bale
+                </label>
+                <input
+                  type="number"
+                  name="maxArchersPerBale"
+                  value={formData.maxArchersPerBale}
+                  onChange={handleInputChange}
+                  min="1"
+                  max="12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Max Team Size
+                </label>
+                <input
+                  type="number"
+                  name="maxTeamSize"
+                  value={formData.maxTeamSize}
+                  onChange={handleInputChange}
+                  min="1"
+                  max="8"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Team Scoring Method
+                </label>
+                <select
+                  name="teamScoringMethod"
+                  value={formData.teamScoringMethod}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="sum">Sum of Scores</option>
+                  <option value="average">Average Score</option>
+                  <option value="best">Best Score</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                <span className="text-orange-600 text-sm">📊</span>
+              </span>
+              Status
+            </h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Competition Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="draft">Draft</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );
