@@ -315,6 +315,150 @@ firebase deploy
 - [ ] Verify Back/Next navigation works correctly
 - [ ] Ensure System Admin can now edit profiles
 
+## 🏆 COMPETITION RESULTS & SCORECARD IMPROVEMENTS
+**Priority**: HIGH - Core functionality for competition management
+**Status**: PLANNING
+
+### Current Issues Identified
+- [ ] **Score-Archer Linkage**: Scores do not properly link to archer profiles
+- [ ] **Competition Results**: No proper results page showing archer rankings
+- [ ] **Scorecard Display**: Missing detailed scorecard view for individual archers
+- [ ] **Competition Integration**: Scores not available in competition screens
+- [ ] **Results Summary**: No top 5 rankings by event category
+
+### Required Improvements
+
+#### 1. Enhanced Competition Results Page
+- [ ] **Results Overview**
+  - [ ] Show each archer with running total or completed total
+  - [ ] Display archer name, division, school, current score
+  - [ ] Indicate completion status (in progress/completed)
+  - [ ] Sort by score (highest first) within divisions
+  - [ ] Show top 5 in each event category (MV, MJV, FV, FJV, etc.)
+
+- [ ] **Archer Detail View**
+  - [ ] Click on archer to see detailed scorecard
+  - [ ] Display archer name in bold at top
+  - [ ] Show competition name and date
+  - [ ] Indicate if Varsity or JV score
+  - [ ] Display complete 12-end scorecard with all arrows
+  - [ ] Show running totals and averages per end
+  - [ ] Include final totals (score, tens, Xs, average)
+
+#### 2. Scorecard Improvements
+- [ ] **Detailed Scorecard Component**
+  - [ ] Create `CompetitionScorecard.jsx` component
+  - [ ] Match ranking round results format
+  - [ ] Bold archer name at top
+  - [ ] Competition name and date
+  - [ ] Varsity/JV indicator
+  - [ ] Complete 12-end breakdown
+  - [ ] Running totals and averages
+  - [ ] Final statistics
+
+- [ ] **Scorecard Data Structure**
+  - [ ] Link scores to archer profiles via `archerId`
+  - [ ] Store competition metadata (name, date, type)
+  - [ ] Include division and gender information
+  - [ ] Track completion status and verification
+
+#### 3. Competition Management Integration
+- [ ] **Results Tab in Competition Management**
+  - [ ] Add "Results" tab to competition details
+  - [ ] Show archer list with scores
+  - [ ] Display completion status
+  - [ ] Link to detailed scorecards
+  - [ ] Show top 5 rankings by division
+
+- [ ] **Score Linking**
+  - [ ] Ensure all scores link to archer profiles
+  - [ ] Update scoring components to save archer ID
+  - [ ] Link competition scores to competition records
+  - [ ] Maintain proper data relationships
+
+#### 4. Data Model Improvements
+- [ ] **Enhanced Score Storage**
+  - [ ] Update `competitionScores` collection structure
+  - [ ] Ensure `archerId` is always included
+  - [ ] Add competition metadata to each score
+  - [ ] Include division and gender information
+  - [ ] Track completion and verification status
+
+- [ ] **Profile Integration**
+  - [ ] Link scores to archer profiles
+  - [ ] Update profile performance stats
+  - [ ] Show recent competition scores in profiles
+  - [ ] Calculate and display PRs and averages
+
+#### 5. UI/UX Enhancements
+- [ ] **Results Page Design**
+  - [ ] Clean, mobile-friendly results layout
+  - [ ] Easy navigation between archers
+  - [ ] Clear completion status indicators
+  - [ ] Intuitive scorecard access
+
+- [ ] **Scorecard Design**
+  - [ ] Professional scorecard layout
+  - [ ] Clear arrow-by-arrow breakdown
+  - [ ] Running totals and averages
+  - [ ] Final statistics summary
+
+### Implementation Plan
+
+#### Phase 1: Data Structure & Linking
+- [ ] Update scoring components to properly link scores to archers
+- [ ] Enhance `competitionScores` collection structure
+- [ ] Ensure all scores include archer profile information
+- [ ] Update Firebase service functions for proper data relationships
+
+#### Phase 2: Competition Results Page
+- [ ] Create enhanced results view in CompetitionManagement
+- [ ] Display archer list with scores and completion status
+- [ ] Implement top 5 rankings by division
+- [ ] Add navigation to detailed scorecards
+
+#### Phase 3: Detailed Scorecard Component
+- [ ] Create `CompetitionScorecard.jsx` component
+- [ ] Implement professional scorecard layout
+- [ ] Display complete 12-end breakdown
+- [ ] Show running totals and final statistics
+
+#### Phase 4: Integration & Testing
+- [ ] Integrate scorecard component into results flow
+- [ ] Test score linking and data relationships
+- [ ] Verify competition results display correctly
+- [ ] Test mobile responsiveness and usability
+
+### Technical Requirements
+
+#### Data Relationships
+- **Scores → Archers**: All scores must link to archer profiles via `archerId`
+- **Scores → Competitions**: All competition scores must link to competition records
+- **Profiles → Scores**: Archer profiles should show recent competition scores
+- **Competitions → Results**: Competition records should show all participant scores
+
+#### Component Structure
+- **CompetitionManagement**: Enhanced with results tab and archer rankings
+- **CompetitionScorecard**: New component for detailed scorecard display
+- **ScoreHistory**: Updated to show competition vs practice rounds
+- **ArcherProfileWithStats**: Enhanced to show competition performance
+
+#### Firebase Collections
+- **competitionScores**: Enhanced with proper archer and competition links
+- **profiles**: Updated with performance statistics and recent scores
+- **competitions**: Enhanced with results and participant information
+
+### Success Criteria
+- [ ] All scores properly link to archer profiles
+- [ ] Competition results page shows archer rankings
+- [ ] Clicking archer shows detailed scorecard
+- [ ] Top 5 rankings displayed by division
+- [ ] Scorecards match ranking round format
+- [ ] Mobile-friendly design and navigation
+- [ ] Proper data relationships maintained
+
+---
+
 ## ✅ Recent Achievements
 
 ### Unified ProfileEditor Implementation (Session 10)
