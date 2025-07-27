@@ -106,6 +106,32 @@ export function AuthProvider({ children }) {
     return true; // Archers have basic access
   };
 
+  // Check if user is coach for specific school/team
+  const isCoachForSchool = async (school, team = null) => {
+    if (!currentUser) return false;
+    
+    try {
+      const { isCoachForSchool } = await import('../services/firebaseService.js');
+      return await isCoachForSchool(currentUser.uid, school, team);
+    } catch (error) {
+      console.error('Error checking coach assignment:', error);
+      return false;
+    }
+  };
+
+  // Get user's coach assignments
+  const getMyCoachAssignments = async () => {
+    if (!currentUser) return [];
+    
+    try {
+      const { getCoachAssignments } = await import('../services/firebaseService.js');
+      return await getCoachAssignments(currentUser.uid);
+    } catch (error) {
+      console.error('Error loading coach assignments:', error);
+      return [];
+    }
+  };
+
   // Load user preferences from localStorage
   const loadUserPreferences = () => {
     try {
@@ -201,6 +227,8 @@ export function AuthProvider({ children }) {
     currentUser,
     userRole,
     hasRole,
+    isCoachForSchool,
+    getMyCoachAssignments,
     signInWithPhone,
     signInWithGoogle,
     logout,

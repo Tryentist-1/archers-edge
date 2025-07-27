@@ -24,11 +24,14 @@
   - [x] Implement role-specific UI components
   - [x] Add role-based permissions
 
-- [ ] **Coach-Specific Features**
-  - [ ] Coach dashboard interface
-  - [ ] Team management tools
-  - [ ] Event creation and management
-  - [ ] Archer profile management
+- [x] **Coach-Specific Features**
+  - [x] Coach dashboard interface
+  - [x] Team management tools
+  - [x] Event creation and management
+  - [x] Archer profile management
+  - [x] Coach-School relationship system
+  - [x] Coach assignment management
+  - [x] Coach event management
 
 - [ ] **Event Manager Features**
   - [ ] Event creation interface

@@ -872,4 +872,239 @@ export const saveTeamToFirebase = async (teamData, userId) => {
         console.error('Error saving team to Firebase:', error);
         throw error;
     }
+};
+
+// Coach Assignment Management
+export const assignCoachToSchool = async (coachId, school, team, role = 'head_coach', assignedBy) => {
+    try {
+        console.log('Assigning coach to school:', { coachId, school, team, role });
+        
+        const assignmentRef = doc(db, 'coachAssignments', `${coachId}_${school}_${team}`);
+        const assignmentData = {
+            coachId,
+            school: school.toUpperCase(),
+            team: team.toUpperCase(),
+            role,
+            assignedAt: serverTimestamp(),
+            assignedBy,
+            isActive: true
+        };
+        
+        await setDoc(assignmentRef, assignmentData);
+        console.log('Coach assignment saved successfully');
+        return true;
+    } catch (error) {
+        console.error('Error assigning coach to school:', error);
+        throw error;
+    }
+};
+
+export const removeCoachFromSchool = async (coachId, school, team) => {
+    try {
+        console.log('Removing coach from school:', { coachId, school, team });
+        
+        const assignmentRef = doc(db, 'coachAssignments', `${coachId}_${school}_${team}`);
+        await deleteDoc(assignmentRef);
+        console.log('Coach assignment removed successfully');
+        return true;
+    } catch (error) {
+        console.error('Error removing coach from school:', error);
+        throw error;
+    }
+};
+
+export const getCoachAssignments = async (coachId = null) => {
+    try {
+        console.log('Loading coach assignments:', coachId);
+        
+        const assignmentsRef = collection(db, 'coachAssignments');
+        let q;
+        
+        if (coachId) {
+            q = query(assignmentsRef, where('coachId', '==', coachId), where('isActive', '==', true));
+        } else {
+            q = query(assignmentsRef, where('isActive', '==', true));
+        }
+        
+        const querySnapshot = await getDocs(q);
+        const assignments = [];
+        
+        querySnapshot.forEach((doc) => {
+            assignments.push({ id: doc.id, ...doc.data() });
+        });
+        
+        console.log(`Found ${assignments.length} coach assignments`);
+        return assignments;
+    } catch (error) {
+        console.error('Error loading coach assignments:', error);
+        throw error;
+    }
+};
+
+export const getSchoolCoaches = async (school, team = null) => {
+    try {
+        console.log('Loading coaches for school:', { school, team });
+        
+        const assignmentsRef = collection(db, 'coachAssignments');
+        let q;
+        
+        if (team) {
+            q = query(
+                assignmentsRef, 
+                where('school', '==', school.toUpperCase()),
+                where('team', '==', team.toUpperCase()),
+                where('isActive', '==', true)
+            );
+        } else {
+            q = query(
+                assignmentsRef, 
+                where('school', '==', school.toUpperCase()),
+                where('isActive', '==', true)
+            );
+        }
+        
+        const querySnapshot = await getDocs(q);
+        const coaches = [];
+        
+        querySnapshot.forEach((doc) => {
+            coaches.push({ id: doc.id, ...doc.data() });
+        });
+        
+        console.log(`Found ${coaches.length} coaches for school ${school}`);
+        return coaches;
+    } catch (error) {
+        console.error('Error loading school coaches:', error);
+        throw error;
+    }
+};
+
+export const isCoachForSchool = async (coachId, school, team = null) => {
+    try {
+        const assignments = await getCoachAssignments(coachId);
+        
+        if (team) {
+            return assignments.some(assignment => 
+                assignment.school === school.toUpperCase() && 
+                assignment.team === team.toUpperCase()
+            );
+        } else {
+            return assignments.some(assignment => 
+                assignment.school === school.toUpperCase()
+            );
+        }
+    } catch (error) {
+        console.error('Error checking coach assignment:', error);
+        return false;
+    }
+};
+
+// Coach Event Management
+export const createCoachEvent = async (eventData, coachId) => {
+    try {
+        console.log('Creating coach event:', { eventData, coachId });
+        
+        const eventRef = doc(db, 'coachEvents', eventData.id);
+        const eventDoc = {
+            ...eventData,
+            coachId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            status: 'active'
+        };
+        
+        await setDoc(eventRef, eventDoc);
+        console.log('Coach event created successfully');
+        return true;
+    } catch (error) {
+        console.error('Error creating coach event:', error);
+        throw error;
+    }
+};
+
+export const updateCoachEvent = async (eventId, updates) => {
+    try {
+        console.log('Updating coach event:', { eventId, updates });
+        
+        const eventRef = doc(db, 'coachEvents', eventId);
+        const updateData = {
+            ...updates,
+            updatedAt: serverTimestamp()
+        };
+        
+        await updateDoc(eventRef, updateData);
+        console.log('Coach event updated successfully');
+        return true;
+    } catch (error) {
+        console.error('Error updating coach event:', error);
+        throw error;
+    }
+};
+
+export const getCoachEvents = async (coachId = null, status = 'active') => {
+    try {
+        console.log('Loading coach events:', { coachId, status });
+        
+        const eventsRef = collection(db, 'coachEvents');
+        let q;
+        
+        if (coachId) {
+            q = query(
+                eventsRef, 
+                where('coachId', '==', coachId),
+                where('status', '==', status),
+                orderBy('createdAt', 'desc')
+            );
+        } else {
+            q = query(
+                eventsRef, 
+                where('status', '==', status),
+                orderBy('createdAt', 'desc')
+            );
+        }
+        
+        const querySnapshot = await getDocs(q);
+        const events = [];
+        
+        querySnapshot.forEach((doc) => {
+            events.push({ id: doc.id, ...doc.data() });
+        });
+        
+        console.log(`Found ${events.length} coach events`);
+        return events;
+    } catch (error) {
+        console.error('Error loading coach events:', error);
+        throw error;
+    }
+};
+
+export const deleteCoachEvent = async (eventId) => {
+    try {
+        console.log('Deleting coach event:', eventId);
+        
+        const eventRef = doc(db, 'coachEvents', eventId);
+        await deleteDoc(eventRef);
+        console.log('Coach event deleted successfully');
+        return true;
+    } catch (error) {
+        console.error('Error deleting coach event:', error);
+        throw error;
+    }
+};
+
+export const assignArchersToEvent = async (eventId, archerIds) => {
+    try {
+        console.log('Assigning archers to event:', { eventId, archerIds });
+        
+        const eventRef = doc(db, 'coachEvents', eventId);
+        await updateDoc(eventRef, {
+            assignedArchers: archerIds,
+            updatedAt: serverTimestamp()
+        });
+        
+        console.log('Archers assigned to event successfully');
+        return true;
+    } catch (error) {
+        console.error('Error assigning archers to event:', error);
+        throw error;
+    }
 }; 
