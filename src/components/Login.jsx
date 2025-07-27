@@ -277,6 +277,7 @@ function ProfileSelectionView({ onBack }) {
   const [error, setError] = useState('');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showTeamCodeInput, setShowTeamCodeInput] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { login, getMyProfileId, getFavoriteProfileIds, toggleFavorite } = useAuth();
 
   // Load profiles from localStorage
@@ -384,13 +385,19 @@ function ProfileSelectionView({ onBack }) {
   };
 
   const handleProfileSelect = (profileId) => {
+    console.log('=== PROFILE SELECT DEBUG ===');
+    console.log('Selecting profile ID:', profileId);
+    console.log('Available profiles:', profiles);
+    
     setLoading(true);
     setError('');
 
     try {
       login(profileId);
+      console.log('Profile selection successful');
       setLoading(false);
     } catch (error) {
+      console.error('Profile selection failed:', error);
       setError('Failed to set profile: ' + error.message);
       setLoading(false);
     }
@@ -399,10 +406,17 @@ function ProfileSelectionView({ onBack }) {
   const myProfileId = getMyProfileId();
   const favoriteProfileIds = getFavoriteProfileIds();
 
-  // Filter profiles
-  const myProfile = profiles.find(p => p.id === myProfileId);
-  const favoriteProfiles = profiles.filter(p => favoriteProfileIds.includes(p.id));
-  const otherProfiles = profiles.filter(p => p.id !== myProfileId && !favoriteProfileIds.includes(p.id));
+  // Filter profiles with search
+  const filteredProfiles = profiles.filter(profile => {
+    const matchesSearch = !searchTerm ||
+      (profile.firstName && profile.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (profile.lastName && profile.lastName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (profile.school && profile.school.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch;
+  });
+
+  const myProfile = filteredProfiles.find(p => p.id === myProfileId);
+  const otherProfiles = filteredProfiles.filter(p => p.id !== myProfileId);
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
@@ -473,41 +487,60 @@ function ProfileSelectionView({ onBack }) {
           </div>
         )}
 
-        {/* All Profiles */}
+        {/* Search and All Profiles */}
         {profiles.length > 0 && (
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               {myProfile ? 'Other Profiles' : 'Select Your Profile'}
             </h3>
+            
+            {/* Search Input */}
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Search by name or school..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            
             <div className="space-y-2">
-              {profiles.filter(p => p.id !== myProfileId).map(profile => (
-                <div key={profile.id} className="bg-white border border-gray-200 rounded-md p-3 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {profile.firstName} {profile.lastName}
-                      </p>
-                      <p className="text-sm text-gray-600">{profile.school || 'No school'}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleProfileSelect(profile.id)}
-                        disabled={loading}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        Select
-                      </button>
-                      <button
-                        onClick={() => toggleFavorite(profile.id)}
-                        disabled={loading}
-                        className="text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
-                      >
-                        {favoriteProfileIds.includes(profile.id) ? '⭐' : '☆'}
-                      </button>
+              {otherProfiles.length > 0 ? (
+                otherProfiles.map(profile => (
+                  <div key={profile.id} className="bg-white border border-gray-200 rounded-md p-3 hover:bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {profile.firstName} {profile.lastName}
+                        </p>
+                        <p className="text-sm text-gray-600">{profile.school || 'No school'}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleProfileSelect(profile.id)}
+                          disabled={loading}
+                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          Select
+                        </button>
+                        <button
+                          onClick={() => toggleFavorite(profile.id)}
+                          disabled={loading}
+                          className="text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                        >
+                          {favoriteProfileIds.includes(profile.id) ? '⭐' : '☆'}
+                        </button>
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : searchTerm ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-center">
+                  <p className="text-gray-600">No profiles found matching "{searchTerm}"</p>
+                  <p className="text-sm text-gray-500 mt-1">Try a different search term</p>
                 </div>
-              ))}
+              ) : null}
             </div>
           </div>
         )}
