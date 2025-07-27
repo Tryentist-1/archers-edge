@@ -162,4 +162,49 @@ export const cleanupDuplicateProfiles = () => {
     console.error('Error cleaning up duplicate profiles:', error);
     return 0;
   }
+};
+
+// Function to clean up Firebase duplicates
+export const cleanupFirebaseDuplicates = async () => {
+  try {
+    const { loadProfilesFromFirebase, deleteProfileFromFirebase } = await import('../services/firebaseService.js');
+    
+    console.log('Loading all profiles from Firebase...');
+    const firebaseProfiles = await loadProfilesFromFirebase();
+    
+    // Find duplicates by name and role
+    const seen = new Set();
+    const duplicates = [];
+    
+    firebaseProfiles.forEach(profile => {
+      const key = `${profile.firstName} ${profile.lastName} ${profile.role}`;
+      if (seen.has(key)) {
+        duplicates.push(profile);
+      } else {
+        seen.add(key);
+      }
+    });
+    
+    if (duplicates.length > 0) {
+      console.log(`Found ${duplicates.length} duplicate profiles in Firebase`);
+      
+      // Delete duplicates (keep the first one found)
+      for (const duplicate of duplicates) {
+        try {
+          await deleteProfileFromFirebase(duplicate.id);
+          console.log(`Deleted duplicate profile: ${duplicate.firstName} ${duplicate.lastName}`);
+        } catch (error) {
+          console.error(`Error deleting duplicate profile ${duplicate.id}:`, error);
+        }
+      }
+      
+      return duplicates.length;
+    } else {
+      console.log('No duplicate profiles found in Firebase');
+      return 0;
+    }
+  } catch (error) {
+    console.error('Error cleaning up Firebase duplicates:', error);
+    return 0;
+  }
 }; 

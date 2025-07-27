@@ -851,6 +851,15 @@ export const saveTeamToFirebase = async (teamData, userId) => {
         const savedProfiles = [];
         
         for (const archer of teamData.archers) {
+            // Check if profile already exists in Firebase
+            const profileRef = doc(db, 'profiles', archer.id);
+            const profileDoc = await getDoc(profileRef);
+            
+            if (profileDoc.exists()) {
+                console.log(`Profile ${archer.id} already exists in Firebase, skipping`);
+                continue;
+            }
+            
             const profileData = {
                 ...archer,
                 createdBy: userId,
@@ -861,12 +870,11 @@ export const saveTeamToFirebase = async (teamData, userId) => {
                 team: teamData.team
             };
             
-            const profileRef = doc(db, 'profiles', archer.id);
             await setDoc(profileRef, profileData);
             savedProfiles.push({ id: archer.id, ...profileData });
         }
         
-        console.log(`Saved ${savedProfiles.length} profiles for team ${teamData.teamCode}`);
+        console.log(`Saved ${savedProfiles.length} new profiles for team ${teamData.teamCode}`);
         return savedProfiles;
     } catch (error) {
         console.error('Error saving team to Firebase:', error);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { loadProfilesFromFirebase, loadArcherProfileWithScores } from '../services/firebaseService';
-import { addCoachProfilesToExisting, createSampleTeams, cleanupDuplicateProfiles } from '../utils/sampleData.js';
+import { addCoachProfilesToExisting, createSampleTeams, cleanupDuplicateProfiles, cleanupFirebaseDuplicates } from '../utils/sampleData.js';
 
 const HomePage = ({ currentUser, onNavigate, baleData }) => {
     const { currentUser: authUser } = useAuth();
@@ -363,6 +363,16 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                                     className="w-full bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 text-sm"
                                 >
                                     Clean Up Duplicate Profiles
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const removed = await cleanupFirebaseDuplicates();
+                                        alert(`Removed ${removed} duplicate profiles from Firebase`);
+                                        window.location.reload();
+                                    }}
+                                    className="w-full bg-orange-600 text-white px-3 py-2 rounded-md hover:bg-orange-700 text-sm"
+                                >
+                                    Clean Up Firebase Duplicates
                                 </button>
                             </div>
                         </div>
