@@ -53,6 +53,50 @@ const sampleTeams = {
         school: 'TEST'
       }
     ]
+  },
+  'CAMP-VARSITY': {
+    name: 'Camp Varsity Team',
+    school: 'CAMP',
+    coach: 'Coach Camp',
+    archers: [
+      {
+        id: 'camp-1',
+        firstName: 'Brandon',
+        lastName: 'Camp',
+        email: 'brandon.camp@school.edu',
+        phone: '+1234567890',
+        team: 'VARSITY',
+        level: 'Advanced',
+        school: 'CAMP'
+      },
+      {
+        id: 'camp-2',
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        email: 'sarah.johnson@school.edu',
+        phone: '+1234567891',
+        team: 'VARSITY',
+        level: 'Intermediate',
+        school: 'CAMP'
+      }
+    ]
+  },
+  'CAMP-JV': {
+    name: 'Camp JV Team',
+    school: 'CAMP',
+    coach: 'Coach Camp',
+    archers: [
+      {
+        id: 'camp-jv-1',
+        firstName: 'Mike',
+        lastName: 'Davis',
+        email: 'mike.davis@school.edu',
+        phone: '+1234567892',
+        team: 'JV',
+        level: 'Beginner',
+        school: 'CAMP'
+      }
+    ]
   }
 };
 
@@ -92,7 +136,7 @@ export function generateTeamCodeUrl(teamCode, baseUrl = 'https://archers-edge.we
  * @returns {string[]} - Array of available team codes
  */
 export function getAvailableTeamCodes() {
-  return ['TEST-TEST'];
+  return ['TEST-TEST', 'CAMP-VARSITY', 'CAMP-JV'];
 }
 
 /**

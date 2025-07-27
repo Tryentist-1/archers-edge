@@ -747,20 +747,42 @@ export const loadTeamFromFirebase = async (teamCode) => {
             throw new Error(`Invalid team code format: ${teamCode}. Expected format: SCHOOL-TEAM`);
         }
         
-        // Query profiles by school and team
+        // Query profiles by school and team - try multiple variations
         const profilesRef = collection(db, 'profiles');
-        const schoolQuery = query(
+        let teamProfiles = [];
+        
+        // Try exact match first
+        const exactQuery = query(
             profilesRef, 
             where('school', '==', school.toUpperCase()),
             where('team', '==', team.toUpperCase())
         );
         
-        const querySnapshot = await getDocs(schoolQuery);
-        
-        const teamProfiles = [];
+        let querySnapshot = await getDocs(exactQuery);
         querySnapshot.forEach((doc) => {
             teamProfiles.push({ id: doc.id, ...doc.data() });
         });
+        
+        // If no results, try case-insensitive search
+        if (teamProfiles.length === 0) {
+            console.log('No exact matches, trying case-insensitive search');
+            const allProfilesQuery = query(profilesRef);
+            querySnapshot = await getDocs(allProfilesQuery);
+            
+            querySnapshot.forEach((doc) => {
+                const profile = doc.data();
+                const profileSchool = (profile.school || '').toUpperCase();
+                const profileTeam = (profile.team || '').toUpperCase();
+                const searchSchool = school.toUpperCase();
+                const searchTeam = team.toUpperCase();
+                
+                if (profileSchool.includes(searchSchool) || searchSchool.includes(profileSchool)) {
+                    if (profileTeam.includes(searchTeam) || searchTeam.includes(profileTeam)) {
+                        teamProfiles.push({ id: doc.id, ...profile });
+                    }
+                }
+            });
+        }
         
         console.log(`Found ${teamProfiles.length} profiles for team ${teamCode}`);
         
