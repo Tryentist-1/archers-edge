@@ -11,6 +11,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
     const [archers, setArchers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingArcher, setEditingArcher] = useState(null);
+    const [filterSchool, setFilterSchool] = useState('');
 
     useEffect(() => {
         loadArchers();
@@ -85,6 +86,12 @@ const TeamArcherManagement = ({ onNavigate }) => {
         }
     };
 
+    // Filter archers by school
+    const filteredArchers = archers.filter(archer => {
+        if (!filterSchool) return true;
+        return archer.school && archer.school.toLowerCase().includes(filterSchool.toLowerCase());
+    });
+
     const editArcher = (archer) => {
         console.log('Editing archer:', archer);
         setEditingArcher(archer);
@@ -143,16 +150,30 @@ const TeamArcherManagement = ({ onNavigate }) => {
     // Archer List View
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-4 py-3">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-xl font-semibold text-gray-900">Team Archers</h1>
-                    <button
-                        onClick={() => onNavigate('home')}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                        ← Back to Home
-                    </button>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Team Archer Management</h2>
+                <button
+                    onClick={() => onNavigate('home')}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                    ← Back to Home
+                </button>
+            </div>
+
+            {/* School Filter */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+                <div className="flex items-center space-x-4">
+                    <label className="text-sm font-medium text-gray-700">Filter by School:</label>
+                    <input
+                        type="text"
+                        placeholder="Enter school name..."
+                        value={filterSchool}
+                        onChange={(e) => setFilterSchool(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="text-sm text-gray-600">
+                        {filteredArchers.length} of {archers.length} archers
+                    </span>
                 </div>
             </div>
 
@@ -169,8 +190,8 @@ const TeamArcherManagement = ({ onNavigate }) => {
             </div>
 
             {/* Archer List */}
-            <div className="p-4 space-y-3">
-                {archers.map((archer, index) => (
+            <div className="space-y-4">
+                {filteredArchers.map(archer => (
                     <div
                         key={archer.id}
                         className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
@@ -221,7 +242,7 @@ const TeamArcherManagement = ({ onNavigate }) => {
                     </div>
                 ))}
                 
-                {archers.length === 0 && (
+                {filteredArchers.length === 0 && (
                     <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
                         <p className="text-gray-600 mb-4">No archers found</p>
                         <button

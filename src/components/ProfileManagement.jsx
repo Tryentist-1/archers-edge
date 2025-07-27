@@ -14,6 +14,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
     const [loading, setLoading] = useState(true);
     const [showProfileSelection, setShowProfileSelection] = useState(true);
     const [editingProfile, setEditingProfile] = useState(null);
+    const [filterSchool, setFilterSchool] = useState('');
 
     useEffect(() => {
         loadProfiles();
@@ -38,12 +39,17 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                     if (firebaseProfiles && firebaseProfiles.length > 0) {
                         loadedProfiles = firebaseProfiles;
                         localStorage.setItem('archerProfiles', JSON.stringify(firebaseProfiles));
+                        console.log('✅ Firebase profiles loaded and saved to localStorage');
+                    } else {
+                        console.log('⚠️ No profiles found in Firebase');
                     }
                 } catch (error) {
                     console.error('Error loading from Firebase, falling back to local:', error);
                 }
             } else {
                 console.log('Skipping Firebase load - offline, no user, or mock user');
+                console.log('shouldUseFirebase result:', shouldUseFirebase(currentUser?.uid));
+                console.log('currentUser:', currentUser);
             }
             
             // Fallback to local storage if no Firebase data
@@ -94,6 +100,12 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
             setLoading(false);
         }
     };
+
+    // Filter profiles by school
+    const filteredProfiles = profiles.filter(profile => {
+        if (!filterSchool) return true;
+        return profile.school && profile.school.toLowerCase().includes(filterSchool.toLowerCase());
+    });
 
     const selectProfile = (profile) => {
         console.log('=== SELECT PROFILE DEBUG ===');
@@ -221,9 +233,26 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                 </div>
             </div>
 
+            {/* School Filter */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+                <div className="flex items-center space-x-4">
+                    <label className="text-sm font-medium text-gray-700">Filter by School:</label>
+                    <input
+                        type="text"
+                        placeholder="Enter school name..."
+                        value={filterSchool}
+                        onChange={(e) => setFilterSchool(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="text-sm text-gray-600">
+                        {filteredProfiles.length} of {profiles.length} profiles
+                    </span>
+                </div>
+            </div>
+
             {/* Profile List */}
             <div className="p-4 space-y-3">
-                {profiles.map((profile, index) => (
+                {filteredProfiles.map(profile => (
                     <div
                         key={profile.id}
                         className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
@@ -274,7 +303,7 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
                     </div>
                 ))}
                 
-                {profiles.length === 0 && (
+                {filteredProfiles.length === 0 && (
                     <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
                         <p className="text-gray-600 mb-4">No profiles found</p>
                         <button

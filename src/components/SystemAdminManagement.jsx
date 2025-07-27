@@ -17,6 +17,7 @@ function SystemAdminManagement() {
     // Profile management state
     const [profiles, setProfiles] = useState([]);
     const [filterRole, setFilterRole] = useState('all');
+    const [filterSchool, setFilterSchool] = useState('');
     const [editingProfile, setEditingProfile] = useState(null);
     
     // New profile creation state
@@ -27,7 +28,6 @@ function SystemAdminManagement() {
         phone: '',
         role: 'Coach',
         school: '',
-        team: '',
         division: 'V',
         bowType: 'Recurve ILF'
     });
@@ -106,7 +106,6 @@ function SystemAdminManagement() {
                 phone: '',
                 role: 'Coach',
                 school: '',
-                team: '',
                 division: 'V',
                 bowType: 'Recurve ILF'
             });
@@ -205,8 +204,9 @@ function SystemAdminManagement() {
     }
 
     const filteredProfiles = profiles.filter(profile => {
-        if (filterRole === 'all') return true;
-        return profile.role === filterRole;
+        const roleMatch = filterRole === 'all' || profile.role === filterRole;
+        const schoolMatch = !filterSchool || (profile.school && profile.school.toLowerCase().includes(filterSchool.toLowerCase()));
+        return roleMatch && schoolMatch;
     });
 
     return (
@@ -289,6 +289,14 @@ function SystemAdminManagement() {
                                     <option value="Event Manager">Event Manager</option>
                                     <option value="System Admin">System Admin</option>
                                 </select>
+                                <label className="text-sm font-medium text-gray-700">Filter by School:</label>
+                                <input
+                                    type="text"
+                                    value={filterSchool}
+                                    onChange={(e) => setFilterSchool(e.target.value)}
+                                    placeholder="Enter school name"
+                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
                                 <span className="text-sm text-gray-600">
                                     {filteredProfiles.length} profiles
                                 </span>
