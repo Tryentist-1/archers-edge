@@ -517,19 +517,17 @@ export const loadArcherCompetitionScores = async (archerId, competitionId = null
         let scoresQuery;
         
         if (competitionId) {
-            // Load scores for specific competition
+            // Load scores for specific competition - without ordering to avoid index requirement
             scoresQuery = query(
                 collection(db, 'competitionScores'),
                 where('archerId', '==', archerId),
-                where('competitionId', '==', competitionId),
-                orderBy('completedAt', 'desc')
+                where('competitionId', '==', competitionId)
             );
         } else {
-            // Load all scores for archer
+            // Load all scores for archer - without ordering to avoid index requirement
             scoresQuery = query(
                 collection(db, 'competitionScores'),
-                where('archerId', '==', archerId),
-                orderBy('completedAt', 'desc')
+                where('archerId', '==', archerId)
             );
         }
         
@@ -541,6 +539,13 @@ export const loadArcherCompetitionScores = async (archerId, competitionId = null
                 id: doc.id,
                 ...doc.data()
             });
+        });
+        
+        // Sort in memory instead of in the query
+        scores.sort((a, b) => {
+            const dateA = a.completedAt ? new Date(a.completedAt) : new Date(0);
+            const dateB = b.completedAt ? new Date(b.completedAt) : new Date(0);
+            return dateB - dateA; // Descending order
         });
         
         console.log(`Archer scores loaded for ${archerId}:`, scores.length);

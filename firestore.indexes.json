@@ -1,0 +1,79 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "competitionScores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "archerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "competitionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "competitionScores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "archerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "profiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "school",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "coachAssignments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "coachId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "school",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "coachEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "coachId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+} 
