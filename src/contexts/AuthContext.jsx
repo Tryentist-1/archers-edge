@@ -110,7 +110,7 @@ export function AuthProvider({ children }) {
 
   // Check if user is coach for specific school/team
   const isCoachForSchool = async (school, team = null) => {
-    if (!currentUser) return false;
+    if (!currentUser?.uid) return false;
     
     try {
       const { isCoachForSchool } = await import('../services/firebaseService.js');
@@ -123,7 +123,7 @@ export function AuthProvider({ children }) {
 
   // Get user's coach assignments
   const getMyCoachAssignments = async () => {
-    if (!currentUser) return [];
+    if (!currentUser?.uid) return [];
     
     try {
       const { getCoachAssignments } = await import('../services/firebaseService.js');
@@ -195,7 +195,15 @@ export function AuthProvider({ children }) {
 
   // Simple login (for profile-based auth fallback)
   const login = (profileId) => {
+    console.log('=== LOGIN DEBUG ===');
+    console.log('Profile ID:', profileId);
+    console.log('Current user:', currentUser);
+    console.log('User preferences before:', userPreferences);
+    
     setMyProfile(profileId);
+    
+    console.log('User preferences after:', userPreferences);
+    console.log('=== END LOGIN DEBUG ===');
   };
 
   // Check if user has set up their preferences
