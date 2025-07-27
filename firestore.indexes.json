@@ -1,52 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "competitionScores",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "archerId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "competitionId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "completedAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "competitionScores",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "archerId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "completedAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "profiles",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "school",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "role",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "coachAssignments",
       "queryScope": "COLLECTION",
       "fields": [
@@ -56,6 +10,10 @@
         },
         {
           "fieldPath": "school",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
       ]
@@ -70,6 +28,10 @@
         },
         {
           "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
       ]
@@ -85,6 +47,68 @@
         {
           "fieldPath": "createdAt",
           "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "competitionScores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "archerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "competitionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "competitionScores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "archerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "competitionScores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "competitionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
         }
       ]
     },
@@ -99,6 +123,28 @@
         {
           "fieldPath": "completedAt",
           "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "profiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "school",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
         }
       ]
     }
