@@ -7,67 +7,50 @@
 
 // Sample team data structure
 const sampleTeams = {
-  'CENTRAL-VARSITY': {
-    name: 'Central High Varsity',
-    school: 'Central High School',
-    coach: 'Coach Johnson',
+  'TEST-TEST': {
+    name: 'TEST Team',
+    school: 'TEST School',
+    coach: 'Coach TEST',
     archers: [
       {
         id: 'team-1',
-        firstName: 'John',
-        lastName: 'Smith',
-        email: 'john.smith@central.edu',
+        firstName: 'Robin',
+        lastName: 'Hood',
+        email: 'robin.hood@test.edu',
         phone: '+1234567890',
-        team: 'Varsity',
+        team: 'TEST',
         level: 'Advanced',
-        school: 'Central High'
+        school: 'TEST'
       },
       {
         id: 'team-2',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        email: 'sarah.johnson@central.edu',
+        firstName: 'Green',
+        lastName: 'Arrow',
+        email: 'green.arrow@test.edu',
         phone: '+1234567891',
-        team: 'Varsity',
-        level: 'Intermediate',
-        school: 'Central High'
+        team: 'TEST',
+        level: 'Advanced',
+        school: 'TEST'
       },
       {
         id: 'team-3',
-        firstName: 'Alex',
-        lastName: 'Williams',
-        email: 'alex.williams@central.edu',
+        firstName: 'Katniss',
+        lastName: 'Aberdeen',
+        email: 'katniss.aberdeen@test.edu',
         phone: '+1234567892',
-        team: 'Varsity',
+        team: 'TEST',
         level: 'Advanced',
-        school: 'Central High'
-      }
-    ]
-  },
-  'CENTRAL-JV': {
-    name: 'Central High JV',
-    school: 'Central High School',
-    coach: 'Coach Davis',
-    archers: [
-      {
-        id: 'team-4',
-        firstName: 'Mike',
-        lastName: 'Davis',
-        email: 'mike.davis@central.edu',
-        phone: '+1234567893',
-        team: 'JV',
-        level: 'Beginner',
-        school: 'Central High'
+        school: 'TEST'
       },
       {
-        id: 'team-5',
-        firstName: 'Emma',
-        lastName: 'Brown',
-        email: 'emma.brown@central.edu',
-        phone: '+1234567894',
-        team: 'JV',
-        level: 'Intermediate',
-        school: 'Central High'
+        id: 'team-4',
+        firstName: 'Merida',
+        lastName: 'DunBroch',
+        email: 'merida.dunbroch@test.edu',
+        phone: '+1234567893',
+        team: 'TEST',
+        level: 'Advanced',
+        school: 'TEST'
       }
     ]
   }
@@ -109,7 +92,7 @@ export function generateTeamCodeUrl(teamCode, baseUrl = 'https://archers-edge.we
  * @returns {string[]} - Array of available team codes
  */
 export function getAvailableTeamCodes() {
-  return Object.keys(sampleTeams);
+  return ['TEST-TEST'];
 }
 
 /**
