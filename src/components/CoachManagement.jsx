@@ -186,7 +186,7 @@ function CoachManagement() {
     console.log('CoachManagement: userRole:', userRole);
     console.log('CoachManagement: availableCoaches:', availableCoaches);
 
-    if (!currentUser || (userRole !== 'admin' && userRole !== 'coach' && userRole !== 'System Admin')) {
+    if (!currentUser || (userRole !== 'System Admin' && userRole !== 'Coach')) {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center">
                 <div className="bg-white rounded-lg p-6 max-w-md w-full">
@@ -196,7 +196,7 @@ function CoachManagement() {
                         <br />
                         Current role: {userRole || 'none'}
                         <br />
-                        Required: admin, coach, or System Admin
+                        Required: System Admin or Coach
                     </p>
                 </div>
             </div>

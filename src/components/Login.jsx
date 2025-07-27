@@ -278,16 +278,18 @@ function ProfileSelectionView({ onBack }) {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showTeamCodeInput, setShowTeamCodeInput] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { login, getMyProfileId, getFavoriteProfileIds, toggleFavorite } = useAuth();
+  const { login, getMyProfileId, getFavoriteProfileIds, toggleFavorite, userRole, getMyProfiles } = useAuth();
 
-  // Load profiles from localStorage
+  // Load profiles from localStorage with role filtering
   React.useEffect(() => {
     const loadProfiles = () => {
       try {
         const storedProfiles = localStorage.getItem('archerProfiles');
         if (storedProfiles) {
           const parsedProfiles = JSON.parse(storedProfiles);
-          setProfiles(parsedProfiles);
+          // Apply role-appropriate filtering
+          const roleFilteredProfiles = getMyProfiles(parsedProfiles);
+          setProfiles(roleFilteredProfiles);
         } else {
           // Create sample profiles for testing - available in production
           const sampleProfiles = [
@@ -300,6 +302,7 @@ function ProfileSelectionView({ onBack }) {
               phone: '+1234567890',
               team: 'Varsity',
               level: 'Advanced',
+              role: 'Archer',
               createdAt: new Date().toISOString()
             },
             {
@@ -311,6 +314,7 @@ function ProfileSelectionView({ onBack }) {
               phone: '+1234567891',
               team: 'JV',
               level: 'Intermediate',
+              role: 'Archer',
               createdAt: new Date().toISOString()
             },
             {
@@ -322,6 +326,7 @@ function ProfileSelectionView({ onBack }) {
               phone: '+1234567892',
               team: 'Varsity',
               level: 'Beginner',
+              role: 'Archer',
               createdAt: new Date().toISOString()
             },
             {
@@ -333,6 +338,7 @@ function ProfileSelectionView({ onBack }) {
               phone: '+1234567890',
               team: 'TEST',
               level: 'Advanced',
+              role: 'Archer',
               createdAt: new Date().toISOString()
             },
             {
@@ -344,6 +350,26 @@ function ProfileSelectionView({ onBack }) {
               phone: '+1234567891',
               team: 'TEST',
               level: 'Advanced',
+              role: 'Archer',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'system-admin-1',
+              firstName: 'System',
+              lastName: 'Admin',
+              email: 'admin@archers-edge.com',
+              phone: '+1234567890',
+              role: 'System Admin',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'coach-1',
+              firstName: 'Coach',
+              lastName: 'Adams',
+              email: 'coach.adams@school.edu',
+              phone: '+1234567891',
+              role: 'Coach',
+              school: 'Central High',
               createdAt: new Date().toISOString()
             }
           ];

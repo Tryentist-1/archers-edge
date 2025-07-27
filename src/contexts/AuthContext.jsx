@@ -85,27 +85,71 @@ export function AuthProvider({ children }) {
     const email = user.email || '';
     
     // Example role determination logic
-    if (email.includes('admin')) {
-      return 'admin';
+    if (email.includes('admin') || email.includes('system')) {
+      return 'System Admin';
     } else if (email.includes('coach') || email.includes('coaching')) {
-      return 'coach';
+      return 'Coach';
     } else if (email.includes('event') || email.includes('manager')) {
-      return 'event_manager';
+      return 'Event Manager';
     } else if (email.includes('ref') || email.includes('referee')) {
-      return 'referee';
+      return 'Referee';
     } else {
-      return 'archer'; // Default role
+      return 'Archer'; // Default role
     }
   };
 
   // Check if user has specific role permissions
   const hasRole = (requiredRole) => {
     if (!userRole) return false;
-    if (requiredRole === 'admin') return userRole === 'admin';
-    if (requiredRole === 'coach') return ['coach', 'admin'].includes(userRole);
-    if (requiredRole === 'event_manager') return ['event_manager', 'admin'].includes(userRole);
-    if (requiredRole === 'referee') return ['referee', 'admin'].includes(userRole);
+    if (requiredRole === 'System Admin') return userRole === 'System Admin';
+    if (requiredRole === 'Coach') return ['Coach', 'System Admin'].includes(userRole);
+    if (requiredRole === 'Event Manager') return ['Event Manager', 'System Admin'].includes(userRole);
+    if (requiredRole === 'Referee') return ['Referee', 'System Admin'].includes(userRole);
     return true; // Archers have basic access
+  };
+
+  // Get role-appropriate profiles for the current user
+  const getRoleAppropriateProfiles = (allProfiles) => {
+    if (!userRole) return allProfiles;
+    
+    // System Admin can see all profiles
+    if (userRole === 'System Admin') {
+      return allProfiles;
+    }
+    
+    // Other roles see only their own type of profiles
+    return allProfiles.filter(profile => {
+      const profileRole = profile.role || 'Archer';
+      
+      switch (userRole) {
+        case 'Coach':
+          return profileRole === 'Coach' || profileRole === 'Archer';
+        case 'Event Manager':
+          return profileRole === 'Event Manager' || profileRole === 'Archer';
+        case 'Referee':
+          return profileRole === 'Referee' || profileRole === 'Archer';
+        case 'Archer':
+          return profileRole === 'Archer';
+        default:
+          return true;
+      }
+    });
+  };
+
+  // Get profiles for "My Profile" section (role-appropriate)
+  const getMyProfiles = (allProfiles) => {
+    if (!userRole) return allProfiles;
+    
+    // System Admin sees all profiles but can filter
+    if (userRole === 'System Admin') {
+      return allProfiles;
+    }
+    
+    // Other roles see only their own type
+    return allProfiles.filter(profile => {
+      const profileRole = profile.role || 'Archer';
+      return profileRole === userRole;
+    });
   };
 
   // Check if user is coach for specific school/team
@@ -250,7 +294,9 @@ export function AuthProvider({ children }) {
     getFavoriteProfileIds,
     isFavorite,
     login,
-    isSetup
+    isSetup,
+    getRoleAppropriateProfiles,
+    getMyProfiles
   };
 
   return (

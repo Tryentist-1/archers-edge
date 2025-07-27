@@ -4,7 +4,7 @@ import { loadProfilesFromFirebase, loadArcherProfileWithScores } from '../servic
 import { addCoachProfilesToExisting, createSampleTeams, cleanupDuplicateProfiles, cleanupFirebaseDuplicates } from '../utils/sampleData.js';
 
 const HomePage = ({ currentUser, onNavigate, baleData }) => {
-    const { currentUser: authUser } = useAuth();
+    const { currentUser: authUser, userRole } = useAuth();
     const [myProfile, setMyProfile] = useState(null);
     const [myStats, setMyStats] = useState(null);
     const [profiles, setProfiles] = useState([]);
@@ -103,6 +103,11 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                             <div className="text-xs text-gray-600">
                                 {currentUser?.email}
                             </div>
+                            {userRole && (
+                                <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                    {userRole}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -253,40 +258,42 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                         </div>
                     </div>
 
-                    {/* Coaches Card (Coach Tools) */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div className="flex items-center space-x-3 mb-3">
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                </svg>
+                    {/* Coaches Card (Coach Tools) - Only for System Admin and Coaches */}
+                    {(userRole === 'System Admin' || userRole === 'Coach') && (
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                            <div className="flex items-center space-x-3 mb-3">
+                                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-semibold text-gray-800">Coach Tools</h3>
+                                    <p className="text-sm text-gray-600">Manage team profiles and assignments</p>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-gray-800">Coaches</h3>
-                                <p className="text-sm text-gray-600">Coach Tools - Manage all team profiles and assignments</p>
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={() => handleNavigation('team-archers')}
+                                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
+                                >
+                                    Team Archers
+                                </button>
+                                <button
+                                    onClick={() => handleNavigation('coach-management')}
+                                    className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors text-sm"
+                                >
+                                    Coach Management
+                                </button>
+                                <button
+                                    onClick={() => handleNavigation('coach-qr')}
+                                    className="flex-1 bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 transition-colors text-sm"
+                                >
+                                    QR Generator
+                                </button>
                             </div>
                         </div>
-                        <div className="flex space-x-2">
-                            <button
-                                onClick={() => handleNavigation('team-archers')}
-                                className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
-                            >
-                                Team Archers
-                            </button>
-                            <button
-                                onClick={() => handleNavigation('coach-management')}
-                                className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors text-sm"
-                            >
-                                Coach Management
-                            </button>
-                            <button
-                                onClick={() => handleNavigation('coach-qr')}
-                                className="flex-1 bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 transition-colors text-sm"
-                            >
-                                QR Generator
-                            </button>
-                        </div>
-                    </div>
+                    )}
 
                     {/* Competition Management Card */}
                     <div 
@@ -330,8 +337,8 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                         </div>
                     </div>
 
-                    {/* Debug Section - Only show for admin users */}
-                    {myProfile?.role === 'System Admin' && (
+                    {/* Debug Section - Only show for System Admin users */}
+                    {userRole === 'System Admin' && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
                             <h3 className="text-lg font-semibold text-yellow-800 mb-3">Debug Tools</h3>
                             <div className="space-y-2">
