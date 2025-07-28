@@ -1510,4 +1510,99 @@ export const loadActiveScoringRounds = async (competitionId = null) => {
         console.error('Error loading active scoring rounds:', error);
         return [];
     }
+};
+
+// ===== ARCHER ASSIGNMENT RETRIEVAL =====
+// Find an archer's assigned bale and scoring round
+
+export const findArcherAssignment = async (archerId, competitionId = null) => {
+    try {
+        console.log('Finding assignment for archer:', archerId, 'competition:', competitionId);
+        
+        // First, try to find the archer in active scoring rounds
+        const scoringRounds = await loadActiveScoringRounds(competitionId);
+        
+        for (const round of scoringRounds) {
+            const archerInRound = round.archers?.find(a => a.id === archerId);
+            if (archerInRound) {
+                console.log('Found archer in scoring round:', round.id);
+                return {
+                    type: 'scoring_round',
+                    roundId: round.id,
+                    baleNumber: round.baleNumber,
+                    competitionId: round.competitionId,
+                    competitionName: round.competitionName,
+                    archer: archerInRound,
+                    targetAssignment: archerInRound.targetAssignment,
+                    allArchers: round.archers,
+                    currentEnd: round.currentEnd,
+                    totalEnds: round.totalEnds,
+                    status: round.status
+                };
+            }
+        }
+        
+        // If not found in scoring rounds, check event assignments
+        const assignments = await getEventAssignments(competitionId);
+        
+        for (const assignment of assignments) {
+            if (assignment.bales) {
+                for (const bale of assignment.bales) {
+                    const archerInBale = bale.archers?.find(a => a.id === archerId);
+                    if (archerInBale) {
+                        console.log('Found archer in event assignment bale:', assignment.id);
+                        return {
+                            type: 'event_assignment',
+                            assignmentId: assignment.id,
+                            baleNumber: bale.baleNumber,
+                            competitionId: assignment.competitionId,
+                            competitionName: assignment.competitionName,
+                            archer: archerInBale,
+                            targetAssignment: archerInBale.targetAssignment,
+                            allArchers: bale.archers,
+                            assignmentType: assignment.assignmentType,
+                            status: assignment.status
+                        };
+                    }
+                }
+            }
+        }
+        
+        console.log('No assignment found for archer');
+        return null;
+    } catch (error) {
+        console.error('Error finding archer assignment:', error);
+        return null;
+    }
+};
+
+export const getArcherBaleInfo = async (archerId, competitionId = null) => {
+    try {
+        console.log('Getting bale info for archer:', archerId);
+        
+        const assignment = await findArcherAssignment(archerId, competitionId);
+        
+        if (!assignment) {
+            return null;
+        }
+        
+        // Format the response for easy consumption
+        return {
+            archerId: archerId,
+            baleNumber: assignment.baleNumber,
+            targetAssignment: assignment.targetAssignment,
+            competitionId: assignment.competitionId,
+            competitionName: assignment.competitionName,
+            assignmentType: assignment.type,
+            status: assignment.status,
+            archer: assignment.archer,
+            baleArchers: assignment.allArchers,
+            roundId: assignment.roundId || null,
+            currentEnd: assignment.currentEnd || null,
+            totalEnds: assignment.totalEnds || null
+        };
+    } catch (error) {
+        console.error('Error getting archer bale info:', error);
+        return null;
+    }
 }; 
