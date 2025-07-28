@@ -6,7 +6,8 @@ import {
     createEventAssignment,
     getEventAssignments,
     updateEventAssignment,
-    deleteEventAssignment
+    deleteEventAssignment,
+    convertEventAssignmentToScoringRounds
 } from '../services/firebaseService';
 
 const EventAssignment = ({ onNavigate }) => {
@@ -347,6 +348,33 @@ const EventAssignment = ({ onNavigate }) => {
         }
     };
 
+    const handleCreateScoringRounds = async (assignmentId) => {
+        if (!window.confirm('This will create scoring rounds for all archers. Archers will be able to access their assigned bales. Continue?')) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError('');
+            setSuccess('');
+
+            console.log('Creating scoring rounds for assignment:', assignmentId);
+            
+            // Convert assignment to scoring rounds
+            const scoringRounds = await convertEventAssignmentToScoringRounds(assignmentId);
+            
+            // Reload assignments to get updated status
+            await loadData();
+            
+            setSuccess(`Successfully created ${scoringRounds.length} scoring rounds! Archers can now access their assigned bales.`);
+        } catch (error) {
+            console.error('Error creating scoring rounds:', error);
+            setError('Failed to create scoring rounds: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const getArcherName = (archerId) => {
         const profile = profiles.find(p => p.id === archerId);
         return profile ? `${profile.firstName} ${profile.lastName}` : 'Unknown Archer';
@@ -669,6 +697,29 @@ const EventAssignment = ({ onNavigate }) => {
                                                 >
                                                     Auto-Assign Bales
                                                 </button>
+                                            </div>
+                                        )}
+
+                                        {/* Create Scoring Rounds Button - Show when bales are assigned but scoring rounds not created */}
+                                        {assignment.bales && assignment.bales.length > 0 && assignment.status !== 'scoring_rounds_created' && (
+                                            <div className="flex justify-end space-x-3 mt-4">
+                                                <button
+                                                    onClick={() => handleCreateScoringRounds(assignment.id)}
+                                                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                                                >
+                                                    Create Scoring Rounds
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Scoring Rounds Created Status */}
+                                        {assignment.status === 'scoring_rounds_created' && (
+                                            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                <div className="flex items-center">
+                                                    <div className="text-green-600 text-sm font-medium">
+                                                        ✅ Scoring rounds created - Archers can now access their assigned bales
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
