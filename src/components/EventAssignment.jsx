@@ -66,41 +66,23 @@ const EventAssignment = ({ onNavigate }) => {
             // Load profiles - try to sync Firebase data to localStorage first
             let profilesData = [];
             
-            // Always try to load team data from Firebase and sync to localStorage
+            // Always try to load all archer profiles from Firebase (no auth required)
             try {
-                console.log('Attempting to load team data from Firebase...');
-                const { loadTeamFromFirebase } = await import('../services/firebaseService.js');
+                console.log('Attempting to load all archer profiles from Firebase...');
+                const { loadAllArcherProfilesForGuests } = await import('../services/firebaseService.js');
                 
-                // Try to load all available teams (CAMP, WDV, etc.)
-                const teamsToLoad = ['CAMP', 'WDV', 'BHS', 'ORANCO'];
-                let allProfiles = [];
-                
-                for (const teamCode of teamsToLoad) {
-                    try {
-                        const teamProfiles = await loadTeamFromFirebase(teamCode);
-                        console.log(`Loaded ${teamProfiles.length} profiles for team ${teamCode}`);
-                        allProfiles = [...allProfiles, ...teamProfiles];
-                    } catch (teamError) {
-                        console.log(`Failed to load team ${teamCode}:`, teamError.message);
-                    }
-                }
-                
-                // Remove duplicates by ID
-                const uniqueProfiles = allProfiles.filter((profile, index, self) => 
-                    index === self.findIndex(p => p.id === profile.id)
-                );
-                
-                console.log(`Total unique profiles loaded from Firebase: ${uniqueProfiles.length}`);
+                // Load all archer profiles without authentication
+                profilesData = await loadAllArcherProfilesForGuests();
+                console.log(`Loaded ${profilesData.length} archer profiles from Firebase`);
                 
                 // Save to localStorage for soft login access
-                if (uniqueProfiles.length > 0) {
-                    localStorage.setItem('archerProfiles', JSON.stringify(uniqueProfiles));
+                if (profilesData.length > 0) {
+                    localStorage.setItem('archerProfiles', JSON.stringify(profilesData));
                     console.log('Saved Firebase profiles to localStorage');
-                    profilesData = uniqueProfiles;
                 }
                 
             } catch (error) {
-                console.error('Error loading team data from Firebase:', error);
+                console.error('Error loading archer profiles from Firebase:', error);
             }
 
             // Load competitions and assignments (only if we should use Firebase)

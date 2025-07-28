@@ -73,6 +73,41 @@ export const loadProfilesFromFirebase = async (userId) => {
     }
 };
 
+// New function for guest users - loads all archer profiles without authentication
+export const loadAllArcherProfilesForGuests = async () => {
+    try {
+        console.log('Loading all archer profiles for guest users...');
+        console.log('Is online:', isOnline());
+        
+        const profilesRef = collection(db, 'profiles');
+        
+        // Load ALL profiles without authentication requirement
+        const querySnapshot = await getDocs(profilesRef);
+        
+        const profiles = [];
+        querySnapshot.forEach((doc) => {
+            const profile = doc.data();
+            // Only include archer profiles for guest users
+            if (profile.role === 'Archer') {
+                profiles.push({ id: doc.id, ...profile });
+            }
+        });
+        
+        console.log(`Loaded ${profiles.length} archer profiles for guest users`);
+        return profiles;
+    } catch (error) {
+        console.error('Error loading archer profiles for guests:', error);
+        console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            isOnline: isOnline()
+        });
+        
+        // Return empty array on error
+        return [];
+    }
+};
+
 export const deleteProfileFromFirebase = async (profileId) => {
     try {
         const profileRef = doc(db, 'profiles', profileId);

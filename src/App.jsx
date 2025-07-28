@@ -68,10 +68,6 @@ function AppContent() {
         const savedAppState = LocalStorage.loadAppState();
         const savedBaleData = LocalStorage.loadBaleData();
         
-        // Check if user has completed first login setup
-        const firstLoginCompleted = localStorage.getItem('firstLoginCompleted');
-        setHasCompletedFirstLogin(!!firstLoginCompleted);
-        
         // Load user's "Me" profile
         loadMyProfile();
         
@@ -83,12 +79,8 @@ function AppContent() {
           setBaleData(savedBaleData);
           setCurrentView('scoring');
         } else {
-          // If no saved state and first login not completed, show new archer startup
-          if (!firstLoginCompleted) {
-            setCurrentView('new-archer-startup');
-          } else {
-            setCurrentView('home');
-          }
+          // Simplified flow - always go to home, which will show login if needed
+          setCurrentView('home');
         }
 
         // Sync with Firebase if online and user has set up their profile
