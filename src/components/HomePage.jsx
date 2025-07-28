@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { loadProfilesFromFirebase, loadArcherProfileWithScores } from '../services/firebaseService';
+import { 
+    loadProfilesFromFirebase, 
+    loadArcherProfileWithScores,
+    getArcherBaleInfo
+} from '../services/firebaseService';
 import { addCoachProfilesToExisting, createSampleTeams, cleanupDuplicateProfiles, cleanupFirebaseDuplicates } from '../utils/sampleData.js';
 
 const HomePage = ({ currentUser, onNavigate, baleData }) => {
@@ -9,11 +13,20 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
     const [myStats, setMyStats] = useState(null);
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [eventAssignment, setEventAssignment] = useState(null);
+    const [checkingAssignment, setCheckingAssignment] = useState(false);
 
     // Load user's personal profile on component mount
     useEffect(() => {
         loadMyProfile();
     }, [authUser]);
+
+    // Check for event assignments when myProfile changes
+    useEffect(() => {
+        if (myProfile) {
+            checkForEventAssignment();
+        }
+    }, [myProfile]);
 
     const loadMyProfile = async () => {
         try {
@@ -78,6 +91,30 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
         }
     };
 
+    const checkForEventAssignment = async () => {
+        if (!myProfile) return;
+        
+        try {
+            setCheckingAssignment(true);
+            console.log('Checking for event assignment for archer:', myProfile.id);
+            
+            const assignment = await getArcherBaleInfo(myProfile.id);
+            
+            if (assignment) {
+                console.log('Found event assignment:', assignment);
+                setEventAssignment(assignment);
+            } else {
+                console.log('No event assignment found for archer');
+                setEventAssignment(null);
+            }
+        } catch (error) {
+            console.error('Error checking for event assignment:', error);
+            setEventAssignment(null);
+        } finally {
+            setCheckingAssignment(false);
+        }
+    };
+
     const handleNavigation = (destination) => {
         console.log('HomePage: Navigating to:', destination);
         onNavigate(destination);
@@ -89,6 +126,8 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
     console.log('baleData.archers.length:', baleData?.archers?.length);
     console.log('My Profile:', myProfile);
     console.log('My Stats:', myStats);
+    console.log('Event Assignment:', eventAssignment);
+    console.log('Checking Assignment:', checkingAssignment);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -148,36 +187,80 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                     </div>
                 )}
 
-                {/* Round in Progress Card */}
-                {baleData && baleData.archers && baleData.archers.length > 0 && (
+                {/* Round in Progress Card - Priority: Event Assignment then Local BaleData */}
+                {(eventAssignment || (baleData && baleData.archers && baleData.archers.length > 0)) && (
                     <div className="mb-6">
                         <div 
-                            className="bg-orange-50 border border-orange-200 rounded-lg p-4 cursor-pointer hover:bg-orange-100 transition-colors"
+                            className={`rounded-lg p-4 cursor-pointer transition-colors ${
+                                eventAssignment 
+                                    ? 'bg-green-50 border border-green-200 hover:bg-green-100' 
+                                    : 'bg-orange-50 border border-orange-200 hover:bg-orange-100'
+                            }`}
                             onClick={() => {
                                 console.log('Round in Progress clicked, navigating to scoring');
                                 handleNavigation('scoring');
                             }}
                         >
                             <div className="flex items-center space-x-3">
-                                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                    eventAssignment ? 'bg-green-100' : 'bg-orange-100'
+                                }`}>
+                                    <svg className={`w-6 h-6 ${
+                                        eventAssignment ? 'text-green-600' : 'text-orange-600'
+                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-lg font-semibold text-orange-800">Round in Progress</h3>
-                                    <p className="text-sm text-orange-700">
-                                        Bale {baleData.baleNumber} • {baleData.archers.length} archer{baleData.archers.length !== 1 ? 's' : ''} • End {baleData.currentEnd || 1}
+                                    <h3 className={`text-lg font-semibold ${
+                                        eventAssignment ? 'text-green-800' : 'text-orange-800'
+                                    }`}>
+                                        {eventAssignment ? 'Assigned Round' : 'Round in Progress'}
+                                    </h3>
+                                    <p className={`text-sm ${
+                                        eventAssignment ? 'text-green-700' : 'text-orange-700'
+                                    }`}>
+                                        {eventAssignment ? (
+                                            `Bale ${eventAssignment.baleNumber} • Target ${eventAssignment.targetAssignment} • ${eventAssignment.baleArchers.length} archer${eventAssignment.baleArchers.length !== 1 ? 's' : ''}`
+                                        ) : (
+                                            `Bale ${baleData.baleNumber} • ${baleData.archers.length} archer${baleData.archers.length !== 1 ? 's' : ''} • End ${baleData.currentEnd || 1}`
+                                        )}
                                     </p>
-                                    {baleData.competitionName && (
-                                        <p className="text-xs text-orange-600 mt-1">
-                                            {baleData.competitionName}
+                                    {(eventAssignment?.competitionName || baleData?.competitionName) && (
+                                        <p className={`text-xs mt-1 ${
+                                            eventAssignment ? 'text-green-600' : 'text-orange-600'
+                                        }`}>
+                                            {eventAssignment?.competitionName || baleData.competitionName}
+                                        </p>
+                                    )}
+                                    {eventAssignment && (
+                                        <p className="text-xs text-green-600 mt-1">
+                                            Event Assignment • {eventAssignment.status}
                                         </p>
                                     )}
                                 </div>
-                                <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className={`w-5 h-5 ${
+                                    eventAssignment ? 'text-green-400' : 'text-orange-400'
+                                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Loading Event Assignment */}
+                {checkingAssignment && (
+                    <div className="mb-6">
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-semibold text-gray-800">Checking Assignments</h3>
+                                    <p className="text-sm text-gray-600">Looking for your assigned bale...</p>
+                                </div>
                             </div>
                         </div>
                     </div>
