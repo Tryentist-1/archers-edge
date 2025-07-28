@@ -75,6 +75,85 @@
 - [ ] **Email Integration**: Send results to participants
 - [ ] **Advanced Analytics**: Performance trends and statistics
 
+## 🔄 **EVENT ASSIGNMENT INTEGRATION - IN PROGRESS**
+
+### **Phase 1: Event Assignment → Scoring Round Conversion**
+**Goal**: Convert Event Assignment bales into actual MultiArcherScoring rounds
+**Status**: ✅ **STEP 1 COMPLETE** - Firebase service functions added
+
+#### **Step 1: Firebase Service Functions** ✅ COMPLETED
+- **Added**: `convertEventAssignmentToScoringRounds()` - Converts assignment bales to scoring rounds
+- **Added**: `findArcherScoringRound()` - Finds archer's assigned scoring round
+- **Added**: `loadActiveScoringRounds()` - Loads all active scoring rounds
+- **Risk Level**: LOW - Only adds new functions, doesn't modify existing flow
+- **Files Modified**: `src/services/firebaseService.js`
+- **Status**: ✅ **TESTED & DEPLOYED**
+
+#### **Step 2: Modify Event Assignment** ✅ COMPLETED
+- **Goal**: Add "Create Scoring Round" button to Event Assignment
+- **Risk Level**: MEDIUM - Modifies Event Assignment UI
+- **Files**: `src/components/EventAssignment.jsx`
+- **Status**: ✅ **TESTED & DEPLOYED**
+- **Added**: `handleCreateScoringRounds()` function with confirmation dialog
+- **Added**: Green "Create Scoring Rounds" button (shows when bales assigned)
+- **Added**: Success status indicator when scoring rounds are created
+- **Added**: Import of `convertEventAssignmentToScoringRounds` function
+
+#### **Step 3: Add Assignment Retrieval** ✅ COMPLETED
+- **Goal**: Add function to find archer's assigned bale
+- **Risk Level**: MEDIUM - New lookup functionality
+- **Files**: `src/services/firebaseService.js`
+- **Status**: ✅ **TESTED & DEPLOYED**
+- **Added**: `findArcherAssignment()` - Finds archer in scoring rounds or event assignments
+- **Added**: `getArcherBaleInfo()` - Returns formatted bale info for easy consumption
+- **Features**: Searches both active scoring rounds and event assignments
+- **Features**: Returns comprehensive assignment data (bale number, target, competition, etc.)
+
+#### **Step 4: Modify HomePage** ✅ COMPLETED
+- **Goal**: Add "Round in Progress" detection
+- **Risk Level**: HIGH - Modifies main navigation
+- **Files**: `src/components/HomePage.jsx`
+- **Status**: ✅ **TESTED & DEPLOYED**
+- **Added**: Event Assignment detection with priority over local baleData
+- **Added**: `checkForEventAssignment()` function to find archer's assigned bale
+- **Added**: Enhanced "Round in Progress" card with different styling for event assignments
+- **Added**: Loading state while checking for assignments
+- **Features**: Green styling for event assignments, orange for local rounds
+- **Features**: Displays bale number, target assignment, and competition info
+
+#### **Step 5: Integration Testing** ✅ COMPLETED
+- **Goal**: Test complete flow end-to-end
+- **Risk Level**: CRITICAL - Full system testing
+- **Status**: ✅ **TESTED & DEPLOYED**
+- **Added**: Comprehensive integration test script (`test-integration.js`)
+- **Tested**: Event assignment creation and conversion logic
+- **Tested**: Assignment retrieval and archer lookup functionality
+- **Tested**: Data structure compatibility and flow
+- **Verified**: All core functions working correctly
+
+### **🎉 PHASE 1 COMPLETE - EVENT ASSIGNMENT INTEGRATION SUCCESSFUL**
+
+**Status**: ✅ **FULLY DEPLOYED AND TESTED**
+
+#### **Complete Integration Summary:**
+1. ✅ **Firebase Functions**: Added conversion and retrieval functions
+2. ✅ **Event Assignment UI**: Added "Create Scoring Round" button
+3. ✅ **Assignment Retrieval**: Added archer lookup functionality
+4. ✅ **HomePage Integration**: Enhanced with event assignment detection
+5. ✅ **Integration Testing**: Comprehensive end-to-end testing
+
+#### **Key Features Delivered:**
+- **Event Assignment Creation**: Coaches can create assignments with bale assignments
+- **Scoring Round Conversion**: Automatic conversion from assignments to scoring rounds
+- **Archer Assignment Detection**: HomePage shows assigned rounds with priority
+- **Visual Distinction**: Green for event assignments, orange for local rounds
+- **Backward Compatibility**: Existing local scoring functionality preserved
+
+### **Rollback Strategy**
+- **Quick Rollback**: `git checkout v1.0-stable-scoring`
+- **Step 1 Rollback**: Remove new Firebase functions
+- **Full Rollback**: Complete system restore to stable tag
+
 ## 🐛 **RECENT BUG FIXES**
 
 ### Profile Editing Navigation Fix ✅ FIXED
