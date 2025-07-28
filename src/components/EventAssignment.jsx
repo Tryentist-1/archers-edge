@@ -7,7 +7,8 @@ import {
     getEventAssignments,
     updateEventAssignment,
     deleteEventAssignment,
-    convertEventAssignmentToScoringRounds
+    convertEventAssignmentToScoringRounds,
+    shouldUseFirebase
 } from '../services/firebaseService';
 
 const EventAssignment = ({ onNavigate }) => {
@@ -58,14 +59,90 @@ const EventAssignment = ({ onNavigate }) => {
             setLoading(true);
             setError('');
 
-            // Load profiles, competitions, and existing assignments
-            const [profilesData, competitionsData, assignmentsData] = await Promise.all([
-                loadProfilesFromFirebase(),
-                loadCompetitionsFromFirebase(currentUser?.uid),
-                getEventAssignments()
-            ]);
+            console.log('=== EVENT ASSIGNMENT DATA LOAD DEBUG ===');
+            console.log('Current user:', currentUser);
+            console.log('User role:', userRole);
 
-            setProfiles(profilesData);
+            // Load profiles - try to sync Firebase data to localStorage first
+            let profilesData = [];
+            
+            // Always try to load team data from Firebase and sync to localStorage
+            try {
+                console.log('Attempting to load team data from Firebase...');
+                const { loadTeamFromFirebase } = await import('../services/firebaseService.js');
+                
+                // Try to load all available teams (CAMP, WDV, etc.)
+                const teamsToLoad = ['CAMP', 'WDV', 'BHS', 'ORANCO'];
+                let allProfiles = [];
+                
+                for (const teamCode of teamsToLoad) {
+                    try {
+                        const teamProfiles = await loadTeamFromFirebase(teamCode);
+                        console.log(`Loaded ${teamProfiles.length} profiles for team ${teamCode}`);
+                        allProfiles = [...allProfiles, ...teamProfiles];
+                    } catch (teamError) {
+                        console.log(`Failed to load team ${teamCode}:`, teamError.message);
+                    }
+                }
+                
+                // Remove duplicates by ID
+                const uniqueProfiles = allProfiles.filter((profile, index, self) => 
+                    index === self.findIndex(p => p.id === profile.id)
+                );
+                
+                console.log(`Total unique profiles loaded from Firebase: ${uniqueProfiles.length}`);
+                
+                // Save to localStorage for soft login access
+                if (uniqueProfiles.length > 0) {
+                    localStorage.setItem('archerProfiles', JSON.stringify(uniqueProfiles));
+                    console.log('Saved Firebase profiles to localStorage');
+                    profilesData = uniqueProfiles;
+                }
+                
+            } catch (error) {
+                console.error('Error loading team data from Firebase:', error);
+            }
+
+            // Load competitions and assignments (only if we should use Firebase)
+            let competitionsData = [];
+            let assignmentsData = [];
+            
+            if (shouldUseFirebase(currentUser?.uid)) {
+                try {
+                    [competitionsData, assignmentsData] = await Promise.all([
+                        loadCompetitionsFromFirebase(currentUser?.uid),
+                        getEventAssignments()
+                    ]);
+                } catch (error) {
+                    console.error('Error loading competitions/assignments from Firebase:', error);
+                }
+            } else {
+                console.log('Skipping Firebase competitions/assignments load');
+            }
+
+            console.log('Profiles loaded:', profilesData?.length || 0);
+            console.log('Competitions loaded:', competitionsData?.length || 0);
+            console.log('Assignments loaded:', assignmentsData?.length || 0);
+
+            // Debug: Show all archer profiles and their schools
+            const archerProfiles = profilesData?.filter(p => p.role === 'Archer') || [];
+            console.log('Archer profiles found:', archerProfiles.length);
+            console.log('Schools in archer profiles:', [...new Set(archerProfiles.map(p => p.school))]);
+
+            // Use Firebase data if available, otherwise fall back to localStorage
+            let finalProfiles = [];
+            
+            if (profilesData && profilesData.length > 0) {
+                console.log('Using Firebase profiles (freshly loaded):', profilesData.length);
+                finalProfiles = profilesData;
+            } else {
+                // Fall back to localStorage if Firebase load failed
+                const localProfiles = JSON.parse(localStorage.getItem('archerProfiles') || '[]');
+                console.log('Using localStorage profiles (fallback):', localProfiles.length);
+                finalProfiles = localProfiles;
+            }
+
+            setProfiles(finalProfiles);
             setCompetitions(competitionsData);
             setAssignments(assignmentsData);
 
@@ -79,13 +156,21 @@ const EventAssignment = ({ onNavigate }) => {
 
     // Get unique schools from profiles
     const getSchools = () => {
-        const schools = [...new Set(profiles.filter(p => p.role === 'Archer').map(p => p.school))];
+        const archerProfiles = profiles.filter(p => p.role === 'Archer');
+        console.log('All archer profiles:', archerProfiles);
+        console.log('School values found:', archerProfiles.map(p => p.school));
+        
+        const schools = [...new Set(archerProfiles.map(p => p.school))];
+        console.log('Unique schools:', schools);
         return schools.sort();
     };
 
     // Get archers by school
     const getArchersBySchool = (school) => {
-        return profiles.filter(p => p.role === 'Archer' && p.school === school);
+        console.log('Looking for archers in school:', school);
+        const archers = profiles.filter(p => p.role === 'Archer' && p.school === school);
+        console.log('Found archers:', archers);
+        return archers;
     };
 
     // Get archer division
