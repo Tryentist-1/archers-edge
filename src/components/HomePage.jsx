@@ -255,6 +255,12 @@ const HomePage = ({ currentUser, onNavigate, baleData }) => {
                                     Coach Management
                                 </button>
                                 <button
+                                    onClick={() => handleNavigation('event-assignment')}
+                                    className="flex-1 bg-orange-600 text-white px-3 py-2 rounded-md hover:bg-orange-700 transition-colors text-sm"
+                                >
+                                    Event Assignment
+                                </button>
+                                <button
                                     onClick={() => handleNavigation('coach-qr')}
                                     className="flex-1 bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 transition-colors text-sm"
                                 >

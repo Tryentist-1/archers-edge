@@ -142,13 +142,17 @@ const ProfileManagement = ({ onNavigate, onProfileSelect, selectedProfile: appSe
 
     const handleProfileSave = (savedProfile, updatedProfiles) => {
         setProfiles(updatedProfiles);
-        setEditingProfile(null);
-        setShowProfileSelection(true);
+        
+        // Update the editing profile with the saved data
+        setEditingProfile(savedProfile);
         
         // Update selected profile if it was the one being edited
         if (selectedProfile && selectedProfile.id === savedProfile.id) {
             setSelectedProfile(savedProfile);
         }
+        
+        // Stay on the current profile - don't go back to list view
+        setShowProfileSelection(false);
     };
 
     const handleProfileCancel = () => {

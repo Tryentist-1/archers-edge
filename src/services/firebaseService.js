@@ -14,7 +14,7 @@ import {
     addDoc,
     onSnapshot
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { db, auth } from '../config/firebase';
 import { getAvailableTeamCodes, getTeamInfo } from '../utils/teamQRGenerator.js';
 
 // Profile Management
@@ -42,6 +42,9 @@ export const saveProfileToFirebase = async (profile, userId) => {
 export const loadProfilesFromFirebase = async (userId) => {
     try {
         console.log('Loading shared profiles from Firebase for user:', userId);
+        console.log('Current auth state:', auth.currentUser);
+        console.log('Is online:', isOnline());
+        
         const profilesRef = collection(db, 'profiles');
         
         // Load ALL profiles (shared system) - no user filtering
@@ -56,7 +59,17 @@ export const loadProfilesFromFirebase = async (userId) => {
         return profiles;
     } catch (error) {
         console.error('Error loading shared profiles from Firebase:', error);
-        throw error;
+        console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            userId: userId,
+            isOnline: isOnline(),
+            authState: auth.currentUser ? 'authenticated' : 'not authenticated'
+        });
+        
+        // Return empty array instead of throwing to allow fallback to localStorage
+        console.log('Falling back to localStorage due to Firebase error');
+        return [];
     }
 };
 
@@ -743,6 +756,8 @@ export const loadMyScores = async (userId, userEmail = null) => {
 export const loadTeamFromFirebase = async (teamCode) => {
     try {
         console.log('Loading team from Firebase for team code:', teamCode);
+        console.log('Current auth state:', auth.currentUser);
+        console.log('Is online:', isOnline());
         
         // Team code is just the school/team name (e.g., "CAMP", "WDV", "BHS", "ORANCO")
         const schoolTeamName = teamCode.toUpperCase();
@@ -790,7 +805,16 @@ export const loadTeamFromFirebase = async (teamCode) => {
         return teamProfiles;
     } catch (error) {
         console.error('Error loading team from Firebase:', error);
+        console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            teamCode: teamCode,
+            isOnline: isOnline(),
+            authState: auth.currentUser ? 'authenticated' : 'not authenticated'
+        });
+        
         // Fallback to hardcoded data
+        console.log('Falling back to hardcoded data due to Firebase error');
         return loadTeamFromFallback(teamCode);
     }
 };
@@ -809,6 +833,8 @@ export const loadTeamFromFallback = (teamCode) => {
 export const getAvailableTeamsFromFirebase = async () => {
     try {
         console.log('Loading available teams from Firebase');
+        console.log('Current auth state:', auth.currentUser);
+        console.log('Is online:', isOnline());
         
         const profilesRef = collection(db, 'profiles');
         const querySnapshot = await getDocs(profilesRef);
@@ -840,6 +866,16 @@ export const getAvailableTeamsFromFirebase = async () => {
         return Array.from(teams.values());
     } catch (error) {
         console.error('Error loading teams from Firebase:', error);
+        console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            isOnline: isOnline(),
+            authState: auth.currentUser ? 'authenticated' : 'not authenticated'
+        });
+        
+        // Return empty array instead of throwing to allow fallback
+        console.log('Falling back to empty teams list due to Firebase error');
+        return [];
         // Return fallback teams
         const teamCodes = getAvailableTeamCodes();
         
@@ -1131,6 +1167,178 @@ export const assignArchersToEvent = async (eventId, archerIds) => {
         return true;
     } catch (error) {
         console.error('Error assigning archers to event:', error);
+        throw error;
+    }
+};
+
+// ===== EVENT ASSIGNMENT MANAGEMENT =====
+// Event assignment system for coaches and coordinators
+
+export const createEventAssignment = async (assignmentData) => {
+    try {
+        console.log('Creating event assignment:', assignmentData);
+        
+        const assignmentRef = doc(db, 'eventAssignments', `assignment_${Date.now()}`);
+        const assignmentRecord = {
+            id: assignmentRef.id,
+            ...assignmentData,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isShared: true
+        };
+        
+        await setDoc(assignmentRef, assignmentRecord);
+        console.log('Event assignment created successfully');
+        return assignmentRef.id;
+    } catch (error) {
+        console.error('Error creating event assignment:', error);
+        throw error;
+    }
+};
+
+export const getEventAssignments = async (competitionId = null, createdBy = null) => {
+    try {
+        console.log('Loading event assignments:', { competitionId, createdBy });
+        
+        const assignmentsRef = collection(db, 'eventAssignments');
+        let q;
+        
+        if (competitionId) {
+            q = query(assignmentsRef, where('competitionId', '==', competitionId));
+        } else if (createdBy) {
+            q = query(assignmentsRef, where('createdBy', '==', createdBy));
+        } else {
+            q = query(assignmentsRef);
+        }
+        
+        const querySnapshot = await getDocs(q);
+        const assignments = [];
+        
+        querySnapshot.forEach((doc) => {
+            assignments.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Sort by createdAt in descending order
+        assignments.sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+            return dateB - dateA;
+        });
+        
+        console.log(`Found ${assignments.length} event assignments`);
+        return assignments;
+    } catch (error) {
+        console.error('Error loading event assignments:', error);
+        throw error;
+    }
+};
+
+export const updateEventAssignment = async (assignmentId, updates) => {
+    try {
+        console.log('Updating event assignment:', { assignmentId, updates });
+        
+        const assignmentRef = doc(db, 'eventAssignments', assignmentId);
+        const updateData = {
+            ...updates,
+            updatedAt: serverTimestamp()
+        };
+        
+        await updateDoc(assignmentRef, updateData);
+        console.log('Event assignment updated successfully');
+        return true;
+    } catch (error) {
+        console.error('Error updating event assignment:', error);
+        throw error;
+    }
+};
+
+export const deleteEventAssignment = async (assignmentId) => {
+    try {
+        console.log('Deleting event assignment:', assignmentId);
+        
+        const assignmentRef = doc(db, 'eventAssignments', assignmentId);
+        await deleteDoc(assignmentRef);
+        console.log('Event assignment deleted successfully');
+        return true;
+    } catch (error) {
+        console.error('Error deleting event assignment:', error);
+        throw error;
+    }
+};
+
+export const generateBaleAssignments = async (assignmentId) => {
+    try {
+        console.log('Generating bale assignments for:', assignmentId);
+        
+        // Get the assignment
+        const assignmentRef = doc(db, 'eventAssignments', assignmentId);
+        const assignmentDoc = await getDoc(assignmentRef);
+        
+        if (!assignmentDoc.exists()) {
+            throw new Error('Assignment not found');
+        }
+        
+        const assignment = assignmentDoc.data();
+        const { archerIds, maxBales, teams } = assignment;
+        
+        // Load archer profiles
+        const profiles = await loadProfilesFromFirebase();
+        const selectedProfiles = profiles.filter(p => archerIds.includes(p.id));
+        
+        // Generate bale assignments
+        const bales = [];
+        const targets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        
+        // Group archers by team if teams exist
+        if (teams && teams.length > 0) {
+            let baleNumber = 1;
+            let targetIndex = 0;
+            
+            teams.forEach(team => {
+                const teamBale = {
+                    baleNumber: baleNumber,
+                    teamId: team.id,
+                    teamName: team.name,
+                    archers: team.archers.map((archer, index) => ({
+                        ...archer,
+                        targetAssignment: targets[targetIndex % targets.length]
+                    }))
+                };
+                
+                bales.push(teamBale);
+                baleNumber++;
+                targetIndex += team.archers.length;
+            });
+        } else {
+            // Simple bale assignment without teams
+            const archersPerBale = Math.ceil(selectedProfiles.length / maxBales);
+            
+            for (let i = 0; i < maxBales; i++) {
+                const baleArchers = selectedProfiles.slice(i * archersPerBale, (i + 1) * archersPerBale);
+                
+                if (baleArchers.length > 0) {
+                    const bale = {
+                        baleNumber: i + 1,
+                        archers: baleArchers.map((archer, index) => ({
+                            ...archer,
+                            targetAssignment: targets[index % targets.length]
+                        }))
+                    };
+                    bales.push(bale);
+                }
+            }
+        }
+        
+        // Update assignment with bale assignments
+        await updateEventAssignment(assignmentId, { 
+            bales, 
+            status: 'bales_assigned' 
+        });
+        
+        console.log('Bale assignments generated successfully');
+        return bales;
+    } catch (error) {
+        console.error('Error generating bale assignments:', error);
         throw error;
     }
 }; 

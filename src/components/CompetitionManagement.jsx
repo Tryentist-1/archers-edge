@@ -268,9 +268,85 @@ const CompetitionManagement = ({ onNavigate }) => {
     // Create overall rankings
     const allScores = [...scores].sort((a, b) => (b.totals?.totalScore || 0) - (a.totals?.totalScore || 0));
 
+    // Calculate award rankings (Boys Overall, Girls Overall, Overall)
+    const awardRankings = calculateAwardRankings(scores, allProfiles);
+
     return {
       rankings: allScores,
-      divisions: divisionGroups
+      divisions: divisionGroups,
+      awardRankings
+    };
+  };
+
+  const calculateAwardRankings = (scores, allProfiles) => {
+    if (!scores || scores.length === 0) {
+      return {
+        boysOverall: [],
+        girlsOverall: [],
+        overall: []
+      };
+    }
+
+    // Process scores with profile information
+    const processedScores = scores.map(score => {
+      let archerProfile = null;
+      if (score.archerId) {
+        archerProfile = allProfiles.find(p => p.id === score.archerId);
+      }
+
+      // Extract archer details
+      let firstName = '';
+      let lastName = '';
+      let school = '';
+      let gender = '';
+      let division = '';
+
+      if (archerProfile) {
+        firstName = archerProfile.firstName || '';
+        lastName = archerProfile.lastName || '';
+        school = archerProfile.school || '';
+        gender = archerProfile.gender || '';
+        division = archerProfile.defaultClassification || '';
+      } else if (score.archerName) {
+        const nameParts = score.archerName.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+        school = score.school || '';
+        gender = score.gender || '';
+        division = score.division || '';
+      }
+
+      return {
+        ...score,
+        firstName,
+        lastName,
+        school,
+        gender,
+        division,
+        totalScore: score.totals?.totalScore || 0,
+        totalTens: score.totals?.totalTens || 0,
+        totalXs: score.totals?.totalXs || 0,
+        average: score.totals?.totalScore ? (score.totals.totalScore / 36).toFixed(1) : '0.0'
+      };
+    });
+
+    // Boys Overall: Combine all male divisions (MV, MJV, MMS)
+    const boysScores = processedScores.filter(score => 
+      score.gender === 'M' || score.division?.startsWith('M')
+    ).sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+    // Girls Overall: Combine all female divisions (FV, FJV, FMS)
+    const girlsScores = processedScores.filter(score => 
+      score.gender === 'F' || score.division?.startsWith('F')
+    ).sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+    // Overall: All archers combined
+    const overallScores = [...processedScores].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+    return {
+      boysOverall: boysScores,
+      girlsOverall: girlsScores,
+      overall: overallScores
     };
   };
 
@@ -888,6 +964,123 @@ const CompetitionManagement = ({ onNavigate }) => {
                             </div>
                           );
                         })}
+
+                        {/* Award Rankings Section */}
+                        {competitionResults[selectedCompetitionForResults.id]?.awardRankings && (
+                          <div className="mt-8 border-t border-gray-200 pt-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Award Rankings</h3>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {/* Boys Overall */}
+                              <div className="bg-blue-50 rounded-lg p-4">
+                                <h4 className="text-md font-semibold text-blue-800 mb-3">Boys Overall</h4>
+                                <div className="space-y-2">
+                                  {competitionResults[selectedCompetitionForResults.id].awardRankings.boysOverall.slice(0, 5).map((archer, index) => (
+                                    <div key={archer.id} className="flex items-center justify-between bg-white rounded p-2">
+                                      <div className="flex items-center space-x-2">
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                                          index === 0 ? 'bg-yellow-500' : 
+                                          index === 1 ? 'bg-gray-400' : 
+                                          index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                                        }`}>
+                                          {index + 1}
+                                        </div>
+                                        <div>
+                                          <div className="text-sm font-medium text-gray-800">
+                                            {archer.firstName} {archer.lastName}
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            {archer.school} • {archer.division}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-sm font-bold text-gray-800">
+                                          {archer.totalScore || 0}
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          {archer.average} avg
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Girls Overall */}
+                              <div className="bg-pink-50 rounded-lg p-4">
+                                <h4 className="text-md font-semibold text-pink-800 mb-3">Girls Overall</h4>
+                                <div className="space-y-2">
+                                  {competitionResults[selectedCompetitionForResults.id].awardRankings.girlsOverall.slice(0, 5).map((archer, index) => (
+                                    <div key={archer.id} className="flex items-center justify-between bg-white rounded p-2">
+                                      <div className="flex items-center space-x-2">
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                                          index === 0 ? 'bg-yellow-500' : 
+                                          index === 1 ? 'bg-gray-400' : 
+                                          index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                                        }`}>
+                                          {index + 1}
+                                        </div>
+                                        <div>
+                                          <div className="text-sm font-medium text-gray-800">
+                                            {archer.firstName} {archer.lastName}
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            {archer.school} • {archer.division}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-sm font-bold text-gray-800">
+                                          {archer.totalScore || 0}
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          {archer.average} avg
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Overall */}
+                              <div className="bg-green-50 rounded-lg p-4">
+                                <h4 className="text-md font-semibold text-green-800 mb-3">Overall</h4>
+                                <div className="space-y-2">
+                                  {competitionResults[selectedCompetitionForResults.id].awardRankings.overall.slice(0, 5).map((archer, index) => (
+                                    <div key={archer.id} className="flex items-center justify-between bg-white rounded p-2">
+                                      <div className="flex items-center space-x-2">
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                                          index === 0 ? 'bg-yellow-500' : 
+                                          index === 1 ? 'bg-gray-400' : 
+                                          index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                                        }`}>
+                                          {index + 1}
+                                        </div>
+                                        <div>
+                                          <div className="text-sm font-medium text-gray-800">
+                                            {archer.firstName} {archer.lastName}
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            {archer.school} • {archer.division}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-sm font-bold text-gray-800">
+                                          {archer.totalScore || 0}
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          {archer.average} avg
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </>
                   ) : (
@@ -923,27 +1116,27 @@ const CompetitionManagement = ({ onNavigate }) => {
                 
                 <div className="space-y-4">
                   {/* Archer Info - Mobile Optimized */}
-                  <div className="bg-gray-50 rounded-lg p-3 md:p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
+                  <div className="bg-gray-50 rounded-lg p-2 md:p-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-xs md:text-sm">
                       <div>
-                        <span className="text-gray-500 text-xs md:text-sm">Competition:</span>
-                        <div className="font-medium text-sm md:text-base">{selectedArcherForScorecard.competitionName}</div>
+                        <span className="text-gray-500 text-xs">Comp:</span>
+                        <div className="font-medium">{selectedArcherForScorecard.competitionName}</div>
                       </div>
                       <div>
-                        <span className="text-gray-500 text-xs md:text-sm">Division:</span>
-                        <div className="font-medium text-sm md:text-base">{selectedArcherForScorecard.division}</div>
+                        <span className="text-gray-500 text-xs">Div:</span>
+                        <div className="font-medium">{selectedArcherForScorecard.division}</div>
                       </div>
                       <div>
-                        <span className="text-gray-500 text-xs md:text-sm">Gender:</span>
-                        <div className="font-medium text-sm md:text-base">{selectedArcherForScorecard.gender || 'M'}</div>
+                        <span className="text-gray-500 text-xs">Gen:</span>
+                        <div className="font-medium">{selectedArcherForScorecard.gender || 'M'}</div>
                       </div>
                       <div>
-                        <span className="text-gray-500 text-xs md:text-sm">Bale:</span>
-                        <div className="font-medium text-sm md:text-base">{selectedArcherForScorecard.baleNumber} - Target {selectedArcherForScorecard.targetAssignment}</div>
+                        <span className="text-gray-500 text-xs">Bale:</span>
+                        <div className="font-medium">{selectedArcherForScorecard.baleNumber}-{selectedArcherForScorecard.targetAssignment}</div>
                       </div>
-                      <div>
-                        <span className="text-gray-500 text-xs md:text-sm">Status:</span>
-                        <div className={`font-medium text-sm md:text-base ${
+                      <div className="col-span-2 md:col-span-1">
+                        <span className="text-gray-500 text-xs">Status:</span>
+                        <div className={`font-medium ${
                           selectedArcherForScorecard.status === 'verified' ? 'text-green-600' : 
                           selectedArcherForScorecard.status === 'in_progress' ? 'text-yellow-600' : 
                           'text-gray-600'
@@ -958,18 +1151,18 @@ const CompetitionManagement = ({ onNavigate }) => {
                   {/* Scorecard Table - Mobile Optimized */}
                   {selectedArcherForScorecard.ends && (
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 text-xs md:text-sm">
+                      <table className="w-full border-collapse border border-gray-300 text-xs">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">E</th>
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">A1</th>
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">A2</th>
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">A3</th>
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">10s</th>
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">Xs</th>
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">END</th>
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">RUN</th>
-                            <th className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">AVG</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">E</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">A1</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">A2</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">A3</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">10s</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">Xs</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">END</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">RUN</th>
+                            <th className="border border-gray-300 px-1 py-1 text-center font-medium">AVG</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -981,15 +1174,15 @@ const CompetitionManagement = ({ onNavigate }) => {
                             if (!endData) {
                               return (
                                 <tr key={endNumber}>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">{endNumber}</td>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">-</td>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">-</td>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">-</td>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0</td>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0</td>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0</td>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0</td>
-                                  <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">0.0</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">{endNumber}</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">-</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">-</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">-</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">0</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">0</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">0</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">0</td>
+                                  <td className="border border-gray-300 px-1 py-1 text-center">0.0</td>
                                 </tr>
                               );
                             }
@@ -1031,33 +1224,33 @@ const CompetitionManagement = ({ onNavigate }) => {
                             
                             return (
                               <tr key={endNumber}>
-                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-medium">{endNumber}</td>
-                                <td className={`border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold ${
+                                <td className="border border-gray-300 px-1 py-1 text-center font-medium">{endNumber}</td>
+                                <td className={`border border-gray-300 px-1 py-1 text-center font-bold ${
                                   scores[0] === 'X' || scores[0] === '10' ? 'bg-yellow-200' :
                                   scores[0] === '7' || scores[0] === '8' ? 'bg-red-200' :
                                   scores[0] === '6' ? 'bg-blue-200' : 'bg-white'
                                 }`}>
                                   {scores[0] || '-'}
                                 </td>
-                                <td className={`border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold ${
+                                <td className={`border border-gray-300 px-1 py-1 text-center font-bold ${
                                   scores[1] === 'X' || scores[1] === '10' ? 'bg-yellow-200' :
                                   scores[1] === '7' || scores[1] === '8' ? 'bg-red-200' :
                                   scores[1] === '6' ? 'bg-blue-200' : 'bg-white'
                                 }`}>
                                   {scores[1] || '-'}
                                 </td>
-                                <td className={`border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold ${
+                                <td className={`border border-gray-300 px-1 py-1 text-center font-bold ${
                                   scores[2] === 'X' || scores[2] === '10' ? 'bg-yellow-200' :
                                   scores[2] === '7' || scores[2] === '8' ? 'bg-red-200' :
                                   scores[2] === '6' ? 'bg-blue-200' : 'bg-white'
                                 }`}>
                                   {scores[2] || '-'}
                                 </td>
-                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">{tens}</td>
-                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">{xs}</td>
-                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold">{endTotal}</td>
-                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center font-bold">{runningTotal}</td>
-                                <td className="border border-gray-300 px-1 md:px-2 py-1 md:py-2 text-center">{average}</td>
+                                <td className="border border-gray-300 px-1 py-1 text-center">{tens}</td>
+                                <td className="border border-gray-300 px-1 py-1 text-center">{xs}</td>
+                                <td className="border border-gray-300 px-1 py-1 text-center font-bold">{endTotal}</td>
+                                <td className="border border-gray-300 px-1 py-1 text-center font-bold">{runningTotal}</td>
+                                <td className="border border-gray-300 px-1 py-1 text-center">{average}</td>
                               </tr>
                             );
                           })}
@@ -1066,26 +1259,26 @@ const CompetitionManagement = ({ onNavigate }) => {
                     </div>
                   )}
                   
-                  {/* Final Totals - Positioned Close to Table */}
+                  {/* Final Totals - Compact for Mobile */}
                   {selectedArcherForScorecard.totals && (
-                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 mt-4">
-                      <h3 className="font-semibold text-gray-800 mb-3">Final Totals</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                    <div className="bg-gray-50 rounded-lg p-2 md:p-4 mt-2 md:mt-4">
+                      <h3 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">Final Totals</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
                         <div className="text-center">
-                          <div className="text-2xl md:text-3xl font-bold text-blue-600">{selectedArcherForScorecard.totals.totalScore}</div>
-                          <div className="text-xs md:text-sm text-gray-600">Total Score</div>
+                          <div className="text-lg md:text-3xl font-bold text-blue-600">{selectedArcherForScorecard.totals.totalScore}</div>
+                          <div className="text-xs text-gray-600">Total</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl md:text-3xl font-bold text-orange-600">{selectedArcherForScorecard.totals.totalTens}</div>
-                          <div className="text-xs md:text-sm text-gray-600">10s</div>
+                          <div className="text-lg md:text-3xl font-bold text-orange-600">{selectedArcherForScorecard.totals.totalTens}</div>
+                          <div className="text-xs text-gray-600">10s</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl md:text-3xl font-bold text-purple-600">{selectedArcherForScorecard.totals.totalXs}</div>
-                          <div className="text-xs md:text-sm text-gray-600">Xs</div>
+                          <div className="text-lg md:text-3xl font-bold text-purple-600">{selectedArcherForScorecard.totals.totalXs}</div>
+                          <div className="text-xs text-gray-600">Xs</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl md:text-3xl font-bold text-green-600">{selectedArcherForScorecard.totals.average}</div>
-                          <div className="text-xs md:text-sm text-gray-600">Average</div>
+                          <div className="text-lg md:text-3xl font-bold text-green-600">{selectedArcherForScorecard.totals.average}</div>
+                          <div className="text-xs text-gray-600">Avg</div>
                         </div>
                       </div>
                     </div>

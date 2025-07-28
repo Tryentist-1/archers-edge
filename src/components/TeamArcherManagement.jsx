@@ -99,7 +99,11 @@ const TeamArcherManagement = ({ onNavigate }) => {
 
     const handleArcherSave = (savedArcher, updatedArchers) => {
         setArchers(updatedArchers);
-        setEditingArcher(null);
+        
+        // Update the editing archer with the saved data
+        setEditingArcher(savedArcher);
+        
+        // Stay on the current archer - don't go back to list view
     };
 
     const handleArcherCancel = () => {

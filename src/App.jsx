@@ -19,6 +19,7 @@ import NewArcherStartup from './components/NewArcherStartup';
 import CoachQRGenerator from './components/CoachQRGenerator.jsx';
 import CoachManagement from './components/CoachManagement.jsx';
 import SystemAdminManagement from './components/SystemAdminManagement.jsx';
+import EventAssignment from './components/EventAssignment.jsx';
 import { LocalStorage } from './utils/localStorage';
 import { 
     syncLocalDataToFirebase, 
@@ -212,6 +213,9 @@ function AppContent() {
         break;
       case 'system-admin':
         setCurrentView('system-admin');
+        break;
+      case 'event-assignment':
+        setCurrentView('event-assignment');
         break;
       case 'new-round':
         setCurrentView('new-round');
@@ -531,6 +535,11 @@ function AppContent() {
             {/* System Admin Management */}
             {currentView === 'system-admin' && (
               <SystemAdminManagement />
+            )}
+
+            {/* Event Assignment Management */}
+            {currentView === 'event-assignment' && (
+              <EventAssignment onNavigate={handleNavigation} />
             )}
           </>
         )}
