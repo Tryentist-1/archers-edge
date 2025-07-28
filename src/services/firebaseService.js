@@ -1341,4 +1341,173 @@ export const generateBaleAssignments = async (assignmentId) => {
         console.error('Error generating bale assignments:', error);
         throw error;
     }
+};
+
+// ===== EVENT ASSIGNMENT TO SCORING ROUND CONVERSION =====
+// Convert Event Assignment bales to actual MultiArcherScoring rounds
+
+export const convertEventAssignmentToScoringRounds = async (assignmentId) => {
+    try {
+        console.log('Converting event assignment to scoring rounds:', assignmentId);
+        
+        // Get the assignment with bales
+        const assignmentRef = doc(db, 'eventAssignments', assignmentId);
+        const assignmentDoc = await getDoc(assignmentRef);
+        
+        if (!assignmentDoc.exists()) {
+            throw new Error('Assignment not found');
+        }
+        
+        const assignment = assignmentDoc.data();
+        
+        if (!assignment.bales || assignment.bales.length === 0) {
+            throw new Error('No bale assignments found. Generate bales first.');
+        }
+        
+        // Convert each bale to a scoring round
+        const scoringRounds = [];
+        
+        assignment.bales.forEach(bale => {
+            // Create scoring data structure for each archer (like ProfileRoundSetup does)
+            const archersWithScores = bale.archers.map(archer => {
+                const scoresObject = {};
+                for (let end = 1; end <= 12; end++) {
+                    scoresObject[`end${end}`] = {
+                        arrow1: '',
+                        arrow2: '',
+                        arrow3: ''
+                    };
+                }
+                
+                return {
+                    ...archer,
+                    scores: scoresObject
+                };
+            });
+            
+            // Create bale data structure (like ProfileRoundSetup creates)
+            const baleData = {
+                id: `assignment_${assignmentId}_bale_${bale.baleNumber}`,
+                baleNumber: bale.baleNumber,
+                competitionId: assignment.competitionId,
+                competitionName: assignment.competitionName || 'Event Assignment Round',
+                competitionType: 'qualification',
+                isPracticeRound: false,
+                archers: archersWithScores,
+                currentEnd: 1,
+                totalEnds: 12,
+                createdBy: assignment.createdBy,
+                createdAt: new Date().toISOString(),
+                status: 'active',
+                assignmentId: assignmentId, // Link back to original assignment
+                eventAssignmentType: assignment.assignmentType
+            };
+            
+            scoringRounds.push(baleData);
+        });
+        
+        // Save each scoring round to Firebase
+        const savedRounds = [];
+        for (const round of scoringRounds) {
+            const roundRef = doc(db, 'scoringRounds', round.id);
+            await setDoc(roundRef, {
+                ...round,
+                createdAt: serverTimestamp()
+            });
+            savedRounds.push(round);
+        }
+        
+        // Update assignment status
+        await updateEventAssignment(assignmentId, { 
+            status: 'scoring_rounds_created',
+            scoringRounds: savedRounds.map(r => ({ id: r.id, baleNumber: r.baleNumber }))
+        });
+        
+        console.log(`Created ${savedRounds.length} scoring rounds from event assignment`);
+        return savedRounds;
+    } catch (error) {
+        console.error('Error converting event assignment to scoring rounds:', error);
+        throw error;
+    }
+};
+
+export const findArcherScoringRound = async (archerId, competitionId = null) => {
+    try {
+        console.log('Finding scoring round for archer:', archerId, 'competition:', competitionId);
+        
+        // Query for scoring rounds that include this archer
+        const scoringRoundsRef = collection(db, 'scoringRounds');
+        let querySnapshot;
+        
+        if (competitionId) {
+            const q = query(
+                scoringRoundsRef,
+                where('competitionId', '==', competitionId),
+                where('status', '==', 'active')
+            );
+            querySnapshot = await getDocs(q);
+        } else {
+            const q = query(
+                scoringRoundsRef,
+                where('status', '==', 'active')
+            );
+            querySnapshot = await getDocs(q);
+        }
+        
+        // Find the round that contains this archer
+        let archerRound = null;
+        querySnapshot.forEach((doc) => {
+            const round = doc.data();
+            const archerInRound = round.archers?.find(a => a.id === archerId);
+            if (archerInRound) {
+                archerRound = { id: doc.id, ...round };
+            }
+        });
+        
+        if (archerRound) {
+            console.log('Found scoring round for archer:', archerRound.id);
+            return archerRound;
+        } else {
+            console.log('No active scoring round found for archer');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error finding archer scoring round:', error);
+        return null;
+    }
+};
+
+export const loadActiveScoringRounds = async (competitionId = null) => {
+    try {
+        console.log('Loading active scoring rounds, competition:', competitionId);
+        
+        const scoringRoundsRef = collection(db, 'scoringRounds');
+        let querySnapshot;
+        
+        if (competitionId) {
+            const q = query(
+                scoringRoundsRef,
+                where('competitionId', '==', competitionId),
+                where('status', '==', 'active')
+            );
+            querySnapshot = await getDocs(q);
+        } else {
+            const q = query(
+                scoringRoundsRef,
+                where('status', '==', 'active')
+            );
+            querySnapshot = await getDocs(q);
+        }
+        
+        const rounds = [];
+        querySnapshot.forEach((doc) => {
+            rounds.push({ id: doc.id, ...doc.data() });
+        });
+        
+        console.log(`Found ${rounds.length} active scoring rounds`);
+        return rounds;
+    } catch (error) {
+        console.error('Error loading active scoring rounds:', error);
+        return [];
+    }
 }; 
